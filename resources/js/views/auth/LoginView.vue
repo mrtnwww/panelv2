@@ -1,54 +1,7 @@
 <template>
     <div class="min-h-screen flex font-sans">
         <!-- ── Panel izquierdo ── -->
-        <div
-            class="hidden lg:flex lg:flex-1 bg-[#0A2540] flex-col justify-between px-14 py-14 relative overflow-hidden"
-        >
-            <!-- Círculos decorativos -->
-            <div
-                class="absolute -top-24 -right-24 w-80 h-80 rounded-full bg-emerald-500/10 pointer-events-none"
-            />
-            <div
-                class="absolute -bottom-20 -left-20 w-64 h-64 rounded-full bg-emerald-500/6 pointer-events-none"
-            />
-
-            <!-- Logo -->
-            <div class="flex items-center gap-3 relative z-10">
-                <span class="text-emerald-400 font-semibold text-4xl tracking-tight 2xl:text-8xl">
-                    Credi<span class="text-white">gital</span>
-                </span>
-            </div>
-
-            <!-- Contenido central -->
-            <div class="relative z-10 flex flex-col gap-8">
-                <h2 class="text-white text-3xl font-light leading-snug 2xl:text-5xl">
-                    Administra tus clientes
-                    <span class="text-emerald-400 font-semibold"
-                        >de forma fácil y rápida</span
-                    >
-                </h2>
-
-                <ul class="flex flex-col gap-4">
-                    <li
-                        v-for="feature in features"
-                        :key="feature"
-                        class="flex items-start gap-3"
-                    >
-                        <span
-                            class="mt-2 w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0"
-                        />
-                        <span class="text-white/60 text-sm leading-relaxed 2xl:text-xl">{{
-                            feature
-                        }}</span>
-                    </li>
-                </ul>
-            </div>
-
-            <!-- Footer izquierdo -->
-            <p class="text-white/25 text-xs relative z-10">
-                &copy; Todos los derechos reservados
-            </p>
-        </div>
+        <AuthPanelLeft />
 
         <!-- ── Panel derecho: formulario ── -->
         <div
@@ -119,27 +72,7 @@
                         <span
                             class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-300 pointer-events-none"
                         >
-                            <svg
-                                width="16"
-                                height="16"
-                                viewBox="0 0 16 16"
-                                fill="none"
-                            >
-                                <rect
-                                    x="1.5"
-                                    y="3.5"
-                                    width="13"
-                                    height="9"
-                                    rx="1.5"
-                                    stroke="currentColor"
-                                    stroke-width="1.2"
-                                />
-                                <path
-                                    d="M1.5 5L8 9L14.5 5"
-                                    stroke="currentColor"
-                                    stroke-width="1.2"
-                                />
-                            </svg>
+                            <i class="fa-regular fa-envelope"></i>
                         </span>
                     </div>
                     <p v-if="fieldErrors.email" class="text-xs text-red-500">
@@ -182,55 +115,7 @@
                                     : 'Mostrar contraseña'
                             "
                         >
-                            <svg
-                                v-if="!showPassword"
-                                width="16"
-                                height="16"
-                                viewBox="0 0 16 16"
-                                fill="none"
-                            >
-                                <ellipse
-                                    cx="8"
-                                    cy="8"
-                                    rx="6.5"
-                                    ry="4"
-                                    stroke="currentColor"
-                                    stroke-width="1.2"
-                                />
-                                <circle
-                                    cx="8"
-                                    cy="8"
-                                    r="2"
-                                    stroke="currentColor"
-                                    stroke-width="1.2"
-                                />
-                            </svg>
-                            <svg
-                                v-else
-                                width="16"
-                                height="16"
-                                viewBox="0 0 16 16"
-                                fill="none"
-                            >
-                                <path
-                                    d="M2 2L14 14"
-                                    stroke="currentColor"
-                                    stroke-width="1.2"
-                                    stroke-linecap="round"
-                                />
-                                <path
-                                    d="M6.5 4.5C7 4.2 7.5 4 8 4c3 0 5.5 4 5.5 4s-.7 1.4-2 2.5"
-                                    stroke="currentColor"
-                                    stroke-width="1.2"
-                                    stroke-linecap="round"
-                                />
-                                <path
-                                    d="M3.5 6C2.5 7 1.5 8 1.5 8s2.5 4 6.5 4c.8 0 1.6-.2 2.3-.5"
-                                    stroke="currentColor"
-                                    stroke-width="1.2"
-                                    stroke-linecap="round"
-                                />
-                            </svg>
+                            <i class="fa-regular fa-eye"></i>
                         </button>
                     </div>
                     <p v-if="fieldErrors.password" class="text-xs text-red-500">
@@ -273,9 +158,7 @@
                             d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
                         />
                     </svg>
-                    <span>{{
-                        loading ? "Ingresando..." : "Ingresar"
-                    }}</span>
+                    <span>{{ loading ? "Ingresando..." : "Ingresar" }}</span>
                 </button>
             </form>
 
@@ -311,6 +194,8 @@
 </template>
 
 <script setup>
+import AuthPanelLeft from "@/components/AuthPanelLeft.vue";
+
 import { ref, reactive } from "vue";
 import { useRouter } from "vue-router";
 
