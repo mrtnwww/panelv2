@@ -345,7 +345,7 @@ const columns = [
     {
         key: 'fechaRegistro',
         label: 'Fecha registro',
-        sortable: true,
+        sortable: false,
         type: 'date',
     },
     {
