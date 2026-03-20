@@ -21,8 +21,8 @@ const routes = [
         component: LoginView,
     },
     {
-        path: "/register",
-        name: "register",
+        path: "/registro",
+        name: "registro",
         component: RegisterView,
     },
     // Rutas autenticadas
@@ -55,7 +55,7 @@ router.beforeEach((to, from) => {
         return { name: 'login' }
     }
 
-    // Ruta solo para guests (login/register) y ya autenticado → dashboard
+    // Ruta solo para guests (login/registro) y ya autenticado → dashboard
     if (to.meta.guestOnly && auth) {
         return { name: 'dashboard' }
     }

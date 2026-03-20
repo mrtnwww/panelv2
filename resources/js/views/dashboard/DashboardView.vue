@@ -10,7 +10,7 @@
             </div>
 
             <!-- Rango de fechas -->
-            <div class="flex items-center gap-3">
+            <div class="flex flex-col items-center gap-3 lg:flex-row">
                 <div class="flex items-center gap-2">
                     <span class="text-xs text-gray-400">Desde</span>
                     <input
@@ -83,8 +83,7 @@
                 Dashboard en construcción
             </h2>
             <p class="text-sm text-gray-400 max-w-xs">
-                Aquí se mostrará el resumen de gestión, métricas de clientes,
-                créditos y abonos.
+                <!-- TODO -->
             </p>
         </div>
     </div>

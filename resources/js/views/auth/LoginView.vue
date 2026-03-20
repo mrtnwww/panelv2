@@ -24,7 +24,7 @@
                 <p class="text-gray-400 text-sm">
                     ¿Aún no tienes cuenta?
                     <router-link
-                        to="/register"
+                        to="/registro"
                         class="text-emerald-600 font-medium hover:text-emerald-700 transition-colors"
                     >
                         Crear cuenta
@@ -171,7 +171,7 @@
 
             <!-- Botón registrarse -->
             <router-link
-                to="/register"
+                to="/registro"
                 class="w-full h-11 flex items-center justify-center border border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-[#0A2540] text-sm font-medium rounded-lg transition-all"
             >
                 Crear una cuenta nueva
