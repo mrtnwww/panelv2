@@ -1,12 +1,10 @@
 <template>
-    <div class="min-h-screen flex font-sans">
+    <div class="h-full flex font-sans overflow-hidden">
         <!-- ── Panel izquierdo ── -->
         <AuthPanelLeft />
 
         <!-- ── Panel derecho ── -->
-        <div
-            class="w-full lg:w-160 bg-white flex flex-col px-10 py-10 overflow-y-auto"
-        >
+        <div class="w-full lg:w-160 bg-white flex flex-col px-10 py-10 overflow-y-auto min-h-0">
             <!-- Logo móvil -->
             <div class="flex lg:hidden items-center gap-3 mb-8">
                 <span
@@ -508,56 +506,14 @@
 </template>
 
 <script setup>
+import AuthPanelLeft from "@/components/AuthPanelLeft.vue";
+import SectionTitle from "@/components/form/SectionTitle.vue";
+import FormField from "@/components/form/FormField.vue";
+
 import { ref, reactive, computed } from "vue";
 import { useRouter } from "vue-router";
-import AuthPanelLeft from "@/components/AuthPanelLeft.vue";
 
 const router = useRouter();
-
-// ── Componentes internos (inline) ──────────────────────────────────────────
-
-// Título de sección
-const SectionTitle = {
-    props: ["title"],
-    template: `
-        <div class="flex items-center gap-3">
-            <span class="text-xs font-semibold text-emerald-600 uppercase tracking-widest whitespace-nowrap">
-                {{ title }}
-            </span>
-            <div class="flex-1 h-px bg-gray-100" />
-        </div>
-    `,
-};
-
-// Wrapper de campo con label y error
-const FormField = {
-    props: ["label", "error"],
-    template: `
-        <div class="flex flex-col gap-1.5">
-            <label class="text-xs font-medium text-gray-500 uppercase tracking-wide">{{ label }}</label>
-            <slot />
-            <p v-if="error" class="text-xs text-red-500">{{ error }}</p>
-        </div>
-    `,
-};
-
-// Ícono ojo
-const EyeIcon = {
-    props: ["open"],
-    template: `
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-            <template v-if="open">
-                <ellipse cx="8" cy="8" rx="6.5" ry="4" stroke="currentColor" stroke-width="1.2"/>
-                <circle cx="8" cy="8" r="2" stroke="currentColor" stroke-width="1.2"/>
-            </template>
-            <template v-else>
-                <path d="M2 2L14 14" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
-                <path d="M6.5 4.5C7 4.2 7.5 4 8 4c3 0 5.5 4 5.5 4s-.7 1.4-2 2.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
-                <path d="M3.5 6C2.5 7 1.5 8 1.5 8s2.5 4 6.5 4c.8 0 1.6-.2 2.3-.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
-            </template>
-        </svg>
-    `,
-};
 
 // ── Estado ──────────────────────────────────────────────────────────────────
 
@@ -609,13 +565,6 @@ const fieldErrors = reactive({
 });
 
 // ── Datos estáticos ─────────────────────────────────────────────────────────
-
-const features = [
-    "Crea créditos y registra abonos en segundos",
-    "Configura recordatorios de pago automatizados",
-    "Gestiona vencimientos y descarga informes detallados",
-    "Tus clientes consultan sus cuotas desde la App",
-];
 
 const loanTypes = [
     { value: "natural", label: "Crédito a personas naturales" },
@@ -791,12 +740,18 @@ async function handleRegister() {
 </script>
 
 <style scoped>
+html, body {
+    height: 100%;
+    overflow: hidden;
+}
+
 .fade-enter-active,
 .fade-leave-active {
     transition:
         opacity 0.2s ease,
         transform 0.2s ease;
 }
+
 .fade-enter-from,
 .fade-leave-to {
     opacity: 0;
