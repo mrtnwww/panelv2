@@ -66,33 +66,7 @@
                     !isOpen && 'lg:justify-center',
                 ]"
             >
-                <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 16 16"
-                    fill="none"
-                    class="flex-shrink-0"
-                >
-                    <path
-                        d="M6 14H2.667A.667.667 0 0 1 2 13.333V2.667A.667.667 0 0 1 2.667 2H6"
-                        stroke="currentColor"
-                        stroke-width="1.3"
-                        stroke-linecap="round"
-                    />
-                    <path
-                        d="M10.667 11.333L14 8l-3.333-3.333"
-                        stroke="currentColor"
-                        stroke-width="1.3"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                    />
-                    <path
-                        d="M14 8H6"
-                        stroke="currentColor"
-                        stroke-width="1.3"
-                        stroke-linecap="round"
-                    />
-                </svg>
+                <i class="fa-solid fa-arrow-right-from-bracket"></i>
                 <span
                     :class="[
                         'whitespace-nowrap transition-all duration-300 overflow-hidden',
