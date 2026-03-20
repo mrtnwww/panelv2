@@ -6,7 +6,7 @@
         ]"
     >
         <span
-            class="text-white/30 text-[10px] font-semibold uppercase tracking-widest"
+            class="text-white/30 text-[13px] font-semibold uppercase tracking-widest"
         >
             {{ label }}
         </span>

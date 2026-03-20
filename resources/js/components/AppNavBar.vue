@@ -43,7 +43,7 @@
                 v-if="notifications > 0"
                 class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center"
             >
-                {{ notifications > 9 ? "9+" : notifications }}
+                {{ notifications > 9 ? '9+' : notifications }}
             </span>
         </button>
 
@@ -78,10 +78,9 @@
                     <span class="text-sm font-medium text-gray-700">{{
                         user.name
                     }}</span>
-                    <span
-                        class="text-xs text-gray-400 max-w-35 truncate"
-                        >{{ user.company }}</span
-                    >
+                    <span class="text-xs text-gray-400 max-w-35 truncate">{{
+                        user.company
+                    }}</span>
                 </div>
                 <svg
                     width="14"
@@ -169,20 +168,20 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from "vue";
-import { useRouter } from "vue-router";
+import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { useRouter } from 'vue-router';
 
 const props = defineProps({
     sidebarWidth: {
         type: String,
-        default: "224px", // 56 * 4 = 224px (w-56)
+        default: '224px', // 56 * 4 = 224px (w-56)
     },
     user: {
         type: Object,
         default: () => ({
-            name: "Martín Desarrollo",
-            email: "martin@credigital.com",
-            company: "IMPULSA CORP SAS / CREDITRANSITO",
+            name: 'Martín Desarrollo',
+            email: 'martin@credigital.com',
+            company: 'IMPULSA CORP SAS / CREDITRANSITO',
             avatar: null,
         }),
     },
@@ -196,7 +195,7 @@ const props = defineProps({
     },
 });
 
-defineEmits(["toggle-sidebar"]);
+defineEmits(['toggle-sidebar']);
 
 const router = useRouter();
 const userMenuOpen = ref(false);
@@ -204,10 +203,10 @@ const userMenuRef = ref(null);
 
 const userInitials = computed(() => {
     return props.user.name
-        .split(" ")
+        .split(' ')
         .slice(0, 2)
-        .map((n) => n[0])
-        .join("")
+        .map(n => n[0])
+        .join('')
         .toUpperCase();
 });
 
@@ -217,8 +216,8 @@ function goTo(path) {
 }
 
 function handleLogout() {
-    localStorage.removeItem("auth_token");
-    router.push("/login");
+    localStorage.removeItem('auth_token');
+    router.push('/login');
 }
 
 // Cerrar dropdown al hacer clic fuera
@@ -228,9 +227,9 @@ function handleClickOutside(e) {
     }
 }
 
-onMounted(() => document.addEventListener("mousedown", handleClickOutside));
+onMounted(() => document.addEventListener('mousedown', handleClickOutside));
 onUnmounted(() =>
-    document.removeEventListener("mousedown", handleClickOutside),
+    document.removeEventListener('mousedown', handleClickOutside)
 );
 </script>
 

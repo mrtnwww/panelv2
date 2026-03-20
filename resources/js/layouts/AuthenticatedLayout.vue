@@ -18,7 +18,7 @@
 
         <!-- Contenido principal -->
         <main
-            class="transition-all duration-300 pt-[60px]"
+            class="transition-all duration-300 pt-15 h-screen overflow-y-auto"
             :style="{ marginLeft: mainMargin }"
         >
             <div class="p-6">
@@ -29,9 +29,9 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from "vue";
-import AppSidebar from "@/components/AppSideBar.vue";
-import AppNavbar from "@/components/AppNavbar.vue";
+import { ref, computed, onMounted, onUnmounted } from 'vue';
+import AppSidebar from '@/components/AppSideBar.vue';
+import AppNavbar from '@/components/AppNavbar.vue';
 
 // ── Estado del sidebar ─────────────────────────────────────────────────────
 
@@ -55,28 +55,28 @@ function toggleSidebar() {
 
 onMounted(() => {
     checkMobile();
-    window.addEventListener("resize", checkMobile);
+    window.addEventListener('resize', checkMobile);
 });
-onUnmounted(() => window.removeEventListener("resize", checkMobile));
+onUnmounted(() => window.removeEventListener('resize', checkMobile));
 
 // ── Medidas dinámicas ──────────────────────────────────────────────────────
 
 const navbarLeft = computed(() => {
-    if (isMobile.value) return "0px";
+    if (isMobile.value) return '0px';
     return sidebarOpen.value ? `${SIDEBAR_W}px` : `${SIDEBAR_COL}px`;
 });
 
 const mainMargin = computed(() => {
-    if (isMobile.value) return "0px";
+    if (isMobile.value) return '0px';
     return sidebarOpen.value ? `${SIDEBAR_W}px` : `${SIDEBAR_COL}px`;
 });
 
 // ── Usuario actual (reemplazar con store/composable de auth) ───────────────
 
 const currentUser = ref({
-    name: "Martín Desarrollo",
-    email: "martin@credigital.com",
-    company: "IMPULSA CORP SAS / CREDITRANSITO",
+    name: 'Martín Desarrollo',
+    email: 'martin@credigital.com',
+    company: 'IMPULSA CORP SAS / CREDITRANSITO',
     avatar: null,
 });
 </script>

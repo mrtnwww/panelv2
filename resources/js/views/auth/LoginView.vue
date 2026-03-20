@@ -158,7 +158,7 @@
                             d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
                         />
                     </svg>
-                    <span>{{ loading ? "Ingresando..." : "Ingresar" }}</span>
+                    <span>{{ loading ? 'Ingresando...' : 'Ingresar' }}</span>
                 </button>
             </form>
 
@@ -194,40 +194,40 @@
 </template>
 
 <script setup>
-import AuthPanelLeft from "@/components/AuthPanelLeft.vue";
+import AuthPanelLeft from '@/components/AuthPanelLeft.vue';
 
-import { ref, reactive } from "vue";
-import { useRouter } from "vue-router";
+import { ref, reactive } from 'vue';
+import { useRouter } from 'vue-router';
 
 const router = useRouter();
 
 // ── Estado del formulario ──
 const form = reactive({
-    email: "",
-    password: "",
+    email: '',
+    password: '',
 });
 
 const showPassword = ref(false);
 const loading = ref(false);
-const errorMessage = ref("");
+const errorMessage = ref('');
 const fieldErrors = reactive({
-    email: "",
-    password: "",
+    email: '',
+    password: '',
 });
 
 // ── Features del panel izquierdo ──
 const features = [
-    "Crea créditos y registra abonos en segundos",
-    "Configura recordatorios de pago automatizados",
-    "Gestiona vencimientos y descarga informes detallados",
-    "Tus clientes consultan sus cuotas desde la App",
+    'Crea créditos y registra abonos en segundos',
+    'Configura recordatorios de pago automatizados',
+    'Gestiona vencimientos y descarga informes detallados',
+    'Tus clientes consultan sus cuotas desde la App',
 ];
 
 // ── Lógica de login ──
 async function handleLogin() {
-    errorMessage.value = "";
-    fieldErrors.email = "";
-    fieldErrors.password = "";
+    errorMessage.value = '';
+    fieldErrors.email = '';
+    fieldErrors.password = '';
     loading.value = true;
 
     try {
@@ -272,9 +272,9 @@ async function handleLogin() {
         // }
 
         // 6. Redirigir
-        router.push("/dashboard");
+        router.push('/dashboard');
     } catch {
-        errorMessage.value = "Error de conexión. Intenta nuevamente.";
+        errorMessage.value = 'Error de conexión. Intenta nuevamente.';
     } finally {
         loading.value = false;
     }
@@ -285,8 +285,8 @@ function getCookie(name) {
     const value = `; ${document.cookie}`;
     const parts = value.split(`; ${name}=`);
     if (parts.length === 2)
-        return decodeURIComponent(parts.pop().split(";").shift());
-    return "";
+        return decodeURIComponent(parts.pop().split(';').shift());
+    return '';
 }
 </script>
 

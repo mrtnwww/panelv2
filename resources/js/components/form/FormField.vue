@@ -1,6 +1,8 @@
 <template>
     <div class="flex flex-col gap-1.5">
-        <label class="text-xs font-medium text-gray-500 uppercase tracking-wide">
+        <label
+            class="text-xs font-medium text-gray-500 uppercase tracking-wide"
+        >
             {{ label }}
         </label>
         <slot />
@@ -11,6 +13,6 @@
 <script setup>
 defineProps({
     label: String,
-    error: String
+    error: String,
 });
 </script>

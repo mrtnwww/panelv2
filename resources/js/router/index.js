@@ -31,7 +31,28 @@ const routes = [
         component: AuthenticatedLayout,
         children: [
             { path: "", component: DashboardView },
-            // TODO
+            // Clientes
+            {
+                path: 'clientes',
+                children: [
+                    {
+                        path: '',
+                        name: 'clientes',
+                        component: () => import('@/views/dashboard/clientes/ClientesListView.vue'),
+                    },
+                ],
+            },
+            // Informes
+            {
+                path: 'informes',
+                children: [
+                    {
+                        path: 'creditos',
+                        name: 'informes.creditos',
+                        component: () => import('@/views/dashboard/informes/CreditosListView.vue'),
+                    }
+                ],
+            },
         ],
     },
 ];

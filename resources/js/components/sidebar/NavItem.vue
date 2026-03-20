@@ -70,7 +70,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed } from 'vue';
 
 const props = defineProps({
     item: {
@@ -83,11 +83,11 @@ const props = defineProps({
     },
     activePath: {
         type: String,
-        default: "",
+        default: '',
     },
 });
 
-defineEmits(["navigate"]);
+defineEmits(['navigate']);
 
 const open = ref(false);
 

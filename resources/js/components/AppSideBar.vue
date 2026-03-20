@@ -57,7 +57,7 @@
         </nav>
 
         <!-- Footer -->
-        <div class="px-2 py-3 border-t border-white/10 flex-shrink-0">
+        <div class="px-2 py-3 border-t border-white/10 shrink-0">
             <button
                 @click="handleLogout"
                 :class="[
@@ -88,10 +88,10 @@
 </template>
 
 <script setup>
-import { computed } from "vue";
-import { useRouter, useRoute } from "vue-router";
-import NavGroup from "@/components/sidebar/NavGroup.vue";
-import NavItem from "@/components/sidebar/NavItem.vue";
+import { computed } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
+import NavGroup from '@/components/sidebar/NavGroup.vue';
+import NavItem from '@/components/sidebar/NavItem.vue';
 
 defineProps({
     isOpen: {
@@ -104,7 +104,7 @@ defineProps({
     },
 });
 
-defineEmits(["close"]);
+defineEmits(['close']);
 
 const router = useRouter();
 const route = useRoute();
@@ -114,88 +114,107 @@ const currentPath = computed(() => route.path);
 
 const gestionItems = [
     {
-        name: "Clientes",
-        path: "/dashboard/clientes",
-        icon: "fa-regular fa-user",
+        name: 'Clientes',
+        path: '/dashboard/clientes',
+        icon: 'fa-regular fa-user',
         children: [
-            { name: "Nuevo cliente", path: "/dashboard/clientes/nuevo" },
-            { name: "Lista de clientes", path: "/dashboard/clientes" },
-            { name: "Validar cliente", path: "/dashboard/validar-clientes" },
-            { name: "Análisis cliente", path: "/dashboard/analisis-clientes" },
+            { name: 'Nuevo cliente', path: '/dashboard/clientes/nuevo' },
+            { name: 'Lista de clientes', path: '/dashboard/clientes' },
+            { name: 'Validar cliente', path: '/dashboard/validar-clientes' },
+            { name: 'Análisis cliente', path: '/dashboard/analisis-clientes' },
         ],
     },
     {
-        name: "Créditos",
-        path: "/dashboard/creditos",
-        icon: "fa-solid fa-dollar-sign",
+        name: 'Créditos',
+        path: '/dashboard/creditos',
+        icon: 'fa-solid fa-dollar-sign',
         children: [
-            { name: "Crear crédito", path: "/dashboard/creditos/nuevo" },
-            { name: "Estado de crédito", path: "/dashboard/creditos/estado" },
+            { name: 'Crear crédito', path: '/dashboard/creditos/nuevo' },
+            { name: 'Estado de crédito', path: '/dashboard/creditos/estado' },
         ],
     },
     {
-        name: "Abonos",
-        path: "/dashboard/abonos",
-        icon: "fa-solid fa-credit-card",
+        name: 'Abonos',
+        path: '/dashboard/abonos',
+        icon: 'fa-solid fa-credit-card',
+        children: [{ name: 'Abonar cuota', path: '/dashboard/abonos/nuevo' }],
+    },
+    {
+        name: 'Productos',
+        path: '/dashboard/productos',
+        icon: 'fa-solid fa-cart-flatbed',
         children: [
-            { name: "Abonar cuota", path: "/dashboard/abonos/nuevo" },
+            { name: 'Crear producto', path: '/dashboard/productos/nuevo' },
         ],
     },
     {
-        name: "Productos",
-        path: "/dashboard/productos",
-        icon: "fa-solid fa-cart-flatbed",
+        name: 'Cobranza',
+        path: '/dashboard/cobranza',
+        icon: 'fa-solid fa-hand-holding-dollar',
         children: [
-            { name: "Crear producto", path: "/dashboard/productos/nuevo" }
-        ],
-    },
-    {
-        name: "Cobranza",
-        path: "/dashboard/cobranza",
-        icon: "fa-solid fa-hand-holding-dollar",
-        children: [
-            { name: "Créditos", path: "/dashboard/cobranza/creditos" },
-            { name: "Tareas", path: "/dashboard/cobranza/tareas" }
+            { name: 'Créditos', path: '/dashboard/cobranza/creditos' },
+            { name: 'Tareas', path: '/dashboard/cobranza/tareas' },
         ],
     },
 ];
 
 const adminItems = [
     {
-        name: "Contabilidad",
-        path: "/dashboard/contabilidad",
-        icon: "fa-solid fa-calculator",
+        name: 'Contabilidad',
+        path: '/dashboard/contabilidad',
+        icon: 'fa-solid fa-calculator',
         children: [
-            { name: "Recibo de caja CXC", path: "/dashboard/contabilidad/recibo-cxc" },
-            { name: "Costos y gastos", path: "/dashboard/contabilidad/costos-gastos" }
+            {
+                name: 'Recibo de caja CXC',
+                path: '/dashboard/contabilidad/recibo-cxc',
+            },
+            {
+                name: 'Costos y gastos',
+                path: '/dashboard/contabilidad/costos-gastos',
+            },
         ],
     },
     {
-        name: "Informes",
-        path: "/dashboard/informes",
-        icon: "fa-solid fa-chart-line",
+        name: 'Informes',
+        path: '/dashboard/informes',
+        icon: 'fa-solid fa-chart-line',
         children: [
-            { name: "Créditos", path: "/dashboard/informes/creditos" },
-            { name: "Abonos", path: "/dashboard/informes/abonos" },
-            { name: "Cartera por edades", path: "/dashboard/informes/cartera" },
-            { name: "Consultas", path: "/dashboard/informes/consultas" },
-            { name: "CXC aliado", path: "/dashboard/informes/cxc-aliado" },
-            { name: "Comisiones", path: "/dashboard/informes/comisiones" },
-            { name: "Administrativo", path: "/dashboard/informes/administrativo" },
-            { name: "Corresponsal", path: "/dashboard/informes/corresponsal" },
-            { name: "Ventas", path: "/dashboard/informes/ventas" },
-            { name: "Facturas", path: "/dashboard/informes/facturas" },
+            { name: 'Créditos', path: '/dashboard/informes/creditos' },
+            { name: 'Abonos', path: '/dashboard/informes/abonos' },
+            { name: 'Cartera por edades', path: '/dashboard/informes/cartera' },
+            { name: 'Consultas', path: '/dashboard/informes/consultas' },
+            { name: 'CXC aliado', path: '/dashboard/informes/cxc-aliado' },
+            { name: 'Comisiones', path: '/dashboard/informes/comisiones' },
+            {
+                name: 'Administrativo',
+                path: '/dashboard/informes/administrativo',
+            },
+            { name: 'Corresponsal', path: '/dashboard/informes/corresponsal' },
+            { name: 'Ventas', path: '/dashboard/informes/ventas' },
+            { name: 'Facturas', path: '/dashboard/informes/facturas' },
         ],
     },
     {
-        name: "Configuración",
-        path: "/dashboard/configuracion",
-        icon: "fa-solid fa-gear",
+        name: 'Configuración',
+        path: '/dashboard/configuracion',
+        icon: 'fa-solid fa-gear',
         children: [
-            { name: "Gestión de usuarios", path: "/dashboard/configuracion/usuarios" },
-            { name: "Parametros correo", path: "/dashboard/configuracion/parametros-correo" },
-            { name: "Plantillas de correo", path: "/dashboard/configuracion/plantillas-correo" },
-            { name: "Sedes/Aliados", path: "/dashboard/configuracion/sedes-aliados" },
+            {
+                name: 'Gestión de usuarios',
+                path: '/dashboard/configuracion/usuarios',
+            },
+            {
+                name: 'Parametros correo',
+                path: '/dashboard/configuracion/parametros-correo',
+            },
+            {
+                name: 'Plantillas de correo',
+                path: '/dashboard/configuracion/plantillas-correo',
+            },
+            {
+                name: 'Sedes/Aliados',
+                path: '/dashboard/configuracion/sedes-aliados',
+            },
         ],
     },
 ];
@@ -207,7 +226,7 @@ function navigate(path) {
 }
 
 function handleLogout() {
-    localStorage.removeItem("auth_token");
-    router.push("/login");
+    localStorage.removeItem('auth_token');
+    router.push('/login');
 }
 </script>

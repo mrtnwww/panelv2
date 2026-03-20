@@ -1,10 +1,12 @@
 <template>
-    <div class="h-full flex font-sans overflow-hidden">
+    <div class="min-h-screen flex font-sans h-screen">
         <!-- ── Panel izquierdo ── -->
         <AuthPanelLeft />
 
         <!-- ── Panel derecho ── -->
-        <div class="w-full lg:w-160 bg-white flex flex-col px-10 py-10 overflow-y-auto min-h-0">
+        <div
+            class="w-full lg:w-160 bg-white flex flex-col px-10 py-10 overflow-y-auto h-screen"
+        >
             <!-- Logo móvil -->
             <div class="flex lg:hidden items-center gap-3 mb-8">
                 <span
@@ -143,7 +145,7 @@
                         >
                             <div class="flex gap-2">
                                 <div
-                                    class="flex items-center gap-1 h-11 px-3 rounded-lg border border-gray-200 bg-gray-50 text-sm text-gray-400 flex-shrink-0"
+                                    class="flex items-center gap-1 h-11 px-3 rounded-lg border border-gray-200 bg-gray-50 text-sm text-gray-400 shrink-0"
                                 >
                                     🇨🇴 +57
                                 </div>
@@ -185,7 +187,7 @@
                             :key="loan.value"
                             class="flex items-center gap-3 cursor-pointer group"
                         >
-                            <div class="relative flex-shrink-0">
+                            <div class="relative shrink-0">
                                 <input
                                     v-model="form.loan_types"
                                     type="checkbox"
@@ -418,7 +420,7 @@
                                 required
                                 :class="
                                     inputClass(
-                                        fieldErrors.password_confirmation,
+                                        fieldErrors.password_confirmation
                                     )
                                 "
                             />
@@ -439,7 +441,7 @@
                         v-model="form.terms"
                         type="checkbox"
                         required
-                        class="mt-0.5 w-4 h-4 rounded border-gray-300 accent-emerald-600 flex-shrink-0"
+                        class="mt-0.5 w-4 h-4 rounded border-gray-300 accent-emerald-600 shrink-0"
                     />
                     <span class="text-xs text-gray-400 leading-relaxed">
                         Acepto la
@@ -487,7 +489,7 @@
                         />
                     </svg>
                     <span>{{
-                        loading ? "Creando cuenta..." : "Crear mi cuenta"
+                        loading ? 'Creando cuenta...' : 'Crear mi cuenta'
                     }}</span>
                 </button>
             </form>
@@ -506,12 +508,12 @@
 </template>
 
 <script setup>
-import AuthPanelLeft from "@/components/AuthPanelLeft.vue";
-import SectionTitle from "@/components/form/SectionTitle.vue";
-import FormField from "@/components/form/FormField.vue";
+import AuthPanelLeft from '@/components/AuthPanelLeft.vue';
+import SectionTitle from '@/components/form/SectionTitle.vue';
+import FormField from '@/components/form/FormField.vue';
 
-import { ref, reactive, computed } from "vue";
-import { useRouter } from "vue-router";
+import { ref, reactive, computed } from 'vue';
+import { useRouter } from 'vue-router';
 
 const router = useRouter();
 
@@ -519,83 +521,83 @@ const router = useRouter();
 
 const form = reactive({
     // Empresa
-    business_name: "",
-    nit: "",
-    address: "",
-    municipality: "",
-    contact_phone: "",
-    contact_email: "",
+    business_name: '',
+    nit: '',
+    address: '',
+    municipality: '',
+    contact_phone: '',
+    contact_email: '',
     // Préstamos
     loan_types: [],
     // Logo
     logo: null,
     // Representante legal
-    legal_name: "",
-    legal_phone: "",
-    legal_id: "",
+    legal_name: '',
+    legal_phone: '',
+    legal_id: '',
     // Acceso
-    email: "",
-    password: "",
-    password_confirmation: "",
+    email: '',
+    password: '',
+    password_confirmation: '',
     terms: false,
 });
 
 const showPassword = ref(false);
 const showConfirm = ref(false);
 const loading = ref(false);
-const errorMessage = ref("");
-const successMessage = ref("");
-const logoPreview = ref("");
-const logoFileName = ref("");
+const errorMessage = ref('');
+const successMessage = ref('');
+const logoPreview = ref('');
+const logoFileName = ref('');
 
 const fieldErrors = reactive({
-    business_name: "",
-    nit: "",
-    address: "",
-    municipality: "",
-    contact_phone: "",
-    contact_email: "",
-    loan_types: "",
-    legal_name: "",
-    legal_phone: "",
-    legal_id: "",
-    email: "",
-    password: "",
-    password_confirmation: "",
+    business_name: '',
+    nit: '',
+    address: '',
+    municipality: '',
+    contact_phone: '',
+    contact_email: '',
+    loan_types: '',
+    legal_name: '',
+    legal_phone: '',
+    legal_id: '',
+    email: '',
+    password: '',
+    password_confirmation: '',
 });
 
 // ── Datos estáticos ─────────────────────────────────────────────────────────
 
 const loanTypes = [
-    { value: "natural", label: "Crédito a personas naturales" },
+    { value: 'natural', label: 'Crédito a personas naturales' },
     {
-        value: "vivienda",
-        label: "Crédito con respaldo de vivienda (hipoteca o leaseback)",
+        value: 'vivienda',
+        label: 'Crédito con respaldo de vivienda (hipoteca o leaseback)',
     },
-    { value: "vehiculos", label: "Crédito con respaldo de vehículos" },
+    { value: 'vehiculos', label: 'Crédito con respaldo de vehículos' },
 ];
 
 const municipalities = [
-    "Bogotá D.C.",
-    "Medellín",
-    "Cali",
-    "Barranquilla",
-    "Cartagena",
-    "Cúcuta",
-    "Bucaramanga",
-    "Pereira",
-    "Santa Marta",
-    "Ibagué",
-    "Pasto",
-    "Manizales",
-    "Neiva",
-    "Villavicencio",
-    "Armenia",
-    "Valledupar",
-    "Montería",
-    "Sincelejo",
-    "Popayán",
-    "Tunja",
+    'Bogotá D.C.',
+    'Medellín',
+    'Cali',
+    'Barranquilla',
+    'Cartagena',
+    'Cúcuta',
+    'Bucaramanga',
+    'Pereira',
+    'Santa Marta',
+    'Ibagué',
+    'Pasto',
+    'Manizales',
+    'Neiva',
+    'Villavicencio',
+    'Armenia',
+    'Valledupar',
+    'Montería',
+    'Sincelejo',
+    'Popayán',
+    'Tunja',
 ];
 
 // ── Fortaleza de contraseña ──────────────────────────────────────────────────
@@ -610,29 +612,29 @@ const passwordStrength = computed(() => {
 
     const map = {
         0: {
-            label: "Muy débil",
-            color: "bg-red-400",
-            textColor: "text-red-400",
+            label: 'Muy débil',
+            color: 'bg-red-400',
+            textColor: 'text-red-400',
         },
         1: {
-            label: "Débil",
-            color: "bg-orange-400",
-            textColor: "text-orange-400",
+            label: 'Débil',
+            color: 'bg-orange-400',
+            textColor: 'text-orange-400',
         },
         2: {
-            label: "Regular",
-            color: "bg-yellow-400",
-            textColor: "text-yellow-500",
+            label: 'Regular',
+            color: 'bg-yellow-400',
+            textColor: 'text-yellow-500',
         },
         3: {
-            label: "Buena",
-            color: "bg-emerald-400",
-            textColor: "text-emerald-500",
+            label: 'Buena',
+            color: 'bg-emerald-400',
+            textColor: 'text-emerald-500',
         },
         4: {
-            label: "Excelente",
-            color: "bg-emerald-600",
-            textColor: "text-emerald-600",
+            label: 'Excelente',
+            color: 'bg-emerald-600',
+            textColor: 'text-emerald-600',
         },
     };
     return { score, ...map[score] };
@@ -642,10 +644,10 @@ const passwordStrength = computed(() => {
 
 function inputClass(error) {
     return [
-        "w-full h-11 pl-4 pr-3 rounded-lg border bg-gray-50 text-[#0A2540] text-sm outline-none transition-all",
-        "placeholder:text-gray-300",
-        "focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/15",
-        error ? "border-red-400" : "border-gray-200 hover:border-gray-300",
+        'w-full h-11 pl-4 pr-3 rounded-lg border bg-gray-50 text-[#0A2540] text-sm outline-none transition-all',
+        'placeholder:text-gray-300',
+        'focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/15',
+        error ? 'border-red-400' : 'border-gray-200 hover:border-gray-300',
     ];
 }
 
@@ -661,59 +663,59 @@ function getCookie(name) {
     const value = `; ${document.cookie}`;
     const parts = value.split(`; ${name}=`);
     if (parts.length === 2)
-        return decodeURIComponent(parts.pop().split(";").shift());
-    return "";
+        return decodeURIComponent(parts.pop().split(';').shift());
+    return '';
 }
 
 // ── Submit ───────────────────────────────────────────────────────────────────
 
 async function handleRegister() {
-    errorMessage.value = "";
-    successMessage.value = "";
-    Object.keys(fieldErrors).forEach((k) => (fieldErrors[k] = ""));
+    errorMessage.value = '';
+    successMessage.value = '';
+    Object.keys(fieldErrors).forEach(k => (fieldErrors[k] = ''));
 
     if (form.loan_types.length === 0) {
-        fieldErrors.loan_types = "Selecciona al menos un tipo de préstamo.";
+        fieldErrors.loan_types = 'Selecciona al menos un tipo de préstamo.';
         return;
     }
 
     if (form.password !== form.password_confirmation) {
-        fieldErrors.password_confirmation = "Las contraseñas no coinciden.";
+        fieldErrors.password_confirmation = 'Las contraseñas no coinciden.';
         return;
     }
 
     loading.value = true;
 
     try {
-        await fetch("/sanctum/csrf-cookie", { credentials: "include" });
+        await fetch('/sanctum/csrf-cookie', { credentials: 'include' });
 
         // Usamos FormData para poder enviar el logo como archivo
         const payload = new FormData();
         Object.entries(form).forEach(([key, val]) => {
-            if (key === "loan_types") {
-                val.forEach((v) => payload.append("loan_types[]", v));
-            } else if (key === "logo" && val) {
-                payload.append("logo", val);
+            if (key === 'loan_types') {
+                val.forEach(v => payload.append('loan_types[]', v));
+            } else if (key === 'logo' && val) {
+                payload.append('logo', val);
             } else {
                 payload.append(key, val);
             }
         });
 
-        const response = await fetch("/api/register", {
-            method: "POST",
+        const response = await fetch('/api/register', {
+            method: 'POST',
             headers: {
-                Accept: "application/json",
-                "X-XSRF-TOKEN": getCookie("XSRF-TOKEN"),
+                Accept: 'application/json',
+                'X-XSRF-TOKEN': getCookie('XSRF-TOKEN'),
             },
-            credentials: "include",
+            credentials: 'include',
             body: payload,
         });
 
         const data = await response.json();
 
         if (response.status === 422 && data.errors) {
-            Object.keys(data.errors).forEach((key) => {
-                const k = key.replace("[]", "");
+            Object.keys(data.errors).forEach(key => {
+                const k = key.replace('[]', '');
                 if (fieldErrors[k] !== undefined)
                     fieldErrors[k] = data.errors[key][0];
             });
@@ -723,16 +725,16 @@ async function handleRegister() {
         if (!response.ok) {
             errorMessage.value =
                 data.message ||
-                "No se pudo crear la cuenta. Intenta nuevamente.";
+                'No se pudo crear la cuenta. Intenta nuevamente.';
             return;
         }
 
-        if (data.token) localStorage.setItem("auth_token", data.token);
+        if (data.token) localStorage.setItem('auth_token', data.token);
 
-        successMessage.value = "¡Cuenta creada con éxito! Redirigiendo...";
-        setTimeout(() => router.push("/dashboard"), 1500);
+        successMessage.value = '¡Cuenta creada con éxito! Redirigiendo...';
+        setTimeout(() => router.push('/dashboard'), 1500);
     } catch {
-        errorMessage.value = "Error de conexión. Intenta nuevamente.";
+        errorMessage.value = 'Error de conexión. Intenta nuevamente.';
     } finally {
         loading.value = false;
     }
@@ -740,7 +742,8 @@ async function handleRegister() {
 </script>
 
 <style scoped>
-html, body {
+html,
+body {
     height: 100%;
     overflow: hidden;
 }
