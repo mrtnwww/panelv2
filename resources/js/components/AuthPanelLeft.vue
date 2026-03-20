@@ -60,5 +60,5 @@ const features = [
     'Configura recordatorios de pago automatizados',
     'Gestiona vencimientos y descarga informes detallados',
     'Tus clientes consultan sus cuotas desde la App',
-];
+]
 </script>

@@ -2,10 +2,9 @@ import { createRouter, createWebHistory } from "vue-router";
 
 // Vistas
 import LoginView from "@/views/auth/LoginView.vue";
-import RegisterView from "@/views/auth/RegisterView.vue";
-import DashboardView from "@/views/dashboard/DashboardView.vue";
+import RegisterView from "@/views/auth/RegistroView.vue";
 
-// Componentes
+// Layouts
 import AuthenticatedLayout from "@/layouts/AuthenticatedLayout.vue";
 
 const routes = [
@@ -25,33 +24,47 @@ const routes = [
         name: "registro",
         component: RegisterView,
     },
-    // Rutas autenticadas
+    // -- Rutas autenticadas ----------------------------------------------------------------
     {
-        path: "/dashboard",
+        path: '/',
         component: AuthenticatedLayout,
         children: [
-            { path: "", component: DashboardView },
-            // Clientes
+            {
+                path: 'dashboard',
+                name: 'dashboard',
+                component: () => import('@/views/dashboard/DashboardView.vue'),
+            },
+            // -- CLIENTES --------------------------------------------------------------------
+            {
+                path: 'clientes/nuevo',
+                name: 'clientes.nuevo',
+                component: () => import('@/views/clientes/ClienteCrearView.vue'),
+            },
+            {
+                path: 'clientes/validar',
+                name: 'clientes.validar',
+                component: () => import('@/views/clientes/ClientesValidarView.vue'),
+            },
+            {
+                path: 'clientes/analisis',
+                name: 'clientes.analisis',
+                component: () => import('@/views/clientes/ClientesAnalisisView.vue'),
+            },
             {
                 path: 'clientes',
-                children: [
-                    {
-                        path: '',
-                        name: 'clientes',
-                        component: () => import('@/views/dashboard/clientes/ClientesListView.vue'),
-                    },
-                ],
+                name: 'clientes',
+                component: () => import('@/views/clientes/ClientesListaView.vue'),
             },
-            // Informes
+            // -- INFORMES --------------------------------------------------------------------
             {
-                path: 'informes',
-                children: [
-                    {
-                        path: 'creditos',
-                        name: 'informes.creditos',
-                        component: () => import('@/views/dashboard/informes/CreditosListView.vue'),
-                    }
-                ],
+                path: 'informes/creditos',
+                name: 'informes.creditos',
+                component: () => import('@/views/informes/CreditosListaView.vue'),
+            },
+            {
+                path: 'informes/abonos',
+                name: 'informes.abonos',
+                component: () => import('@/views/informes/AbonosListaView.vue'),
             },
         ],
     },
@@ -62,12 +75,12 @@ const router = createRouter({
     routes,
 });
 
-// ── Helper: comprueba si hay sesión activa ──────────────────────────────────
+// -- Helper: comprueba si hay sesión activa ----------------------------------
 function isAuthenticated() {
     return !!localStorage.getItem('auth_token')
 }
 
-// ── Guard global ────────────────────────────────────────────────────────────
+// -- Guard global ------------------------------------------------------------
 router.beforeEach((to, from) => {
     const auth = isAuthenticated()
 

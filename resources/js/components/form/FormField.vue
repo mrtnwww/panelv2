@@ -14,5 +14,5 @@
 defineProps({
     label: String,
     error: String,
-});
+})
 </script>

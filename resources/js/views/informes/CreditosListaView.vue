@@ -211,7 +211,7 @@
 
             <!-- Botones de informe -->
             <div
-                class="flex flex-col items-center gap-3 pt-1 border-t border-gray-100 xl:flex-row"
+                class="flex flex-col items-start justify-end gap-3 pt-1 border-t border-gray-100 xl:flex-row xl:items-end"
             >
                 <button
                     @click="generarInforme('resumido')"
@@ -290,15 +290,6 @@
         >
             <!-- Controles extra en la barra -->
             <template #actions>
-                <!-- <label class="flex items-center gap-2 cursor-pointer">
-                    <input
-                        v-model="verSubtotales"
-                        type="checkbox"
-                        class="w-3.5 h-3.5 rounded border-gray-300 accent-[#1a5c2a] cursor-pointer"
-                    />
-                    <span class="text-xs text-gray-500">Ver subtotales</span>
-                </label> -->
-
                 <button
                     @click="fetchCreditos"
                     class="h-8 px-3 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium transition-all flex items-center gap-1.5"
@@ -398,13 +389,13 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref, reactive, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 
-import DataTable from '@/components/table/DataTable.vue';
-import ChevronIcon from '@/components/ChevronIcon.vue';
+import DataTable from '@/components/table/DataTable.vue'
+import ChevronIcon from '@/components/ChevronIcon.vue'
 
-const router = useRouter();
+const router = useRouter()
 
 // ── Columnas ───────────────────────────────────────────────────────────────
 const columns = [
@@ -471,7 +462,7 @@ const columns = [
     { key: 'destino', label: 'Destino', sortable: false },
     { key: 'estadoCredito', label: 'Estado crédito', sortable: false },
     { key: 'acciones', label: '', sortable: false },
-];
+]
 
 // Columnas que renderizan como moneda via slot dinámico
 const currencyCols = [
@@ -485,18 +476,17 @@ const currencyCols = [
     'intMoratorio',
     'gastosCobranza',
     'pendienteMora',
-];
+]
 
 // ── Estado ─────────────────────────────────────────────────────────────────
-const creditos = ref([]);
-const loading = ref(false);
-const loadingInforme = ref(null);
-const search = ref('');
-const verSubtotales = ref(false);
-let searchTimeout = null;
+const creditos = ref([])
+const loading = ref(false)
+const loadingInforme = ref(null)
+const search = ref('')
+let searchTimeout = null
 
-const pagination = reactive({ currentPage: 1, perPage: 10, total: 0 });
-const sort = reactive({ key: 'numCredito', dir: 'desc' });
+const pagination = reactive({ currentPage: 1, perPage: 10, total: 0 })
+const sort = reactive({ key: 'numCredito', dir: 'desc' })
 
 // ── Filtros ────────────────────────────────────────────────────────────────
 const filters = reactive({
@@ -510,42 +500,41 @@ const filters = reactive({
     periodicidad: '',
     aliado: '',
     soloAliados: false,
-});
+})
 
 // ── Opciones de selects ────────────────────────────────────────────────────
 const clientes = [
     { value: '1', label: 'Juan David Alvarado' },
     { value: '2', label: 'Sara Michel Trujillo' },
-];
+]
 
 const estadosCredito = [
     { value: 'vigente', label: 'Vigente' },
     { value: 'finalizado', label: 'Finalizado' },
     { value: 'anulado', label: 'Anulado' },
     { value: 'mora', label: 'En mora' },
-];
+]
 
 const destinos = [
     { value: 'vehiculo', label: 'Vehículo' },
     { value: 'libre', label: 'Libre inversión' },
     { value: 'vivienda', label: 'Vivienda' },
-];
+]
 
 const periodicidades = [
     { value: 'semanal', label: 'Semanal' },
     { value: 'quincenal', label: 'Quincenal' },
     { value: 'mensual', label: 'Mensual' },
-];
+]
 
 const aliados = [
     { value: 'impulsa', label: 'IMPULSA CORP SAS / CREDITRANSITO' },
     { value: 'cda', label: 'CDA LEBRIJA' },
-];
+]
 
 // ── Totales calculados ─────────────────────────────────────────────────────
 const totales = computed(() => {
-    const sum = key =>
-        creditos.value.reduce((acc, c) => acc + (c[key] ?? 0), 0);
+    const sum = key => creditos.value.reduce((acc, c) => acc + (c[key] ?? 0), 0)
     return {
         valorBase: sum('valorBase'),
         valorAval: sum('valorAval'),
@@ -557,25 +546,25 @@ const totales = computed(() => {
         intMoratorio: sum('intMoratorio'),
         gastosCobranza: sum('gastosCobranza'),
         pendienteMora: sum('pendienteMora'),
-    };
-});
+    }
+})
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 const inputClass =
-    'w-full h-9 px-3 rounded-lg border border-gray-200 bg-gray-50 text-sm text-gray-600 outline-none focus:border-[#1a5c2a] focus:ring-2 focus:ring-[#1a5c2a]/10 transition-all';
+    'w-full h-9 px-3 rounded-lg border border-gray-200 bg-gray-50 text-sm text-gray-600 outline-none focus:border-[#1a5c2a] focus:ring-2 focus:ring-[#1a5c2a]/10 transition-all'
 
 function formatCurrency(value) {
-    if (value == null) return '$0';
+    if (value == null) return '$0'
     return new Intl.NumberFormat('es-CO', {
         style: 'currency',
         currency: 'COP',
         maximumFractionDigits: 0,
-    }).format(value);
+    }).format(value)
 }
 
 // ── Llamada al backend ─────────────────────────────────────────────────────
 async function fetchCreditos() {
-    loading.value = true;
+    loading.value = true
     try {
         const params = new URLSearchParams({
             page: pagination.currentPage,
@@ -597,30 +586,30 @@ async function fetchCreditos() {
             ...(filters.aliado && { aliado: filters.aliado }),
             ...(filters.porRango && { por_rango: 1 }),
             ...(filters.soloAliados && { solo_aliados: 1 }),
-        });
+        })
 
         const response = await fetch(`/api/creditos?${params}`, {
             headers: {
                 Accept: 'application/json',
                 Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
             },
-        });
+        })
 
-        if (!response.ok) throw new Error('Error al cargar créditos');
+        if (!response.ok) throw new Error('Error al cargar créditos')
 
-        const data = await response.json();
-        creditos.value = data.data;
-        pagination.total = data.meta.total;
-        pagination.currentPage = data.meta.current_page;
+        const data = await response.json()
+        creditos.value = data.data
+        pagination.total = data.meta.total
+        pagination.currentPage = data.meta.current_page
     } catch (err) {
-        console.error(err);
+        console.error(err)
     } finally {
-        loading.value = false;
+        loading.value = false
     }
 }
 
 async function generarInforme(tipo) {
-    loadingInforme.value = tipo;
+    loadingInforme.value = tipo
     try {
         const params = new URLSearchParams({
             tipo,
@@ -628,73 +617,73 @@ async function generarInforme(tipo) {
                 fecha_inicial: filters.fechaInicial,
             }),
             ...(filters.fechaFinal && { fecha_final: filters.fechaFinal }),
-        });
+        })
 
         const response = await fetch(`/api/creditos/informe?${params}`, {
             headers: {
                 Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
             },
-        });
+        })
 
-        if (!response.ok) throw new Error('Error al generar informe');
+        if (!response.ok) throw new Error('Error al generar informe')
 
         // Descarga el archivo
-        const blob = await response.blob();
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `informe_creditos_${tipo}.xlsx`;
-        a.click();
-        URL.revokeObjectURL(url);
+        const blob = await response.blob()
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `informe_creditos_${tipo}.xlsx`
+        a.click()
+        URL.revokeObjectURL(url)
     } catch (err) {
-        console.error(err);
+        console.error(err)
     } finally {
-        loadingInforme.value = null;
+        loadingInforme.value = null
     }
 }
 
 // ── Handlers DataTable ─────────────────────────────────────────────────────
 function onPageChange(page) {
-    pagination.currentPage = page;
-    fetchCreditos();
+    pagination.currentPage = page
+    fetchCreditos()
 }
 
 function onPerPageChange(val) {
-    pagination.perPage = val;
-    pagination.currentPage = 1;
-    fetchCreditos();
+    pagination.perPage = val
+    pagination.currentPage = 1
+    fetchCreditos()
 }
 
 function onSearch(val) {
-    search.value = val;
-    clearTimeout(searchTimeout);
+    search.value = val
+    clearTimeout(searchTimeout)
     searchTimeout = setTimeout(() => {
-        pagination.currentPage = 1;
-        fetchCreditos();
-    }, 400);
+        pagination.currentPage = 1
+        fetchCreditos()
+    }, 400)
 }
 
 function onSort({ key, dir }) {
-    sort.key = key;
-    sort.dir = dir;
-    pagination.currentPage = 1;
-    fetchCreditos();
+    sort.key = key
+    sort.dir = dir
+    pagination.currentPage = 1
+    fetchCreditos()
 }
 
 // ── Acciones de fila ───────────────────────────────────────────────────────
 function verDetalle(row) {
-    router.push(`/dashboard/creditos/${row.id}`);
+    router.push(`/dashboard/creditos/${row.id}`)
 }
 
 function generarExtracto(row) {
     // Llamada al backend para generar PDF del extracto
-    console.log('Generar extracto:', row.id);
+    console.log('Generar extracto:', row.id)
 }
 
 function anularCredito(row) {
     // Confirmar y anular
-    console.log('Anular crédito:', row.id);
+    console.log('Anular crédito:', row.id)
 }
 
-onMounted(fetchCreditos);
+onMounted(fetchCreditos)
 </script>

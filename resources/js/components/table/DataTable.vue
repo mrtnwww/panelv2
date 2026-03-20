@@ -381,7 +381,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed } from 'vue'
 
 const props = defineProps({
     // Datos
@@ -406,7 +406,7 @@ const props = defineProps({
     currentPage: { type: Number, default: 1 },
     perPage: { type: Number, default: 10 },
     total: { type: Number, default: 0 },
-});
+})
 
 const emit = defineEmits([
     'update:search',
@@ -418,43 +418,43 @@ const emit = defineEmits([
     'toggle-all',
     'toggle-row',
     'row-click',
-]);
+])
 
 // ── Columnas totales (para colspan) ───────────────────────────────────────
 const totalCols = computed(
     () => props.columns.length + (props.selectable ? 1 : 0)
-);
+)
 
 // ── Paginación ─────────────────────────────────────────────────────────────
 const totalPages = computed(() =>
     Math.max(1, Math.ceil(props.total / props.perPage))
-);
+)
 
 const from = computed(() =>
     props.total === 0 ? 0 : (props.currentPage - 1) * props.perPage + 1
-);
+)
 
 const to = computed(() =>
     Math.min(props.currentPage * props.perPage, props.total)
-);
+)
 
 const visiblePages = computed(() => {
-    const total = totalPages.value;
-    const cur = props.currentPage;
-    if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
-    if (cur <= 4) return [1, 2, 3, 4, 5, '...', total];
+    const total = totalPages.value
+    const cur = props.currentPage
+    if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1)
+    if (cur <= 4) return [1, 2, 3, 4, 5, '...', total]
     if (cur >= total - 3)
-        return [1, '...', total - 4, total - 3, total - 2, total - 1, total];
-    return [1, '...', cur - 1, cur, cur + 1, '...', total];
-});
+        return [1, '...', total - 4, total - 3, total - 2, total - 1, total]
+    return [1, '...', cur - 1, cur, cur + 1, '...', total]
+})
 
 // ── Ordenamiento ───────────────────────────────────────────────────────────
 function onSort(key) {
     const newDir =
-        props.sortKey === key && props.sortDir === 'asc' ? 'desc' : 'asc';
-    emit('update:sortKey', key);
-    emit('update:sortDir', newDir);
-    emit('sort', { key, dir: newDir });
+        props.sortKey === key && props.sortDir === 'asc' ? 'desc' : 'asc'
+    emit('update:sortKey', key)
+    emit('update:sortDir', newDir)
+    emit('sort', { key, dir: newDir })
 }
 
 // ── Helper clases paginación ───────────────────────────────────────────────
@@ -464,6 +464,6 @@ function paginationBtnClass(disabled) {
         disabled
             ? 'border-gray-100 text-gray-300 cursor-not-allowed'
             : 'border-gray-200 text-gray-500 hover:bg-gray-50 hover:border-gray-300',
-    ];
+    ]
 }
 </script>

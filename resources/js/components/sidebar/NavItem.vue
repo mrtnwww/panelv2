@@ -70,7 +70,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed } from 'vue'
 
 const props = defineProps({
     item: {
@@ -85,11 +85,11 @@ const props = defineProps({
         type: String,
         default: '',
     },
-});
+})
 
-defineEmits(['navigate']);
+defineEmits(['navigate'])
 
-const open = ref(false);
+const open = ref(false)
 
-const isActive = computed(() => props.activePath.startsWith(props.item.path));
+const isActive = computed(() => props.activePath.startsWith(props.item.path))
 </script>

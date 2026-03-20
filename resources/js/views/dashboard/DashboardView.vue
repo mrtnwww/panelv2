@@ -79,9 +79,6 @@
                     />
                 </svg>
             </div>
-            <h2 class="text-lg font-semibold text-[#0A2540] mb-1">
-                Dashboard en construcción
-            </h2>
             <p class="text-sm text-gray-400 max-w-xs">
                 <!-- TODO -->
             </p>
@@ -90,8 +87,8 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref } from 'vue'
 
-const dateFrom = ref('');
-const dateTo = ref('');
+const dateFrom = ref('')
+const dateTo = ref('')
 </script>

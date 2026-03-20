@@ -43,5 +43,5 @@
 <script setup>
 defineProps({
     open: Boolean,
-});
+})
 </script>

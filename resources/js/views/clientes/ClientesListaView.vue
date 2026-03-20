@@ -15,14 +15,7 @@
                             : 'text-gray-400 hover:text-gray-600',
                     ]"
                 >
-                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                        <path
-                            d="M1 2.5h12M1 7h12M1 11.5h12"
-                            stroke="currentColor"
-                            stroke-width="1.5"
-                            stroke-linecap="round"
-                        />
-                    </svg>
+                    <i class="fa-solid fa-bars"></i>
                 </button>
                 <button
                     @click="viewMode = 'grid'"
@@ -333,20 +326,20 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
-import DataTable from '@/components/table/DataTable.vue';
+import { ref, reactive, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import DataTable from '@/components/table/DataTable.vue'
 
-const router = useRouter();
+const router = useRouter()
 
 // ── Vista ──────────────────────────────────────────────────────────────────
-const viewMode = ref('list');
+const viewMode = ref('list')
 
 // ── Columnas ───────────────────────────────────────────────────────────────
 const columns = [
-    { key: 'nombre', label: 'Nombre', sortable: true },
-    { key: 'identificacion', label: 'Identificación', sortable: true },
-    { key: 'aliado', label: 'Aliado / Sede', sortable: true, truncate: true },
+    { key: 'nombre', label: 'Nombre', sortable: false },
+    { key: 'identificacion', label: 'Identificación', sortable: false },
+    { key: 'aliado', label: 'Aliado / Sede', sortable: false, truncate: true },
     { key: 'correo', label: 'Correo', sortable: false },
     { key: 'telefono', label: 'Teléfono', sortable: false },
     {
@@ -385,24 +378,24 @@ const columns = [
     },
     { key: 'valorCredito', label: 'Valor crédito', sortable: false },
     { key: 'acciones', label: 'Acciones', sortable: false },
-];
+]
 
 // ── Datos y estado ─────────────────────────────────────────────────────────
-const clientes = ref([]);
-const loading = ref(false);
-const search = ref('');
-let searchTimeout = null;
+const clientes = ref([])
+const loading = ref(false)
+const search = ref('')
+let searchTimeout = null
 
 const pagination = reactive({
     currentPage: 1,
     perPage: 10,
     total: 0,
-});
+})
 
 const sort = reactive({
     key: 'fechaRegistro',
     dir: 'desc',
-});
+})
 
 // ── Filtros ────────────────────────────────────────────────────────────────
 const filters = reactive({
@@ -412,7 +405,7 @@ const filters = reactive({
     aliado: '',
     fechaInicial: '',
     fechaFinal: '',
-});
+})
 
 const estadoOpts = [
     {
@@ -428,7 +421,7 @@ const estadoOpts = [
         label: 'Pendiente por consulta centrales de riesgo',
     },
     { value: 'pendiente_foto', label: 'Pendiente foto del cliente' },
-];
+]
 
 const origenOpts = [
     { value: 'formulario_web', label: 'Registro desde formulario web' },
@@ -436,7 +429,7 @@ const origenOpts = [
         value: 'validacion_automatica',
         label: 'Validación identidad automática',
     },
-];
+]
 
 const resultadoOpts = [
     {
@@ -444,47 +437,47 @@ const resultadoOpts = [
         label: 'Crédito aprobado (Pendiente desembolso)',
     },
     { value: 'proceso_finalizado', label: 'Proceso finalizado' },
-];
+]
 
 const aliados = [
     { value: 'impulsa', label: 'IMPULSA CORP SAS / CREDITRANSITO' },
     { value: 'cda', label: 'CDA LEBRIJA' },
     { value: 'ampara', label: 'AMPARA SEGUROS Y SERVICIOS S.A.S.' },
-];
+]
 
 function resetFilters() {
-    filters.estado = [];
-    filters.origen = [];
-    filters.resultado = [];
-    filters.aliado = '';
-    filters.fechaInicial = '';
-    filters.fechaFinal = '';
-    pagination.currentPage = 1;
-    fetchClientes();
+    filters.estado = []
+    filters.origen = []
+    filters.resultado = []
+    filters.aliado = ''
+    filters.fechaInicial = ''
+    filters.fechaFinal = ''
+    pagination.currentPage = 1
+    fetchClientes()
 }
 
 // ── Selección ──────────────────────────────────────────────────────────────
-const selected = ref([]);
+const selected = ref([])
 
 const allSelected = computed(
     () =>
         clientes.value.length > 0 &&
         clientes.value.every(c => selected.value.includes(c.id))
-);
+)
 
 function onToggleAll(checked) {
-    selected.value = checked ? clientes.value.map(c => c.id) : [];
+    selected.value = checked ? clientes.value.map(c => c.id) : []
 }
 
 function onToggleRow(id) {
-    const idx = selected.value.indexOf(id);
-    if (idx === -1) selected.value.push(id);
-    else selected.value.splice(idx, 1);
+    const idx = selected.value.indexOf(id)
+    if (idx === -1) selected.value.push(id)
+    else selected.value.splice(idx, 1)
 }
 
 // ── Llamada al backend ─────────────────────────────────────────────────────
 async function fetchClientes() {
-    loading.value = true;
+    loading.value = true
 
     try {
         const params = new URLSearchParams({
@@ -498,73 +491,73 @@ async function fetchClientes() {
                 fecha_inicial: filters.fechaInicial,
             }),
             ...(filters.fechaFinal && { fecha_final: filters.fechaFinal }),
-        });
+        })
 
-        filters.estado.forEach(v => params.append('estado[]', v));
-        filters.origen.forEach(v => params.append('origen[]', v));
-        filters.resultado.forEach(v => params.append('resultado[]', v));
+        filters.estado.forEach(v => params.append('estado[]', v))
+        filters.origen.forEach(v => params.append('origen[]', v))
+        filters.resultado.forEach(v => params.append('resultado[]', v))
 
         const response = await fetch(`/api/clientes?${params}`, {
             headers: {
                 Accept: 'application/json',
                 Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
             },
-        });
+        })
 
-        if (!response.ok) throw new Error('Error al cargar clientes');
+        if (!response.ok) throw new Error('Error al cargar clientes')
 
-        const data = await response.json();
+        const data = await response.json()
 
         // Estructura esperada del backend:
         // { data: [...], meta: { total, current_page, per_page } }
-        clientes.value = data.data;
-        pagination.total = data.meta.total;
-        pagination.currentPage = data.meta.current_page;
+        clientes.value = data.data
+        pagination.total = data.meta.total
+        pagination.currentPage = data.meta.current_page
     } catch (err) {
-        console.error(err);
+        console.error(err)
     } finally {
-        loading.value = false;
+        loading.value = false
     }
 }
 
 // ── Handlers de eventos del DataTable ─────────────────────────────────────
 function onPageChange(page) {
-    pagination.currentPage = page;
-    fetchClientes();
+    pagination.currentPage = page
+    fetchClientes()
 }
 
 function onPerPageChange(val) {
-    pagination.perPage = val;
-    pagination.currentPage = 1;
-    fetchClientes();
+    pagination.perPage = val
+    pagination.currentPage = 1
+    fetchClientes()
 }
 
 function onSearch(val) {
-    search.value = val;
+    search.value = val
     // Debounce: espera 400ms antes de llamar al backend
-    clearTimeout(searchTimeout);
+    clearTimeout(searchTimeout)
     searchTimeout = setTimeout(() => {
-        pagination.currentPage = 1;
-        fetchClientes();
-    }, 400);
+        pagination.currentPage = 1
+        fetchClientes()
+    }, 400)
 }
 
 function onSort({ key, dir }) {
-    sort.key = key;
-    sort.dir = dir;
-    pagination.currentPage = 1;
-    fetchClientes();
+    sort.key = key
+    sort.dir = dir
+    pagination.currentPage = 1
+    fetchClientes()
 }
 
 // ── Navegación ─────────────────────────────────────────────────────────────
 function editCliente(row) {
-    router.push(`/dashboard/clientes/${row.id}/editar`);
+    router.push(`/dashboard/clientes/${row.id}/editar`)
 }
 
 function viewCliente(row) {
-    router.push(`/dashboard/clientes/${row.id}`);
+    router.push(`/dashboard/clientes/${row.id}`)
 }
 
 // ── Carga inicial ──────────────────────────────────────────────────────────
-onMounted(fetchClientes);
+onMounted(fetchClientes)
 </script>

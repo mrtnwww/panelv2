@@ -168,8 +168,8 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useRouter } from 'vue-router'
 
 const props = defineProps({
     sidebarWidth: {
@@ -193,13 +193,13 @@ const props = defineProps({
         type: Number,
         default: 0,
     },
-});
+})
 
-defineEmits(['toggle-sidebar']);
+defineEmits(['toggle-sidebar'])
 
-const router = useRouter();
-const userMenuOpen = ref(false);
-const userMenuRef = ref(null);
+const router = useRouter()
+const userMenuOpen = ref(false)
+const userMenuRef = ref(null)
 
 const userInitials = computed(() => {
     return props.user.name
@@ -207,30 +207,28 @@ const userInitials = computed(() => {
         .slice(0, 2)
         .map(n => n[0])
         .join('')
-        .toUpperCase();
-});
+        .toUpperCase()
+})
 
 function goTo(path) {
-    userMenuOpen.value = false;
-    router.push(path);
+    userMenuOpen.value = false
+    router.push(path)
 }
 
 function handleLogout() {
-    localStorage.removeItem('auth_token');
-    router.push('/login');
+    localStorage.removeItem('auth_token')
+    router.push('/login')
 }
 
 // Cerrar dropdown al hacer clic fuera
 function handleClickOutside(e) {
     if (userMenuRef.value && !userMenuRef.value.contains(e.target)) {
-        userMenuOpen.value = false;
+        userMenuOpen.value = false
     }
 }
 
-onMounted(() => document.addEventListener('mousedown', handleClickOutside));
-onUnmounted(() =>
-    document.removeEventListener('mousedown', handleClickOutside)
-);
+onMounted(() => document.addEventListener('mousedown', handleClickOutside))
+onUnmounted(() => document.removeEventListener('mousedown', handleClickOutside))
 </script>
 
 <style scoped>

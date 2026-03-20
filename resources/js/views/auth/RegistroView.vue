@@ -508,14 +508,14 @@
 </template>
 
 <script setup>
-import AuthPanelLeft from '@/components/AuthPanelLeft.vue';
-import SectionTitle from '@/components/form/SectionTitle.vue';
-import FormField from '@/components/form/FormField.vue';
+import AuthPanelLeft from '@/components/AuthPanelLeft.vue'
+import SectionTitle from '@/components/form/SectionTitle.vue'
+import FormField from '@/components/form/FormField.vue'
 
-import { ref, reactive, computed } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref, reactive, computed } from 'vue'
+import { useRouter } from 'vue-router'
 
-const router = useRouter();
+const router = useRouter()
 
 // ── Estado ──────────────────────────────────────────────────────────────────
 
@@ -540,15 +540,15 @@ const form = reactive({
     password: '',
     password_confirmation: '',
     terms: false,
-});
+})
 
-const showPassword = ref(false);
-const showConfirm = ref(false);
-const loading = ref(false);
-const errorMessage = ref('');
-const successMessage = ref('');
-const logoPreview = ref('');
-const logoFileName = ref('');
+const showPassword = ref(false)
+const showConfirm = ref(false)
+const loading = ref(false)
+const errorMessage = ref('')
+const successMessage = ref('')
+const logoPreview = ref('')
+const logoFileName = ref('')
 
 const fieldErrors = reactive({
     business_name: '',
@@ -564,7 +564,7 @@ const fieldErrors = reactive({
     email: '',
     password: '',
     password_confirmation: '',
-});
+})
 
 // ── Datos estáticos ─────────────────────────────────────────────────────────
 
@@ -575,7 +575,7 @@ const loanTypes = [
         label: 'Crédito con respaldo de vivienda (hipoteca o leaseback)',
     },
     { value: 'vehiculos', label: 'Crédito con respaldo de vehículos' },
-];
+]
 
 const municipalities = [
     'Bogotá D.C.',
@@ -598,17 +598,17 @@ const municipalities = [
     'Sincelejo',
     'Popayán',
     'Tunja',
-];
+]
 
 // ── Fortaleza de contraseña ──────────────────────────────────────────────────
 
 const passwordStrength = computed(() => {
-    const p = form.password;
-    let score = 0;
-    if (p.length >= 8) score++;
-    if (/[A-Z]/.test(p)) score++;
-    if (/[0-9]/.test(p)) score++;
-    if (/[^A-Za-z0-9]/.test(p)) score++;
+    const p = form.password
+    let score = 0
+    if (p.length >= 8) score++
+    if (/[A-Z]/.test(p)) score++
+    if (/[0-9]/.test(p)) score++
+    if (/[^A-Za-z0-9]/.test(p)) score++
 
     const map = {
         0: {
@@ -636,9 +636,9 @@ const passwordStrength = computed(() => {
             color: 'bg-emerald-600',
             textColor: 'text-emerald-600',
         },
-    };
-    return { score, ...map[score] };
-});
+    }
+    return { score, ...map[score] }
+})
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -648,58 +648,58 @@ function inputClass(error) {
         'placeholder:text-gray-300',
         'focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/15',
         error ? 'border-red-400' : 'border-gray-200 hover:border-gray-300',
-    ];
+    ]
 }
 
 function handleLogoUpload(e) {
-    const file = e.target.files[0];
-    if (!file) return;
-    form.logo = file;
-    logoFileName.value = file.name;
-    logoPreview.value = URL.createObjectURL(file);
+    const file = e.target.files[0]
+    if (!file) return
+    form.logo = file
+    logoFileName.value = file.name
+    logoPreview.value = URL.createObjectURL(file)
 }
 
 function getCookie(name) {
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; ${name}=`);
+    const value = `; ${document.cookie}`
+    const parts = value.split(`; ${name}=`)
     if (parts.length === 2)
-        return decodeURIComponent(parts.pop().split(';').shift());
-    return '';
+        return decodeURIComponent(parts.pop().split(';').shift())
+    return ''
 }
 
 // ── Submit ───────────────────────────────────────────────────────────────────
 
 async function handleRegister() {
-    errorMessage.value = '';
-    successMessage.value = '';
-    Object.keys(fieldErrors).forEach(k => (fieldErrors[k] = ''));
+    errorMessage.value = ''
+    successMessage.value = ''
+    Object.keys(fieldErrors).forEach(k => (fieldErrors[k] = ''))
 
     if (form.loan_types.length === 0) {
-        fieldErrors.loan_types = 'Selecciona al menos un tipo de préstamo.';
-        return;
+        fieldErrors.loan_types = 'Selecciona al menos un tipo de préstamo.'
+        return
     }
 
     if (form.password !== form.password_confirmation) {
-        fieldErrors.password_confirmation = 'Las contraseñas no coinciden.';
-        return;
+        fieldErrors.password_confirmation = 'Las contraseñas no coinciden.'
+        return
     }
 
-    loading.value = true;
+    loading.value = true
 
     try {
-        await fetch('/sanctum/csrf-cookie', { credentials: 'include' });
+        await fetch('/sanctum/csrf-cookie', { credentials: 'include' })
 
         // Usamos FormData para poder enviar el logo como archivo
-        const payload = new FormData();
+        const payload = new FormData()
         Object.entries(form).forEach(([key, val]) => {
             if (key === 'loan_types') {
-                val.forEach(v => payload.append('loan_types[]', v));
+                val.forEach(v => payload.append('loan_types[]', v))
             } else if (key === 'logo' && val) {
-                payload.append('logo', val);
+                payload.append('logo', val)
             } else {
-                payload.append(key, val);
+                payload.append(key, val)
             }
-        });
+        })
 
         const response = await fetch('/api/register', {
             method: 'POST',
@@ -709,34 +709,34 @@ async function handleRegister() {
             },
             credentials: 'include',
             body: payload,
-        });
+        })
 
-        const data = await response.json();
+        const data = await response.json()
 
         if (response.status === 422 && data.errors) {
             Object.keys(data.errors).forEach(key => {
-                const k = key.replace('[]', '');
+                const k = key.replace('[]', '')
                 if (fieldErrors[k] !== undefined)
-                    fieldErrors[k] = data.errors[key][0];
-            });
-            return;
+                    fieldErrors[k] = data.errors[key][0]
+            })
+            return
         }
 
         if (!response.ok) {
             errorMessage.value =
                 data.message ||
-                'No se pudo crear la cuenta. Intenta nuevamente.';
-            return;
+                'No se pudo crear la cuenta. Intenta nuevamente.'
+            return
         }
 
-        if (data.token) localStorage.setItem('auth_token', data.token);
+        if (data.token) localStorage.setItem('auth_token', data.token)
 
-        successMessage.value = '¡Cuenta creada con éxito! Redirigiendo...';
-        setTimeout(() => router.push('/dashboard'), 1500);
+        successMessage.value = '¡Cuenta creada con éxito! Redirigiendo...'
+        setTimeout(() => router.push('/dashboard'), 1500)
     } catch {
-        errorMessage.value = 'Error de conexión. Intenta nuevamente.';
+        errorMessage.value = 'Error de conexión. Intenta nuevamente.'
     } finally {
-        loading.value = false;
+        loading.value = false
     }
 }
 </script>

@@ -9,26 +9,28 @@
         <div
             class="flex items-center gap-2 px-4 py-4 border-b border-white/10 shrink-0 min-h-15"
         >
-            <span
+            <router-link
                 :class="[
-                    'text-white font-bold text-xl tracking-tight transition-all duration-300 whitespace-nowrap overflow-hidden xl:text-2xl',
+                    'text-white font-bold text-xl tracking-tight transition-all duration-300 whitespace-nowrap xl:text-4xl',
                     isOpen ? 'opacity-100 max-w-xs' : 'opacity-0 max-w-0',
                 ]"
+                to="/dashboard"
             >
                 Credi<span class="text-emerald-300">gital</span>
-            </span>
-            <span
+            </router-link>
+            <router-link
                 :class="[
                     'text-emerald-300 font-bold text-xl transition-all duration-300 xl:text-2xl',
                     isOpen ? 'hidden' : 'hidden lg:block',
                 ]"
+                to="/dashboard"
             >
                 C
-            </span>
+            </router-link>
         </div>
 
         <!-- Navegación -->
-        <nav class="flex-1 overflow-y-auto py-4 px-2 flex flex-col gap-1">
+        <nav class="flex-1 overflow-y-auto py-4 px-2 flex flex-col gap-0.5">
             <NavGroup label="Gestión" :collapsed="!isOpen" />
 
             <NavItem
@@ -88,10 +90,10 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
-import NavGroup from '@/components/sidebar/NavGroup.vue';
-import NavItem from '@/components/sidebar/NavItem.vue';
+import { computed } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+import NavGroup from '@/components/sidebar/NavGroup.vue'
+import NavItem from '@/components/sidebar/NavItem.vue'
 
 defineProps({
     isOpen: {
@@ -102,131 +104,129 @@ defineProps({
         type: Boolean,
         default: false,
     },
-});
+})
 
-defineEmits(['close']);
+defineEmits(['close'])
 
-const router = useRouter();
-const route = useRoute();
-const currentPath = computed(() => route.path);
+const router = useRouter()
+const route = useRoute()
+const currentPath = computed(() => route.path)
 
 // ── Ítems de navegación ────────────────────────────────────────────────────
 
 const gestionItems = [
     {
         name: 'Clientes',
-        path: '/dashboard/clientes',
+        path: '/clientes',
         icon: 'fa-regular fa-user',
         children: [
-            { name: 'Nuevo cliente', path: '/dashboard/clientes/nuevo' },
-            { name: 'Lista de clientes', path: '/dashboard/clientes' },
-            { name: 'Validar cliente', path: '/dashboard/validar-clientes' },
-            { name: 'Análisis cliente', path: '/dashboard/analisis-clientes' },
+            { name: 'Nuevo cliente', path: '/clientes/nuevo' },
+            { name: 'Lista de clientes', path: '/clientes' },
+            { name: 'Validar cliente', path: '/clientes/validar' },
+            { name: 'Análisis cliente', path: '/clientes/analisis' },
         ],
     },
     {
         name: 'Créditos',
-        path: '/dashboard/creditos',
-        icon: 'fa-solid fa-dollar-sign',
+        path: '/creditos',
+        icon: 'fa-solid fa-wallet',
         children: [
-            { name: 'Crear crédito', path: '/dashboard/creditos/nuevo' },
-            { name: 'Estado de crédito', path: '/dashboard/creditos/estado' },
+            { name: 'Crear crédito', path: '/creditos/nuevo' },
+            { name: 'Estado de crédito', path: '/creditos/estado' },
         ],
     },
     {
         name: 'Abonos',
-        path: '/dashboard/abonos',
-        icon: 'fa-solid fa-credit-card',
-        children: [{ name: 'Abonar cuota', path: '/dashboard/abonos/nuevo' }],
+        path: '/abonos',
+        icon: 'fa-solid fa-dollar-sign',
+        children: [{ name: 'Abonar cuota', path: '/abonos/nuevo' }],
     },
     {
         name: 'Productos',
-        path: '/dashboard/productos',
+        path: '/productos',
         icon: 'fa-solid fa-cart-flatbed',
-        children: [
-            { name: 'Crear producto', path: '/dashboard/productos/nuevo' },
-        ],
+        children: [{ name: 'Crear producto', path: '/productos/nuevo' }],
     },
     {
         name: 'Cobranza',
-        path: '/dashboard/cobranza',
+        path: '/cobranza',
         icon: 'fa-solid fa-hand-holding-dollar',
         children: [
-            { name: 'Créditos', path: '/dashboard/cobranza/creditos' },
-            { name: 'Tareas', path: '/dashboard/cobranza/tareas' },
+            { name: 'Créditos', path: '/cobranza/creditos' },
+            { name: 'Tareas', path: '/cobranza/tareas' },
         ],
     },
-];
+]
 
 const adminItems = [
     {
         name: 'Contabilidad',
-        path: '/dashboard/contabilidad',
+        path: '/contabilidad',
         icon: 'fa-solid fa-calculator',
         children: [
             {
                 name: 'Recibo de caja CXC',
-                path: '/dashboard/contabilidad/recibo-cxc',
+                path: '/contabilidad/recibo-cxc',
             },
             {
                 name: 'Costos y gastos',
-                path: '/dashboard/contabilidad/costos-gastos',
+                path: '/contabilidad/costos-gastos',
             },
         ],
     },
     {
         name: 'Informes',
-        path: '/dashboard/informes',
+        path: '/informes',
         icon: 'fa-solid fa-chart-line',
         children: [
-            { name: 'Créditos', path: '/dashboard/informes/creditos' },
-            { name: 'Abonos', path: '/dashboard/informes/abonos' },
-            { name: 'Cartera por edades', path: '/dashboard/informes/cartera' },
-            { name: 'Consultas', path: '/dashboard/informes/consultas' },
-            { name: 'CXC aliado', path: '/dashboard/informes/cxc-aliado' },
-            { name: 'Comisiones', path: '/dashboard/informes/comisiones' },
+            { name: 'Créditos', path: '/informes/creditos' },
+            { name: 'Abonos', path: '/informes/abonos' },
+            { name: 'Cartera por edades', path: '/informes/cartera' },
+            { name: 'Consultas', path: '/informes/consultas' },
+            { name: 'CXC aliado', path: '/informes/cxc-aliado' },
+            { name: 'Comisiones', path: '/informes/comisiones' },
             {
                 name: 'Administrativo',
-                path: '/dashboard/informes/administrativo',
+                path: '/informes/administrativo',
             },
-            { name: 'Corresponsal', path: '/dashboard/informes/corresponsal' },
-            { name: 'Ventas', path: '/dashboard/informes/ventas' },
-            { name: 'Facturas', path: '/dashboard/informes/facturas' },
+            { name: 'Corresponsal', path: '/informes/corresponsal' },
+            { name: 'Ventas', path: '/informes/ventas' },
+            { name: 'Facturas', path: '/informes/facturas' },
         ],
     },
     {
         name: 'Configuración',
-        path: '/dashboard/configuracion',
+        path: '/configuracion',
         icon: 'fa-solid fa-gear',
         children: [
             {
                 name: 'Gestión de usuarios',
-                path: '/dashboard/configuracion/usuarios',
+                path: '/configuracion/usuarios',
             },
             {
                 name: 'Parametros correo',
-                path: '/dashboard/configuracion/parametros-correo',
+                path: '/configuracion/parametros-correo',
             },
             {
                 name: 'Plantillas de correo',
-                path: '/dashboard/configuracion/plantillas-correo',
+                path: '/configuracion/plantillas-correo',
             },
             {
                 name: 'Sedes/Aliados',
-                path: '/dashboard/configuracion/sedes-aliados',
+                path: '/configuracion/sedes-aliados',
             },
         ],
     },
-];
+]
 
 // ── Métodos ────────────────────────────────────────────────────────────────
 
 function navigate(path) {
-    router.push(path);
+    router.push(path)
 }
 
 function handleLogout() {
-    localStorage.removeItem('auth_token');
-    router.push('/login');
+    localStorage.removeItem('auth_token')
+    router.push('/login')
 }
 </script>
