@@ -232,44 +232,44 @@ async function handleLogin() {
 
     try {
         // 1. CSRF cookie de Laravel Sanctum
-        await fetch("/sanctum/csrf-cookie", { credentials: "include" });
+        // await fetch("/sanctum/csrf-cookie", { credentials: "include" });
 
-        // 2. Petición de login
-        const response = await fetch("/api/login", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                Accept: "application/json",
-                "X-XSRF-TOKEN": getCookie("XSRF-TOKEN"),
-            },
-            credentials: "include",
-            body: JSON.stringify({
-                email: form.email,
-                password: form.password,
-            }),
-        });
+        // // 2. Petición de login
+        // const response = await fetch("/api/login", {
+        //     method: "POST",
+        //     headers: {
+        //         "Content-Type": "application/json",
+        //         Accept: "application/json",
+        //         "X-XSRF-TOKEN": getCookie("XSRF-TOKEN"),
+        //     },
+        //     credentials: "include",
+        //     body: JSON.stringify({
+        //         email: form.email,
+        //         password: form.password,
+        //     }),
+        // });
 
-        const data = await response.json();
+        // const data = await response.json();
 
-        // 3. Errores de validación (422)
-        if (response.status === 422 && data.errors) {
-            if (data.errors.email) fieldErrors.email = data.errors.email[0];
-            if (data.errors.password)
-                fieldErrors.password = data.errors.password[0];
-            return;
-        }
+        // // 3. Errores de validación (422)
+        // if (response.status === 422 && data.errors) {
+        //     if (data.errors.email) fieldErrors.email = data.errors.email[0];
+        //     if (data.errors.password)
+        //         fieldErrors.password = data.errors.password[0];
+        //     return;
+        // }
 
-        // 4. Credenciales incorrectas
-        if (!response.ok) {
-            errorMessage.value =
-                data.message || "Correo o contraseña incorrectos.";
-            return;
-        }
+        // // 4. Credenciales incorrectas
+        // if (!response.ok) {
+        //     errorMessage.value =
+        //         data.message || "Correo o contraseña incorrectos.";
+        //     return;
+        // }
 
-        // 5. Guardar token (si usas Sanctum con tokens)
-        if (data.token) {
-            localStorage.setItem("auth_token", data.token);
-        }
+        // // 5. Guardar token (si usas Sanctum con tokens)
+        // if (data.token) {
+        //     localStorage.setItem("auth_token", data.token);
+        // }
 
         // 6. Redirigir
         router.push("/dashboard");

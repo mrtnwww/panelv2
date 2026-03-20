@@ -22,7 +22,7 @@
                 <p class="text-gray-400 text-sm">
                     ¿Ya tienes cuenta?
                     <router-link
-                        to="/"
+                        to="/login"
                         class="text-emerald-600 font-medium hover:text-emerald-700 transition-colors"
                     >
                         Iniciar sesión
@@ -495,7 +495,7 @@
             <p class="text-center text-xs text-gray-300 mt-6 mb-2">
                 ¿Ya tienes cuenta?
                 <router-link
-                    to="/"
+                    to="/login"
                     class="text-emerald-600 hover:underline font-medium"
                 >
                     Iniciar sesión
