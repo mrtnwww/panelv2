@@ -114,7 +114,7 @@
                     </div>
                     <button
                         class="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
-                        @click="goTo('/dashboard/configuracion')"
+                        @click="goTo('/usuario/perfil')"
                     >
                         <i class="fa-regular fa-user"></i>
                         Mi perfil
@@ -142,7 +142,7 @@
                     </button>
                     <button
                         class="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
-                        @click="goTo('/dashboard/cuenta-facturacion')"
+                        @click="goTo('/usuario/cambiar-clave')"
                     >
                         <i class="fa-solid fa-key"></i>
                         Cambio de clave

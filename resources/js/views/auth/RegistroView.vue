@@ -511,6 +511,7 @@
 import AuthPanelLeft from '@/components/AuthPanelLeft.vue'
 import SectionTitle from '@/components/form/SectionTitle.vue'
 import FormField from '@/components/form/FormField.vue'
+import EyeIcon from '@/components/form/EyeIcon.vue'
 
 import { ref, reactive, computed } from 'vue'
 import { useRouter } from 'vue-router'

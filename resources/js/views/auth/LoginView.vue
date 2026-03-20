@@ -115,7 +115,7 @@
                                     : 'Mostrar contraseña'
                             "
                         >
-                            <i class="fa-regular fa-eye"></i>
+                            <EyeIcon :open="!showPassword" />
                         </button>
                     </div>
                     <p v-if="fieldErrors.password" class="text-xs text-red-500">
@@ -195,6 +195,7 @@
 
 <script setup>
 import AuthPanelLeft from '@/components/AuthPanelLeft.vue'
+import EyeIcon from '@/components/form/EyeIcon.vue'
 
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'

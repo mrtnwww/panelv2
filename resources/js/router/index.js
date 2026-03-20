@@ -71,6 +71,17 @@ const routes = [
                 name: 'informes.cartera',
                 component: () => import('@/views/informes/CarteraListaView.vue'),
             },
+            // -- USUARIO --------------------------------------------------------------------
+            {
+                path: 'usuario/perfil',
+                name: 'usuario.perfil',
+                component: () => import('@/views/usuario/UsuarioPerfilView.vue'),
+            },
+            {
+                path: 'usuario/cambiar-clave',
+                name: 'usuario.cambiarClave',
+                component: () => import('@/views/usuario/CambiarContraseñaView.vue'),
+            },
         ],
     },
 ];
