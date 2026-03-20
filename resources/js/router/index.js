@@ -66,6 +66,11 @@ const routes = [
                 name: 'informes.abonos',
                 component: () => import('@/views/informes/AbonosListaView.vue'),
             },
+            {
+                path: 'informes/cartera',
+                name: 'informes.cartera',
+                component: () => import('@/views/informes/CarteraListaView.vue'),
+            },
         ],
     },
 ];

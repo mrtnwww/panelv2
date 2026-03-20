@@ -48,7 +48,11 @@ const viewMode = ref('list')
 const columns = [
     { key: 'nombre', label: 'Nombre', sortable: false },
     { key: 'identificacion', label: 'Identificación', sortable: false },
-    { key: 'autorizacionConsulta', label: 'Autorización consulta en centrales', sortable: false },
+    {
+        key: 'autorizacionConsulta',
+        label: 'Autorización consulta en centrales',
+        sortable: false,
+    },
     { key: 'pagoConsulta', label: 'Pago consulta', sortable: false },
     { key: 'correo', label: 'Correo', sortable: false },
     { key: 'telefono', label: 'Teléfono', sortable: false },

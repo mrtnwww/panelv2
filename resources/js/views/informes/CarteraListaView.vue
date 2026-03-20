@@ -1,0 +1,345 @@
+<template>
+    <div class="flex flex-col gap-5">
+        <!-- Encabezado + filtros en una línea -->
+        <div class="flex flex-wrap items-end gap-4">
+            <h1 class="text-lg font-semibold text-[#0A2540] mr-auto">
+                Cartera por edades
+            </h1>
+
+            <!-- Fecha inicial -->
+            <div class="flex flex-col gap-1.5">
+                <label
+                    class="text-xs font-medium text-gray-400 uppercase tracking-wide"
+                    >Fecha inicial</label
+                >
+                <input
+                    v-model="filters.fechaInicial"
+                    type="date"
+                    :class="inputClass"
+                />
+            </div>
+
+            <!-- Fecha final -->
+            <div class="flex flex-col gap-1.5">
+                <label
+                    class="text-xs font-medium text-gray-400 uppercase tracking-wide"
+                    >Fecha final</label
+                >
+                <input
+                    v-model="filters.fechaFinal"
+                    type="date"
+                    :class="inputClass"
+                />
+            </div>
+
+            <!-- Aliado -->
+            <div class="flex flex-col gap-1.5">
+                <label
+                    class="text-xs font-medium text-gray-400 uppercase tracking-wide"
+                    >Aliado</label
+                >
+                <div class="relative">
+                    <select
+                        v-model="filters.aliado"
+                        :class="[
+                            inputClass,
+                            'appearance-none pr-8 cursor-pointer w-48',
+                        ]"
+                    >
+                        <option value="">Seleccione un aliado...</option>
+                        <option
+                            v-for="a in aliadosOpts"
+                            :key="a.value"
+                            :value="a.value"
+                        >
+                            {{ a.label }}
+                        </option>
+                    </select>
+                    <span
+                        class="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-300 pointer-events-none"
+                    >
+                        <svg
+                            width="12"
+                            height="12"
+                            viewBox="0 0 12 12"
+                            fill="none"
+                        >
+                            <path
+                                d="M3 4.5L6 7.5L9 4.5"
+                                stroke="currentColor"
+                                stroke-width="1.3"
+                                stroke-linecap="round"
+                            />
+                        </svg>
+                    </span>
+                </div>
+            </div>
+
+            <!-- Botón actualizar -->
+            <button
+                @click="fetchCartera"
+                :disabled="loading"
+                class="h-9 px-4 rounded-lg bg-orange-500 hover:bg-orange-600 disabled:bg-gray-300 text-white text-sm font-medium transition-all flex items-center gap-2"
+            >
+                <i class="fa-solid fa-arrow-rotate-right"></i>
+                Actualizar mora
+            </button>
+        </div>
+
+        <!-- Tabla de cartera por edades -->
+        <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+            <!-- Loading overlay -->
+            <div v-if="loading" class="flex items-center justify-center py-20">
+                <div class="flex flex-col items-center gap-3">
+                    <svg
+                        class="animate-spin w-6 h-6 text-[#1a5c2a]"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                    >
+                        <circle
+                            class="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            stroke-width="4"
+                        />
+                        <path
+                            class="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                        />
+                    </svg>
+                    <span class="text-xs text-gray-400"
+                        >Calculando cartera...</span
+                    >
+                </div>
+            </div>
+
+            <!-- Filas de mora -->
+            <template v-else>
+                <div
+                    v-for="(tramo, i) in tramos"
+                    :key="tramo.key"
+                    :class="[
+                        'flex items-center justify-between px-8 py-4 transition-colors hover:bg-gray-50/60',
+                        i < tramos.length - 1 ? 'border-b border-gray-100' : '',
+                        tramo.isTotal
+                            ? 'bg-gray-50 border-t-2 border-gray-200'
+                            : '',
+                    ]"
+                >
+                    <!-- Label con color según antigüedad -->
+                    <span
+                        :class="[
+                            'text-sm font-medium',
+                            tramo.isTotal
+                                ? 'text-[#0A2540] font-semibold'
+                                : tramo.color,
+                        ]"
+                    >
+                        {{ tramo.label }}
+                    </span>
+
+                    <!-- Valor -->
+                    <div class="flex items-center gap-4">
+                        <span
+                            :class="[
+                                'text-sm tabular-nums',
+                                tramo.isTotal
+                                    ? 'text-[#0A2540] font-semibold text-base'
+                                    : 'text-gray-600',
+                            ]"
+                        >
+                            {{ formatCurrency(cartera[tramo.key] ?? 0) }}
+                        </span>
+
+                        <!-- Barra visual proporcional (solo en filas normales) -->
+                        <div v-if="!tramo.isTotal" class="hidden sm:block w-32">
+                            <div
+                                class="h-1.5 bg-gray-100 rounded-full overflow-hidden"
+                            >
+                                <div
+                                    class="h-full rounded-full transition-all duration-700"
+                                    :class="tramo.barColor"
+                                    :style="{
+                                        width:
+                                            porcentaje(cartera[tramo.key]) +
+                                            '%',
+                                    }"
+                                />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </template>
+        </div>
+
+        <!-- Resumen de porcentajes -->
+        <div
+            v-if="!loading && totalCartera > 0"
+            class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3"
+        >
+            <div
+                v-for="tramo in tramos.filter(t => !t.isTotal)"
+                :key="tramo.key"
+                class="bg-white rounded-xl border border-gray-200 px-4 py-3 flex flex-col gap-1"
+            >
+                <span class="text-xs font-medium" :class="tramo.color">{{
+                    tramo.labelCorto
+                }}</span>
+                <span class="text-lg font-semibold text-[#0A2540] tabular-nums">
+                    {{ porcentaje(cartera[tramo.key]).toFixed(1) }}%
+                </span>
+                <span class="text-xs text-gray-400 tabular-nums">
+                    {{ formatCurrency(cartera[tramo.key] ?? 0) }}
+                </span>
+            </div>
+        </div>
+    </div>
+</template>
+
+<script setup>
+import { ref, reactive, computed, onMounted } from 'vue'
+
+// ── Definición de tramos ───────────────────────────────────────────────────
+const tramos = [
+    {
+        key: 'mora_1_10',
+        label: 'Mora de 1 a 10 dias',
+        labelCorto: '1-10 días',
+        color: 'text-gray-600',
+        barColor: 'bg-gray-400',
+        isTotal: false,
+    },
+    {
+        key: 'mora_11_30',
+        label: 'Mora de 11 a 30 dias',
+        labelCorto: '11-30 días',
+        color: 'text-emerald-600',
+        barColor: 'bg-emerald-400',
+        isTotal: false,
+    },
+    {
+        key: 'mora_31_60',
+        label: 'Mora de 31 a 60 dias',
+        labelCorto: '31-60 días',
+        color: 'text-yellow-500',
+        barColor: 'bg-yellow-400',
+        isTotal: false,
+    },
+    {
+        key: 'mora_61_90',
+        label: 'Mora de 61 a 90 dias',
+        labelCorto: '61-90 días',
+        color: 'text-orange-500',
+        barColor: 'bg-orange-400',
+        isTotal: false,
+    },
+    {
+        key: 'mora_91_120',
+        label: 'Mora de 91 a 120 dias',
+        labelCorto: '91-120 días',
+        color: 'text-orange-600',
+        barColor: 'bg-orange-500',
+        isTotal: false,
+    },
+    {
+        key: 'mora_120_mas',
+        label: 'Mora de mas de 120 dias',
+        labelCorto: '+120 días',
+        color: 'text-red-500',
+        barColor: 'bg-red-500',
+        isTotal: false,
+    },
+    {
+        key: 'total',
+        label: 'Total',
+        labelCorto: 'Total',
+        color: 'text-[#0A2540]',
+        barColor: '',
+        isTotal: true,
+    },
+]
+
+// ── Estado ─────────────────────────────────────────────────────────────────
+const loading = ref(false)
+const cartera = reactive({
+    mora_1_10: 0,
+    mora_11_30: 0,
+    mora_31_60: 0,
+    mora_61_90: 0,
+    mora_91_120: 0,
+    mora_120_mas: 0,
+    total: 0,
+})
+
+const filters = reactive({
+    fechaInicial: '',
+    fechaFinal: '',
+    aliado: '',
+})
+
+const aliadosOpts = [
+    { value: 'impulsa', label: 'IMPULSA CORP SAS / CREDITRANSITO' },
+    { value: 'cda_moto', label: 'CDA MOTOCENTER RUTA 45A SAS' },
+    { value: 'cda_prad', label: 'CDA LA PRADERA' },
+]
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+const inputClass =
+    'h-9 px-3 rounded-lg border border-gray-200 bg-gray-50 text-sm text-gray-600 outline-none focus:border-[#1a5c2a] focus:ring-2 focus:ring-[#1a5c2a]/10 transition-all'
+
+const totalCartera = computed(() =>
+    tramos
+        .filter(t => !t.isTotal)
+        .reduce((sum, t) => sum + (cartera[t.key] ?? 0), 0)
+)
+
+function porcentaje(valor) {
+    if (!totalCartera.value || !valor) return 0
+    return (valor / totalCartera.value) * 100
+}
+
+function formatCurrency(value) {
+    return new Intl.NumberFormat('es-CO', {
+        style: 'currency',
+        currency: 'COP',
+        maximumFractionDigits: 0,
+    }).format(value ?? 0)
+}
+
+// ── Backend ────────────────────────────────────────────────────────────────
+async function fetchCartera() {
+    loading.value = true
+    try {
+        const params = new URLSearchParams({
+            ...(filters.fechaInicial && {
+                fecha_inicial: filters.fechaInicial,
+            }),
+            ...(filters.fechaFinal && { fecha_final: filters.fechaFinal }),
+            ...(filters.aliado && { aliado: filters.aliado }),
+        })
+
+        const response = await fetch(`/api/informes/cartera-edades?${params}`, {
+            headers: {
+                Accept: 'application/json',
+                Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
+            },
+        })
+
+        if (!response.ok) throw new Error('Error al cargar cartera')
+
+        // Estructura esperada:
+        // { mora_1_10, mora_11_30, mora_31_60, mora_61_90, mora_91_120, mora_120_mas, total }
+        const data = await response.json()
+        Object.assign(cartera, data)
+    } catch (err) {
+        console.error(err)
+    } finally {
+        loading.value = false
+    }
+}
+
+onMounted(fetchCartera)
+</script>
