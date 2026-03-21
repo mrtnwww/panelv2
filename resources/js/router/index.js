@@ -123,6 +123,25 @@ const routes = [
                 component: () =>
                     import('@/views/informes/CarteraListaView.vue'),
             },
+            // -- CONFIGURACION --------------------------------------------------------------
+            {
+                path: 'configuracion/usuarios',
+                name: 'configuracion.usuarios',
+                component: () =>
+                    import('@/views/configuracion/ConfiguracionUsuariosView.vue'),
+            },
+            {
+                path: 'configuracion/plantillas-correo',
+                name: 'configuracion.plantillasCorreo',
+                component: () =>
+                    import('@/views/configuracion/ConfiguracionPlantillasCorreoView.vue'),
+            },
+            {
+                path: 'configuracion/sedes-aliados',
+                name: 'configuracion.sedesAliados',
+                component: () =>
+                    import('@/views/configuracion/ConfiguracionSedesAliadosView.vue'),
+            },
             // -- USUARIO --------------------------------------------------------------------
             {
                 path: 'usuario/perfil',
