@@ -112,7 +112,7 @@ const router = useRouter()
 const route = useRoute()
 const currentPath = computed(() => route.path)
 
-// ── Ítems de navegación ────────────────────────────────────────────────────
+// -- Ítems de navegación ----------------------------------------------------------
 
 const gestionItems = [
     {
@@ -219,7 +219,7 @@ const adminItems = [
     },
 ]
 
-// ── Métodos ────────────────────────────────────────────────────────────────
+// -- Metodos ----------------------------------------------------------
 
 function navigate(path) {
     router.push(path)

@@ -12,7 +12,6 @@
                 class="flex flex-col gap-3 pb-5 border-b border-gray-100 sm:flex-row sm:items-center sm:justify-between"
             >
                 <div class="flex flex-wrap items-center gap-2">
-                    <!-- Descarga plantilla -->
                     <button
                         @click="descargarPlantilla"
                         :disabled="loadingPlantilla"
@@ -42,47 +41,17 @@
                         Descargar plantilla
                     </button>
 
-                    <!-- Cargar abonos -->
-                    <button
-                        @click="triggerCarga"
-                        :disabled="loadingCarga"
-                        class="h-9 px-4 rounded-lg bg-emerald-500 hover:bg-emerald-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white text-sm font-medium transition-all flex items-center gap-2"
-                    >
-                        <svg
-                            v-if="loadingCarga"
-                            class="animate-spin w-3.5 h-3.5"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                        >
-                            <circle
-                                class="opacity-25"
-                                cx="12"
-                                cy="12"
-                                r="10"
-                                stroke="currentColor"
-                                stroke-width="4"
-                            />
-                            <path
-                                class="opacity-75"
-                                fill="currentColor"
-                                d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                            />
-                        </svg>
-                        <i class="fa-solid fa-upload"></i>
-                        Cargar abonos
-                    </button>
-                    <input
-                        ref="fileInput"
+                    <!-- Cargar abonos usa FormInput type="file" -->
+                    <FormInput
                         type="file"
                         accept=".xlsx,.csv"
-                        class="sr-only"
+                        button-label="Cargar abonos"
+                        size="sm"
                         @change="onFileChange"
                     />
 
-                    <!-- Separador visual -->
                     <div class="hidden sm:block w-px h-6 bg-gray-200 mx-1" />
 
-                    <!-- Condonación masiva -->
                     <button
                         @click="condonacionMasiva"
                         class="h-9 px-4 rounded-lg bg-[#1a5c2a] hover:bg-[#154d22] text-white text-sm font-medium transition-all flex items-center gap-2"
@@ -91,7 +60,6 @@
                         Condonación masiva
                     </button>
 
-                    <!-- Actualizar -->
                     <button
                         @click="fetchData"
                         :disabled="loadingRefresh"
@@ -105,72 +73,27 @@
 
             <!-- Selección de cliente y crédito -->
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <!-- Cliente -->
-                <div class="flex flex-col gap-1.5">
-                    <label
-                        class="text-xs font-medium text-gray-400 uppercase tracking-wide"
-                    >
-                        Cliente
-                    </label>
-                    <div class="relative">
-                        <select
-                            v-model="form.cliente_id"
-                            @change="onClienteChange"
-                            :class="[
-                                inputClass,
-                                'appearance-none pr-8 cursor-pointer',
-                            ]"
-                        >
-                            <option value="">Seleccione el cliente</option>
-                            <option
-                                v-for="c in clientes"
-                                :key="c.value"
-                                :value="c.value"
-                            >
-                                {{ c.label }}
-                            </option>
-                        </select>
-                        <ChevronIcon />
-                    </div>
-                </div>
-
-                <!-- Crédito -->
-                <div class="flex flex-col gap-1.5">
-                    <label
-                        class="text-xs font-medium text-gray-400 uppercase tracking-wide"
-                    >
-                        Buscar crédito
-                    </label>
-                    <div class="relative">
-                        <select
-                            v-model="form.credito_id"
-                            @change="onCreditoChange"
-                            :disabled="!form.cliente_id"
-                            :class="[
-                                inputClass,
-                                'appearance-none pr-8',
-                                form.cliente_id
-                                    ? 'cursor-pointer'
-                                    : 'cursor-not-allowed opacity-60',
-                            ]"
-                        >
-                            <option value="">Seleccionar crédito</option>
-                            <!-- <option
-                                v-for="c in creditos"
-                                :key="c.value"
-                                :value="c.value"
-                            >
-                                {{ c.label }}
-                            </option> -->
-                            <option value="1">5173</option>
-                        </select>
-                        <ChevronIcon />
-                    </div>
-                </div>
+                <FormInput
+                    label="Cliente"
+                    type="select"
+                    v-model="form.cliente_id"
+                    :options="clientes"
+                    placeholder="Seleccione el cliente"
+                    @update:model-value="onClienteChange"
+                />
+                <FormInput
+                    label="Buscar crédito"
+                    type="select"
+                    v-model="form.credito_id"
+                    :options="creditos"
+                    placeholder="Seleccionar crédito"
+                    :disabled="!form.cliente_id"
+                    @update:model-value="onCreditoChange"
+                />
             </div>
         </div>
 
-        <!-- Panel detalle de crédito (visible al seleccionar crédito) -->
+        <!-- Panel detalle de crédito -->
         <transition name="fade">
             <div
                 v-if="creditoInfo"
@@ -180,7 +103,7 @@
                 <div
                     class="bg-white rounded-xl border border-gray-200 overflow-hidden"
                 >
-                    <!-- Cabecera tabla -->
+                    <!-- Cabecera -->
                     <div
                         class="grid grid-cols-2 bg-gray-50 border-b border-gray-200 px-5 py-2.5"
                     >
@@ -208,57 +131,42 @@
                         }}</span>
                     </div>
 
-                    <!-- Número de meses (select) -->
+                    <!-- Número de meses -->
                     <div
                         class="grid grid-cols-2 items-center border-b border-gray-100 px-5 py-2"
                     >
                         <span class="text-sm text-gray-500"
                             >Número de meses</span
                         >
-                        <div class="relative">
-                            <select
-                                v-model="form.num_meses"
-                                :class="[
-                                    inputClass,
-                                    'appearance-none pr-8 cursor-pointer h-8 text-xs',
-                                ]"
-                            >
-                                <option
-                                    v-for="m in mesesOpciones"
-                                    :key="m"
-                                    :value="m"
-                                >
-                                    {{ m }}
-                                </option>
-                            </select>
-                            <ChevronIcon />
-                        </div>
+                        <FormInput
+                            type="select"
+                            v-model="form.num_meses"
+                            :options="
+                                mesesOpciones.map(m => ({
+                                    value: m,
+                                    label: String(m),
+                                }))
+                            "
+                            size="sm"
+                        />
                     </div>
 
-                    <!-- Periodicidad (select) -->
+                    <!-- Periodicidad -->
                     <div
                         class="grid grid-cols-2 items-center border-b border-gray-100 px-5 py-2"
                     >
                         <span class="text-sm text-gray-500"
                             >Periodicidad Cuotas</span
                         >
-                        <div class="relative">
-                            <select
-                                v-model="form.periodicidad"
-                                :class="[
-                                    inputClass,
-                                    'appearance-none pr-8 cursor-pointer h-8 text-xs',
-                                ]"
-                            >
-                                <option value="Mensual">Mensual</option>
-                                <option value="Quincenal">Quincenal</option>
-                                <option value="Semanal">Semanal</option>
-                            </select>
-                            <ChevronIcon />
-                        </div>
+                        <FormInput
+                            type="select"
+                            v-model="form.periodicidad"
+                            :options="periodicidadOpts"
+                            size="sm"
+                        />
                     </div>
 
-                    <!-- Filas calculadas (solo lectura) -->
+                    <!-- Filas calculadas -->
                     <div
                         v-for="row in camposCalculados"
                         :key="row.key"
@@ -272,35 +180,35 @@
                         }}</span>
                     </div>
 
-                    <!-- Valor a pagar (editable) -->
+                    <!-- Valor a pagar -->
                     <div
                         class="grid grid-cols-2 items-center border-b border-gray-100 px-5 py-2"
                     >
                         <span class="text-sm text-gray-500">Valor a pagar</span>
-                        <input
-                            v-model.number="form.valor_pagar"
+                        <FormInput
                             type="number"
+                            v-model="form.valor_pagar"
                             placeholder="0"
-                            :class="[inputClass, 'h-8 text-sm']"
+                            size="sm"
                         />
                     </div>
 
-                    <!-- Abono a crédito (editable) -->
+                    <!-- Abono a crédito -->
                     <div
                         class="grid grid-cols-2 items-center border-b border-gray-100 px-5 py-2"
                     >
                         <span class="text-sm text-gray-500"
                             >Abono a crédito</span
                         >
-                        <input
-                            v-model.number="form.abono_credito"
+                        <FormInput
                             type="number"
+                            v-model="form.abono_credito"
                             placeholder="0"
-                            :class="[inputClass, 'h-8 text-sm']"
+                            size="sm"
                         />
                     </div>
 
-                    <!-- Gastos de cobranza (solo lectura) -->
+                    <!-- Gastos de cobranza -->
                     <div
                         class="grid grid-cols-2 border-b border-gray-100 px-5 py-2.5"
                     >
@@ -312,7 +220,7 @@
                         }}</span>
                     </div>
 
-                    <!-- Intereses moratorios (solo lectura) -->
+                    <!-- Intereses moratorios -->
                     <div
                         class="grid grid-cols-2 border-b border-gray-100 px-5 py-2.5"
                     >
@@ -324,31 +232,20 @@
                         }}</span>
                     </div>
 
-                    <!-- Pago con (select) -->
+                    <!-- Pago con -->
                     <div
                         class="grid grid-cols-2 items-center border-b border-gray-100 px-5 py-2"
                     >
                         <span class="text-sm text-gray-500">Pago con</span>
-                        <div class="relative">
-                            <select
-                                v-model="form.pago_con"
-                                :class="[
-                                    inputClass,
-                                    'appearance-none pr-8 cursor-pointer h-8 text-xs',
-                                ]"
-                            >
-                                <option value="Efectivo">Efectivo</option>
-                                <option value="Transferencia">
-                                    Transferencia
-                                </option>
-                                <option value="Cheque">Cheque</option>
-                                <option value="Datafono">Datáfono</option>
-                            </select>
-                            <ChevronIcon />
-                        </div>
+                        <FormInput
+                            type="select"
+                            v-model="form.pago_con"
+                            :options="pagoConOpts"
+                            size="sm"
+                        />
                     </div>
 
-                    <!-- Abono a capital (solo lectura) -->
+                    <!-- Abono a capital -->
                     <div
                         class="grid grid-cols-2 border-b border-gray-100 px-5 py-2.5"
                     >
@@ -360,39 +257,37 @@
                         }}</span>
                     </div>
 
-                    <!-- Condonación o descuento (editable) -->
+                    <!-- Condonación o descuento -->
                     <div
                         class="grid grid-cols-2 items-center border-b border-gray-100 px-5 py-2"
                     >
                         <span class="text-sm text-gray-500"
                             >Condonación o descuento</span
                         >
-                        <input
-                            v-model.number="form.condonacion"
+                        <FormInput
                             type="number"
+                            v-model="form.condonacion"
                             placeholder="0"
-                            :class="[inputClass, 'h-8 text-sm']"
+                            size="sm"
                         />
                     </div>
 
-                    <!-- Observaciones (textarea) -->
+                    <!-- Observaciones -->
                     <div
                         class="grid grid-cols-2 items-start border-b border-gray-100 px-5 py-2.5"
                     >
                         <span class="text-sm text-gray-500 pt-1"
                             >Observaciones</span
                         >
-                        <textarea
+                        <FormInput
+                            type="textarea"
                             v-model="form.observaciones"
-                            rows="3"
-                            :class="[
-                                inputClass,
-                                'h-auto py-2 resize-none text-sm',
-                            ]"
+                            placeholder="Escribe una observación..."
+                            :rows="3"
                         />
                     </div>
 
-                    <!-- Botones de acción -->
+                    <!-- Botones -->
                     <div
                         class="flex items-center justify-center gap-3 px-5 py-4"
                     >
@@ -460,7 +355,7 @@
                         class="bg-white rounded-xl border border-gray-200 overflow-hidden"
                     >
                         <div
-                            class="grid grid-cols-[1fr_auto_auto] items-center border-b border-gray-100 last:border-b-0 px-4 py-3 gap-4"
+                            class="grid grid-cols-[1fr_auto_auto] items-center border-b border-gray-100 px-4 py-3 gap-4"
                         >
                             <span class="text-sm font-semibold text-[#1a5c2a]"
                                 >Saldo Pendiente</span
@@ -497,7 +392,6 @@
                             </p>
                         </div>
 
-                        <!-- Cabecera tabla recibos -->
                         <div
                             class="grid grid-cols-[auto_1fr_1fr_1fr_auto] gap-2 px-4 py-2 bg-gray-50 border-b border-gray-100"
                         >
@@ -518,7 +412,6 @@
                             >
                         </div>
 
-                        <!-- Filas de recibos -->
                         <div
                             v-for="recibo in creditoInfo.recibos"
                             :key="recibo.codigo"
@@ -558,7 +451,6 @@
                             </button>
                         </div>
 
-                        <!-- Sin recibos -->
                         <div
                             v-if="!creditoInfo.recibos?.length"
                             class="px-4 py-4 text-xs text-gray-300 text-center"
@@ -574,7 +466,7 @@
 
 <script setup>
 import { ref, reactive, computed } from 'vue'
-import ChevronIcon from '@/components/ChevronIcon.vue'
+import FormInput from '@/components/form/FormInput.vue'
 
 // ── Estado ─────────────────────────────────────────────────────────────────
 const loadingPlantilla = ref(false)
@@ -582,7 +474,6 @@ const loadingCarga = ref(false)
 const loadingRefresh = ref(false)
 const loadingAbono = ref(false)
 const loadingLiquidar = ref(false)
-const fileInput = ref(null)
 const creditoInfo = ref(null)
 
 const form = reactive({
@@ -597,26 +488,31 @@ const form = reactive({
     observaciones: '',
 })
 
-// ── Opciones de selects ────────────────────────────────────────────────────
+// ── Opciones ───────────────────────────────────────────────────────────────
 const clientes = [
     { value: '1', label: 'CAROLINA RINCON DELGADO (63555661)' },
     { value: '2', label: 'CARLOS ANDRES GOMEZ (10345678)' },
     { value: '3', label: 'MARIA FERNANDA LOPEZ (52345678)' },
 ]
 
-// Se poblaría dinámicamente al elegir cliente
-const creditos = ref([
-    {
-        value: 1,
-        label: 5173,
-    },
-])
+const creditos = ref([{ value: '1', label: '5173' }])
 
 const mesesOpciones = [1, 2, 3, 6, 12, 18, 24, 36]
 
-// ── Computed ───────────────────────────────────────────────────────────────
+const periodicidadOpts = [
+    { value: 'Mensual', label: 'Mensual' },
+    { value: 'Quincenal', label: 'Quincenal' },
+    { value: 'Semanal', label: 'Semanal' },
+]
 
-// Filas de solo lectura del crédito seleccionado
+const pagoConOpts = [
+    { value: 'Efectivo', label: 'Efectivo' },
+    { value: 'Transferencia', label: 'Transferencia' },
+    { value: 'Cheque', label: 'Cheque' },
+    { value: 'Datafono', label: 'Datáfono' },
+]
+
+// ── Computed ───────────────────────────────────────────────────────────────
 const camposLectura = computed(() => {
     if (!creditoInfo.value) return []
     return [
@@ -643,7 +539,6 @@ const camposLectura = computed(() => {
     ]
 })
 
-// Filas calculadas (después de los selects de meses/periodicidad)
 const camposCalculados = computed(() => {
     if (!creditoInfo.value) return []
     return [
@@ -661,9 +556,6 @@ const camposCalculados = computed(() => {
 })
 
 // ── Helpers ────────────────────────────────────────────────────────────────
-const inputClass =
-    'w-full h-9 px-3 rounded-lg border border-gray-200 bg-gray-50 text-sm text-gray-600 outline-none focus:border-[#1a5c2a] focus:ring-2 focus:ring-[#1a5c2a]/10 transition-all'
-
 function formatCurrency(value) {
     if (value == null) return '$0'
     return new Intl.NumberFormat('es-CO', {
@@ -678,7 +570,7 @@ function onClienteChange() {
     form.credito_id = ''
     creditos.value = []
     creditoInfo.value = null
-    // TODO: cargar créditos del cliente seleccionado desde la API
+    // TODO: cargar créditos del cliente desde la API
 }
 
 function onCreditoChange() {
@@ -710,29 +602,22 @@ function onCreditoChange() {
     }
 }
 
-function triggerCarga() {
-    fileInput.value?.click()
-}
-
-async function onFileChange(e) {
-    const file = e.target.files?.[0]
+async function onFileChange(file) {
     if (!file) return
     loadingCarga.value = true
     try {
-        // TODO: enviar archivo al backend
         console.log('Archivo:', file.name)
+        // TODO: enviar archivo al backend
     } catch (err) {
         console.error(err)
     } finally {
         loadingCarga.value = false
-        e.target.value = ''
     }
 }
 
 async function descargarPlantilla() {
     loadingPlantilla.value = true
     try {
-        // TODO: llamar al endpoint de descarga de plantilla
         console.log('Descargando plantilla...')
     } catch (err) {
         console.error(err)
@@ -742,14 +627,12 @@ async function descargarPlantilla() {
 }
 
 function condonacionMasiva() {
-    // TODO: abrir modal de condonación masiva
     console.log('Condonación masiva')
 }
 
 async function fetchData() {
     loadingRefresh.value = true
     try {
-        // TODO: actualizar valores
         await new Promise(r => setTimeout(r, 800))
     } catch (err) {
         console.error(err)
@@ -761,7 +644,6 @@ async function fetchData() {
 async function generarAbono() {
     loadingAbono.value = true
     try {
-        // TODO: llamar al endpoint de generación de abono
         console.log('Generando abono:', { ...form })
     } catch (err) {
         console.error(err)
@@ -773,7 +655,6 @@ async function generarAbono() {
 async function liquidarHoy() {
     loadingLiquidar.value = true
     try {
-        // TODO: llamar al endpoint de liquidación
         console.log('Liquidando crédito:', form.credito_id)
     } catch (err) {
         console.error(err)
@@ -783,12 +664,23 @@ async function liquidarHoy() {
 }
 
 function verDetalle() {
-    // TODO: navegar al detalle del crédito o abrir modal
     console.log('Ver detalle:', form.credito_id)
 }
-
-function descargarRecibo(recibo) {
-    // TODO: llamar al endpoint de descarga del recibo
-    console.log('Descargar recibo:', recibo.codigo)
+function descargarRecibo(r) {
+    console.log('Descargar recibo:', r.codigo)
 }
 </script>
+
+<style scoped>
+.fade-enter-active,
+.fade-leave-active {
+    transition:
+        opacity 0.2s ease,
+        transform 0.2s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+    opacity: 0;
+    transform: translateY(-4px);
+}
+</style>

@@ -29,12 +29,13 @@
 
             <!-- Búsqueda — ancho completo en móvil, automático en desktop -->
             <div class="relative sm:ml-auto">
-                <input
-                    :value="search"
-                    @input="$emit('update:search', $event.target.value)"
-                    type="text"
+                <FormInput
+                    :model-value="search"
                     placeholder="Buscar..."
-                    class="h-8 w-full sm:w-44 pl-8 pr-3 rounded-lg border border-gray-200 bg-gray-50 text-sm text-gray-600 outline-none focus:border-[#1a5c2a] focus:ring-2 focus:ring-[#1a5c2a]/10 transition-all sm:focus:w-56"
+                    size="sm"
+                    icon-left="search"
+                    wrapper-class="w-full sm:w-44"
+                    @update:model-value="$emit('update:search', $event)"
                 />
                 <span
                     class="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-300 pointer-events-none"
@@ -65,13 +66,12 @@
                     <tr class="border-b border-gray-100">
                         <!-- Checkbox seleccionar todos -->
                         <th v-if="selectable" class="w-10 px-4 py-3">
-                            <input
-                                type="checkbox"
-                                :checked="allSelected"
-                                @change="
-                                    $emit('toggle-all', $event.target.checked)
+                            <FormCheckbox
+                                :model-value="allSelected"
+                                :indeterminate="someSelected && !allSelected"
+                                @update:model-value="
+                                    $emit('toggle-all', $event)
                                 "
-                                class="w-4 h-4 rounded border-gray-300 accent-[#1a5c2a] cursor-pointer"
                             />
                         </th>
 
@@ -219,12 +219,14 @@
                     >
                         <!-- Checkbox fila -->
                         <td v-if="selectable" class="px-4 py-3">
-                            <input
-                                type="checkbox"
-                                :checked="selectedRows.includes(row[rowKey])"
-                                @change="$emit('toggle-row', row[rowKey])"
+                            <FormCheckbox
+                                :model-value="
+                                    selectedRows.includes(row[rowKey])
+                                "
+                                @update:model-value="
+                                    $emit('toggle-row', row[rowKey])
+                                "
                                 @click.stop
-                                class="w-4 h-4 rounded border-gray-300 accent-[#1a5c2a] cursor-pointer"
                             />
                         </td>
 
@@ -383,6 +385,10 @@
 <script setup>
 import { computed } from 'vue'
 
+// -- Componentes --------------------------------------
+import FormCheckbox from '@/components/form/FormCheckbox.vue'
+import FormInput from '@/components/form/FormInput.vue'
+
 const props = defineProps({
     // Datos
     rows: { type: Array, default: () => [] },
@@ -420,12 +426,12 @@ const emit = defineEmits([
     'row-click',
 ])
 
-// ── Columnas totales (para colspan) ───────────────────────────────────────
+// -- Columnas totales ----------------------------------------------------------
 const totalCols = computed(
     () => props.columns.length + (props.selectable ? 1 : 0)
 )
 
-// ── Paginación ─────────────────────────────────────────────────────────────
+// -- Paginación ----------------------------------------------------------
 const totalPages = computed(() =>
     Math.max(1, Math.ceil(props.total / props.perPage))
 )
@@ -448,7 +454,14 @@ const visiblePages = computed(() => {
     return [1, '...', cur - 1, cur, cur + 1, '...', total]
 })
 
-// ── Ordenamiento ───────────────────────────────────────────────────────────
+// -- Seleccionar ----------------------------------------------------------
+const someSelected = computed(
+    () =>
+        props.selectedRows.length > 0 &&
+        props.selectedRows.length < props.rows.length
+)
+
+// -- Ordenamiento ----------------------------------------------------------
 function onSort(key) {
     const newDir =
         props.sortKey === key && props.sortDir === 'asc' ? 'desc' : 'asc'
@@ -457,7 +470,7 @@ function onSort(key) {
     emit('sort', { key, dir: newDir })
 }
 
-// ── Helper clases paginación ───────────────────────────────────────────────
+// -- Helper clases paginación ----------------------------------------------------------
 function paginationBtnClass(disabled) {
     return [
         'h-8 px-3 rounded-lg text-xs font-medium transition-all border',

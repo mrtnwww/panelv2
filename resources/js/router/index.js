@@ -8,6 +8,7 @@ import RegisterView from '@/views/auth/RegistroView.vue'
 import AuthenticatedLayout from '@/layouts/AuthenticatedLayout.vue'
 
 const routes = [
+    // Rutas públicas (Auth)
     {
         path: '/',
         redirect: () => {

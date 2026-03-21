@@ -414,7 +414,7 @@
 
 <script setup>
 import { ref, reactive, computed } from 'vue'
-import ChevronIcon from '@/components/ChevronIcon.vue'
+import ChevronIcon from '@/components/form/ChevronIcon.vue'
 
 // ── Opciones de selects ────────────────────────────────────────────────────
 const clientes = [

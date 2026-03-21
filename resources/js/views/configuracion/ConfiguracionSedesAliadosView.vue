@@ -303,16 +303,18 @@
                             />
                         </div>
                         <div class="flex flex-col gap-1.5">
-                            <label :class="labelClass">Periodicidad</label>
-                            <FormSelect
+                            <FormInput
+                                label="Periodicidad"
+                                type="select"
                                 v-model="modal.form.periodicidad"
                                 :options="periodicidadOpts"
                                 placeholder="Seleccione"
                             />
                         </div>
                         <div class="flex flex-col gap-1.5">
-                            <label :class="labelClass">Tipo</label>
-                            <FormSelect
+                            <FormInput
+                                label="Tipo"
+                                type="select"
                                 v-model="modal.form.tipo"
                                 :options="tipoOpts"
                                 placeholder="Aliado o Sede"
@@ -398,9 +400,11 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import DataTable from '@/components/table/DataTable.vue'
-import FormSelect from '@/components/form/FormSelect.vue'
+
+// -- Componentes -------------------------------------------
 import FileUpload from '@/components/form/FileUpload.vue'
+import DataTable from '@/components/table/DataTable.vue'
+import FormInput from '@/components/form/FormInput.vue'
 
 const router = useRouter()
 

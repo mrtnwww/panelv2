@@ -15,7 +15,7 @@
                             : 'text-gray-400 hover:text-gray-600',
                     ]"
                 >
-                    <i class="fa-solid fa-bars"></i>
+                    <i class="fa-solid fa-bars text-xs"></i>
                 </button>
                 <button
                     @click="viewMode = 'grid'"
@@ -74,6 +74,7 @@
         >
             <p class="text-sm font-medium text-gray-500">Filtro de clientes</p>
 
+            <!-- Grupos de checkboxes -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <!-- Estado -->
                 <div class="flex flex-col gap-2">
@@ -87,37 +88,16 @@
                         :key="opt.value"
                         class="flex items-start gap-2.5 cursor-pointer group"
                     >
-                        <div class="relative shrink-0 mt-0.5">
-                            <input
-                                v-model="filters.estado"
-                                type="checkbox"
-                                :value="opt.value"
-                                class="peer sr-only"
-                            />
-                            <div
-                                class="w-4 h-4 rounded border-2 border-gray-200 bg-gray-50 peer-checked:bg-[#1a5c2a] peer-checked:border-[#1a5c2a] transition-all flex items-center justify-center"
-                            >
-                                <svg
-                                    v-if="filters.estado.includes(opt.value)"
-                                    width="8"
-                                    height="8"
-                                    viewBox="0 0 8 8"
-                                    fill="none"
-                                >
-                                    <path
-                                        d="M1 4L3 6.5L7 1.5"
-                                        stroke="white"
-                                        stroke-width="1.5"
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                    />
-                                </svg>
-                            </div>
-                        </div>
+                        <FormCheckbox
+                            v-model="filters.estado"
+                            :value="opt.value"
+                            wrapper-class="mt-0.5"
+                        />
                         <span
                             class="text-sm text-gray-600 group-hover:text-gray-800 transition-colors leading-tight"
-                            >{{ opt.label }}</span
                         >
+                            {{ opt.label }}
+                        </span>
                     </label>
                 </div>
 
@@ -133,37 +113,16 @@
                         :key="opt.value"
                         class="flex items-start gap-2.5 cursor-pointer group"
                     >
-                        <div class="relative shrink-0 mt-0.5">
-                            <input
-                                v-model="filters.origen"
-                                type="checkbox"
-                                :value="opt.value"
-                                class="peer sr-only"
-                            />
-                            <div
-                                class="w-4 h-4 rounded border-2 border-gray-200 bg-gray-50 peer-checked:bg-[#1a5c2a] peer-checked:border-[#1a5c2a] transition-all flex items-center justify-center"
-                            >
-                                <svg
-                                    v-if="filters.origen.includes(opt.value)"
-                                    width="8"
-                                    height="8"
-                                    viewBox="0 0 8 8"
-                                    fill="none"
-                                >
-                                    <path
-                                        d="M1 4L3 6.5L7 1.5"
-                                        stroke="white"
-                                        stroke-width="1.5"
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                    />
-                                </svg>
-                            </div>
-                        </div>
+                        <FormCheckbox
+                            v-model="filters.origen"
+                            :value="opt.value"
+                            wrapper-class="mt-0.5"
+                        />
                         <span
                             class="text-sm text-gray-600 group-hover:text-gray-800 transition-colors leading-tight"
-                            >{{ opt.label }}</span
                         >
+                            {{ opt.label }}
+                        </span>
                     </label>
                 </div>
 
@@ -179,37 +138,16 @@
                         :key="opt.value"
                         class="flex items-start gap-2.5 cursor-pointer group"
                     >
-                        <div class="relative shrink-0 mt-0.5">
-                            <input
-                                v-model="filters.resultado"
-                                type="checkbox"
-                                :value="opt.value"
-                                class="peer sr-only"
-                            />
-                            <div
-                                class="w-4 h-4 rounded border-2 border-gray-200 bg-gray-50 peer-checked:bg-[#1a5c2a] peer-checked:border-[#1a5c2a] transition-all flex items-center justify-center"
-                            >
-                                <svg
-                                    v-if="filters.resultado.includes(opt.value)"
-                                    width="8"
-                                    height="8"
-                                    viewBox="0 0 8 8"
-                                    fill="none"
-                                >
-                                    <path
-                                        d="M1 4L3 6.5L7 1.5"
-                                        stroke="white"
-                                        stroke-width="1.5"
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                    />
-                                </svg>
-                            </div>
-                        </div>
+                        <FormCheckbox
+                            v-model="filters.resultado"
+                            :value="opt.value"
+                            wrapper-class="mt-0.5"
+                        />
                         <span
                             class="text-sm text-gray-600 group-hover:text-gray-800 transition-colors leading-tight"
-                            >{{ opt.label }}</span
                         >
+                            {{ opt.label }}
+                        </span>
                     </label>
                 </div>
             </div>
@@ -218,68 +156,26 @@
             <div
                 class="flex flex-wrap items-end gap-4 pt-3 border-t border-gray-100"
             >
-                <div class="flex flex-col gap-1.5 min-w-[200px]">
-                    <label
-                        class="text-xs font-medium text-gray-400 uppercase tracking-wide"
-                        >Aliado</label
-                    >
-                    <div class="relative">
-                        <select
-                            v-model="filters.aliado"
-                            class="w-full h-9 pl-3 pr-8 rounded-lg border border-gray-200 bg-gray-50 text-sm text-gray-600 outline-none appearance-none focus:border-[#1a5c2a] focus:ring-2 focus:ring-[#1a5c2a]/10 transition-all"
-                        >
-                            <option value="">Seleccione un aliado</option>
-                            <option
-                                v-for="a in aliados"
-                                :key="a.value"
-                                :value="a.value"
-                            >
-                                {{ a.label }}
-                            </option>
-                        </select>
-                        <span
-                            class="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-300 pointer-events-none"
-                        >
-                            <svg
-                                width="12"
-                                height="12"
-                                viewBox="0 0 12 12"
-                                fill="none"
-                            >
-                                <path
-                                    d="M3 4.5L6 7.5L9 4.5"
-                                    stroke="currentColor"
-                                    stroke-width="1.3"
-                                    stroke-linecap="round"
-                                />
-                            </svg>
-                        </span>
-                    </div>
-                </div>
+                <FormInput
+                    label="Aliado"
+                    type="select"
+                    v-model="filters.aliado"
+                    :options="aliados"
+                    placeholder="Seleccione un aliado"
+                    wrapper-class="min-w-[200px]"
+                />
 
-                <div class="flex flex-col gap-1.5">
-                    <label
-                        class="text-xs font-medium text-gray-400 uppercase tracking-wide"
-                        >Fecha inicial</label
-                    >
-                    <input
-                        v-model="filters.fechaInicial"
-                        type="date"
-                        class="h-9 px-3 rounded-lg border border-gray-200 bg-gray-50 text-sm text-gray-600 outline-none focus:border-[#1a5c2a] focus:ring-2 focus:ring-[#1a5c2a]/10 transition-all"
-                    />
-                </div>
+                <FormInput
+                    label="Fecha inicial"
+                    type="date"
+                    v-model="filters.fechaInicial"
+                />
 
-                <div class="flex flex-col gap-1.5">
-                    <label
-                        class="text-xs font-medium text-gray-400 uppercase tracking-wide"
-                        >Fecha final</label
-                    >
-                    <input
-                        v-model="filters.fechaFinal"
-                        type="date"
-                        class="h-9 px-3 rounded-lg border border-gray-200 bg-gray-50 text-sm text-gray-600 outline-none focus:border-[#1a5c2a] focus:ring-2 focus:ring-[#1a5c2a]/10 transition-all"
-                    />
-                </div>
+                <FormInput
+                    label="Fecha final"
+                    type="date"
+                    v-model="filters.fechaFinal"
+                />
 
                 <div class="flex items-center gap-2 ml-auto">
                     <button
@@ -320,7 +216,60 @@
             @toggle-all="onToggleAll"
             @toggle-row="onToggleRow"
         >
-            <!-- Acciones personalizadas en la barra superior -->
+            <!-- Celda acciones -->
+            <template #cell-acciones="{ row }">
+                <div
+                    class="flex items-center gap-2 justify-end opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                    <button
+                        @click.stop="editCliente(row)"
+                        class="w-7 h-7 rounded-lg border border-gray-200 flex items-center justify-center text-gray-400 hover:text-[#1a5c2a] hover:border-[#1a5c2a]/30 transition-all"
+                        title="Editar"
+                    >
+                        <svg
+                            width="13"
+                            height="13"
+                            viewBox="0 0 13 13"
+                            fill="none"
+                        >
+                            <path
+                                d="M9 1.5L11.5 4L4.5 11H2V8.5L9 1.5Z"
+                                stroke="currentColor"
+                                stroke-width="1.2"
+                                stroke-linejoin="round"
+                            />
+                        </svg>
+                    </button>
+                    <button
+                        @click.stop="viewCliente(row)"
+                        class="w-7 h-7 rounded-lg border border-gray-200 flex items-center justify-center text-gray-400 hover:text-blue-500 hover:border-blue-200 transition-all"
+                        title="Ver detalle"
+                    >
+                        <svg
+                            width="13"
+                            height="13"
+                            viewBox="0 0 13 13"
+                            fill="none"
+                        >
+                            <ellipse
+                                cx="6.5"
+                                cy="6.5"
+                                rx="5.5"
+                                ry="3.5"
+                                stroke="currentColor"
+                                stroke-width="1.2"
+                            />
+                            <circle
+                                cx="6.5"
+                                cy="6.5"
+                                r="1.5"
+                                stroke="currentColor"
+                                stroke-width="1.2"
+                            />
+                        </svg>
+                    </button>
+                </div>
+            </template>
         </DataTable>
     </div>
 </template>
@@ -328,7 +277,11 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+
+// -- Componentes -------------------------------------------
+import FormCheckbox from '@/components/form/FormCheckbox.vue'
 import DataTable from '@/components/table/DataTable.vue'
+import FormInput from '@/components/form/FormInput.vue'
 
 const router = useRouter()
 
@@ -380,22 +333,14 @@ const columns = [
     { key: 'acciones', label: 'Acciones', sortable: false },
 ]
 
-// ── Datos y estado ─────────────────────────────────────────────────────────
+// ── Estado ─────────────────────────────────────────────────────────────────
 const clientes = ref([])
 const loading = ref(false)
 const search = ref('')
 let searchTimeout = null
 
-const pagination = reactive({
-    currentPage: 1,
-    perPage: 10,
-    total: 0,
-})
-
-const sort = reactive({
-    key: 'fechaRegistro',
-    dir: 'desc',
-})
+const pagination = reactive({ currentPage: 1, perPage: 10, total: 0 })
+const sort = reactive({ key: 'fechaRegistro', dir: 'desc' })
 
 // ── Filtros ────────────────────────────────────────────────────────────────
 const filters = reactive({
@@ -471,14 +416,12 @@ function onToggleAll(checked) {
 
 function onToggleRow(id) {
     const idx = selected.value.indexOf(id)
-    if (idx === -1) selected.value.push(id)
-    else selected.value.splice(idx, 1)
+    idx === -1 ? selected.value.push(id) : selected.value.splice(idx, 1)
 }
 
-// ── Llamada al backend ─────────────────────────────────────────────────────
+// ── Backend ────────────────────────────────────────────────────────────────
 async function fetchClientes() {
     loading.value = true
-
     try {
         const params = new URLSearchParams({
             page: pagination.currentPage,
@@ -507,9 +450,6 @@ async function fetchClientes() {
         if (!response.ok) throw new Error('Error al cargar clientes')
 
         const data = await response.json()
-
-        // Estructura esperada del backend:
-        // { data: [...], meta: { total, current_page, per_page } }
         clientes.value = data.data
         pagination.total = data.meta.total
         pagination.currentPage = data.meta.current_page
@@ -520,21 +460,24 @@ async function fetchClientes() {
     }
 }
 
-// ── Handlers de eventos del DataTable ─────────────────────────────────────
+// ── Handlers DataTable ─────────────────────────────────────────────────────
 function onPageChange(page) {
     pagination.currentPage = page
     fetchClientes()
 }
-
 function onPerPageChange(val) {
     pagination.perPage = val
     pagination.currentPage = 1
     fetchClientes()
 }
-
+function onSort({ key, dir }) {
+    sort.key = key
+    sort.dir = dir
+    pagination.currentPage = 1
+    fetchClientes()
+}
 function onSearch(val) {
     search.value = val
-    // Debounce: espera 400ms antes de llamar al backend
     clearTimeout(searchTimeout)
     searchTimeout = setTimeout(() => {
         pagination.currentPage = 1
@@ -542,22 +485,13 @@ function onSearch(val) {
     }, 400)
 }
 
-function onSort({ key, dir }) {
-    sort.key = key
-    sort.dir = dir
-    pagination.currentPage = 1
-    fetchClientes()
-}
-
 // ── Navegación ─────────────────────────────────────────────────────────────
 function editCliente(row) {
     router.push(`/dashboard/clientes/${row.id}/editar`)
 }
-
 function viewCliente(row) {
     router.push(`/dashboard/clientes/${row.id}`)
 }
 
-// ── Carga inicial ──────────────────────────────────────────────────────────
 onMounted(fetchClientes)
 </script>

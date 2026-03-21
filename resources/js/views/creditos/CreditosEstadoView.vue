@@ -34,7 +34,7 @@
 
 <script setup>
 import { ref } from 'vue'
-import ChevronIcon from '@/components/ChevronIcon.vue'
+import ChevronIcon from '@/components/form/ChevronIcon.vue'
 
 // ── Estado ─────────────────────────────────────────────────────────────────
 const clienteId = ref('')

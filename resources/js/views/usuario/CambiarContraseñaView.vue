@@ -25,7 +25,7 @@
                             <input
                                 v-model="password.actual"
                                 :type="showPass.actual ? 'text' : 'password'"
-                                placeholder="********"
+                                placeholder="••••••••"
                                 :class="inputClass"
                             />
                             <button

@@ -3,7 +3,7 @@
         <!-- ── Panel izquierdo ── -->
         <AuthPanelLeft />
 
-        <!-- ── Panel derecho: formulario ── -->
+        <!-- ── Panel derecho ── -->
         <div
             class="w-full lg:w-160 bg-white flex flex-col justify-center px-10 py-14"
         >
@@ -32,7 +32,7 @@
                 </p>
             </div>
 
-            <!-- Alerta de error -->
+            <!-- Alerta de error general -->
             <transition name="fade">
                 <div
                     v-if="errorMessage"
@@ -45,84 +45,50 @@
             <!-- Formulario -->
             <form @submit.prevent="handleLogin" class="flex flex-col gap-5">
                 <!-- Email -->
-                <div class="flex flex-col gap-1.5">
-                    <label
-                        for="email"
-                        class="text-xs font-medium text-gray-500 uppercase tracking-wide"
-                    >
-                        Correo electrónico
-                    </label>
-                    <div class="relative">
-                        <input
-                            id="email"
-                            v-model="form.email"
-                            type="email"
-                            placeholder="tucorreo@mail.com"
-                            autocomplete="email"
-                            required
-                            :class="[
-                                'w-full h-11 pl-4 pr-10 rounded-lg border bg-gray-50 text-[#0A2540] text-sm outline-none transition-all',
-                                'placeholder:text-gray-300',
-                                'focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/15',
-                                fieldErrors.email
-                                    ? 'border-red-400'
-                                    : 'border-gray-200 hover:border-gray-300',
-                            ]"
-                        />
-                        <span
-                            class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-300 pointer-events-none"
-                        >
-                            <i class="fa-regular fa-envelope"></i>
-                        </span>
-                    </div>
-                    <p v-if="fieldErrors.email" class="text-xs text-red-500">
-                        {{ fieldErrors.email }}
-                    </p>
-                </div>
+                <FormInput
+                    label="Correo electrónico"
+                    type="email"
+                    v-model="form.email"
+                    placeholder="tucorreo@mail.com"
+                    size="lg"
+                    :error="fieldErrors.email"
+                    autocomplete="email"
+                    required
+                >
+                    <template #icon-right>
+                        <i class="fa-regular fa-envelope text-gray-300" />
+                    </template>
+                </FormInput>
 
                 <!-- Contraseña -->
                 <div class="flex flex-col gap-1.5">
-                    <label
-                        for="password"
-                        class="text-xs font-medium text-gray-500 uppercase tracking-wide"
+                    <FormInput
+                        label="Contraseña"
+                        :type="showPassword ? 'text' : 'password'"
+                        v-model="form.password"
+                        placeholder="••••••••"
+                        size="lg"
+                        :error="fieldErrors.password"
+                        autocomplete="current-password"
+                        required
                     >
-                        Contraseña
-                    </label>
-                    <div class="relative">
-                        <input
-                            id="password"
-                            v-model="form.password"
-                            :type="showPassword ? 'text' : 'password'"
-                            placeholder="********"
-                            autocomplete="current-password"
-                            required
-                            :class="[
-                                'w-full h-11 pl-4 pr-10 rounded-lg border bg-gray-50 text-[#0A2540] text-sm outline-none transition-all',
-                                'placeholder:text-gray-300',
-                                'focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/15',
-                                fieldErrors.password
-                                    ? 'border-red-400'
-                                    : 'border-gray-200 hover:border-gray-300',
-                            ]"
-                        />
-                        <button
-                            type="button"
-                            @click="showPassword = !showPassword"
-                            class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-300 hover:text-gray-500 transition-colors"
-                            :aria-label="
-                                showPassword
-                                    ? 'Ocultar contraseña'
-                                    : 'Mostrar contraseña'
-                            "
-                        >
-                            <EyeIcon :open="!showPassword" />
-                        </button>
-                    </div>
-                    <p v-if="fieldErrors.password" class="text-xs text-red-500">
-                        {{ fieldErrors.password }}
-                    </p>
+                        <template #icon-right>
+                            <button
+                                type="button"
+                                @click="showPassword = !showPassword"
+                                class="text-gray-300 hover:text-gray-500 transition-colors"
+                                :aria-label="
+                                    showPassword
+                                        ? 'Ocultar contraseña'
+                                        : 'Mostrar contraseña'
+                                "
+                            >
+                                <EyeIcon :open="!showPassword" />
+                            </button>
+                        </template>
+                    </FormInput>
 
-                    <div class="flex justify-end mt-0.5">
+                    <div class="flex justify-end">
                         <router-link
                             to="/forgot-password"
                             class="text-xs text-emerald-600 hover:text-emerald-700 font-medium transition-colors"
@@ -194,37 +160,22 @@
 </template>
 
 <script setup>
-import AuthPanelLeft from '@/components/AuthPanelLeft.vue'
-import EyeIcon from '@/components/form/EyeIcon.vue'
-
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 
+// -- Componentes ----------------------------------------
+import AuthPanelLeft from '@/components/AuthPanelLeft.vue'
+import FormInput from '@/components/form/FormInput.vue'
+import EyeIcon from '@/components/form/EyeIcon.vue'
+
 const router = useRouter()
 
-// ── Estado del formulario ──
-const form = reactive({
-    email: '',
-    password: '',
-})
-
+const form = reactive({ email: '', password: '' })
 const showPassword = ref(false)
 const loading = ref(false)
 const errorMessage = ref('')
-const fieldErrors = reactive({
-    email: '',
-    password: '',
-})
+const fieldErrors = reactive({ email: '', password: '' })
 
-// ── Features del panel izquierdo ──
-const features = [
-    'Crea créditos y registra abonos en segundos',
-    'Configura recordatorios de pago automatizados',
-    'Gestiona vencimientos y descarga informes detallados',
-    'Tus clientes consultan sus cuotas desde la App',
-]
-
-// ── Lógica de login ──
 async function handleLogin() {
     errorMessage.value = ''
     fieldErrors.email = ''
@@ -232,47 +183,39 @@ async function handleLogin() {
     loading.value = true
 
     try {
-        // 1. CSRF cookie de Laravel Sanctum
-        // await fetch("/sanctum/csrf-cookie", { credentials: "include" });
+        await fetch('/sanctum/csrf-cookie', { credentials: 'include' })
 
-        // // 2. Petición de login
-        // const response = await fetch("/api/login", {
-        //     method: "POST",
-        //     headers: {
-        //         "Content-Type": "application/json",
-        //         Accept: "application/json",
-        //         "X-XSRF-TOKEN": getCookie("XSRF-TOKEN"),
-        //     },
-        //     credentials: "include",
-        //     body: JSON.stringify({
-        //         email: form.email,
-        //         password: form.password,
-        //     }),
-        // });
+        const response = await fetch('/api/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Accept: 'application/json',
+                'X-XSRF-TOKEN': getCookie('XSRF-TOKEN'),
+            },
+            credentials: 'include',
+            body: JSON.stringify({
+                email: form.email,
+                password: form.password,
+            }),
+        })
 
-        // const data = await response.json();
+        const data = await response.json()
 
-        // // 3. Errores de validación (422)
-        // if (response.status === 422 && data.errors) {
-        //     if (data.errors.email) fieldErrors.email = data.errors.email[0];
-        //     if (data.errors.password)
-        //         fieldErrors.password = data.errors.password[0];
-        //     return;
-        // }
+        if (response.status === 422 && data.errors) {
+            if (data.errors.email) fieldErrors.email = data.errors.email[0]
+            if (data.errors.password)
+                fieldErrors.password = data.errors.password[0]
+            return
+        }
 
-        // // 4. Credenciales incorrectas
-        // if (!response.ok) {
-        //     errorMessage.value =
-        //         data.message || "Correo o contraseña incorrectos.";
-        //     return;
-        // }
+        if (!response.ok) {
+            errorMessage.value =
+                data.message || 'Correo o contraseña incorrectos.'
+            return
+        }
 
-        // // 5. Guardar token (si usas Sanctum con tokens)
-        // if (data.token) {
-        //     localStorage.setItem("auth_token", data.token);
-        // }
+        if (data.token) localStorage.setItem('auth_token', data.token)
 
-        // 6. Redirigir
         router.push('/dashboard')
     } catch {
         errorMessage.value = 'Error de conexión. Intenta nuevamente.'
@@ -281,7 +224,6 @@ async function handleLogin() {
     }
 }
 
-// ── Leer cookie por nombre ──
 function getCookie(name) {
     const value = `; ${document.cookie}`
     const parts = value.split(`; ${name}=`)

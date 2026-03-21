@@ -11,8 +11,9 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <!-- Estado de crédito -->
                 <div class="flex flex-col gap-1.5">
-                    <label :class="labelClass">Estado de crédito</label>
-                    <FormSelect
+                    <FormInput
+                        label="Estado de crédito"
+                        type="select"
                         v-model="filters.estadoCredito"
                         :options="estadoCreditoOpts"
                         placeholder="Seleccionar estado de crédito"
@@ -56,8 +57,9 @@
 
                 <!-- Notificación -->
                 <div class="flex flex-col gap-1.5">
-                    <label :class="labelClass">Notificación</label>
-                    <FormSelect
+                    <FormInput
+                        label="Notificación"
+                        type="select"
                         v-model="filters.notificacion"
                         :options="notificacionOpts"
                         placeholder="Seleccionar notificación"
@@ -69,8 +71,9 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <!-- Reporte -->
                 <div class="flex flex-col gap-1.5">
-                    <label :class="labelClass">Reporte</label>
-                    <FormSelect
+                    <FormInput
+                        label="Reporte"
+                        type="select"
                         v-model="filters.reporte"
                         :options="reporteOpts"
                         placeholder="Seleccionar reporte"
@@ -79,8 +82,9 @@
 
                 <!-- Aliado -->
                 <div class="flex flex-col gap-1.5">
-                    <label :class="labelClass">Aliado</label>
-                    <FormSelect
+                    <FormInput
+                        label="Aliado"
+                        type="select"
                         v-model="filters.aliado"
                         :options="aliadoOpts"
                         placeholder="Seleccione un aliado"
@@ -103,7 +107,9 @@
                 <!-- Estado de cliente -->
                 <div class="flex flex-col gap-1.5">
                     <label :class="labelClass">Estado de cliente</label>
-                    <FormSelect
+                    <FormInput
+                        label="Aliado"
+                        type="select"
                         v-model="filters.estadoCliente"
                         :options="estadoClienteOpts"
                         placeholder="Seleccione un estado"
@@ -451,8 +457,8 @@
 <script setup>
 // -- Componentes ----------------------------------------------
 import FormCheckbox from '@/components/form/FormCheckbox.vue'
-import FormSelect from '@/components/form/FormSelect.vue'
 import DataTable from '@/components/table/DataTable.vue'
+import FormInput from '@/components/form/FormInput.vue'
 
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'

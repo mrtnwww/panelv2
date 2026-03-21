@@ -33,7 +33,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import AppSidebar from '@/components/AppSideBar.vue'
 import AppNavbar from '@/components/AppNavbar.vue'
 
-// ── Estado del sidebar ─────────────────────────────────────────────────────
+// -- Estado del sidebar ----------------------------------------------------------
 
 const BREAKPOINT = 1024 // lg
 const SIDEBAR_W = 224 // w-56 = 224px
@@ -59,7 +59,7 @@ onMounted(() => {
 })
 onUnmounted(() => window.removeEventListener('resize', checkMobile))
 
-// ── Medidas dinámicas ──────────────────────────────────────────────────────
+// -- Medidas dinámicas ----------------------------------------------------------
 
 const navbarLeft = computed(() => {
     if (isMobile.value) return '0px'
@@ -71,7 +71,7 @@ const mainMargin = computed(() => {
     return sidebarOpen.value ? `${SIDEBAR_W}px` : `${SIDEBAR_COL}px`
 })
 
-// ── Usuario actual (reemplazar con store/composable de auth) ───────────────
+// -- Usuario actual ----------------------------------------------------------
 
 const currentUser = ref({
     name: 'Martín Desarrollo',

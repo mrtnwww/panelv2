@@ -393,7 +393,7 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 
 import DataTable from '@/components/table/DataTable.vue'
-import ChevronIcon from '@/components/ChevronIcon.vue'
+import ChevronIcon from '@/components/form/ChevronIcon.vue'
 
 const router = useRouter()
 

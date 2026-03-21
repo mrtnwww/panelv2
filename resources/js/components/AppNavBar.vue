@@ -47,10 +47,50 @@
             </span>
         </button>
 
-        <!-- Configuración -->
-        <button class="text-gray-400 hover:text-gray-600 transition-colors">
-            <i class="fa-solid fa-gear"></i>
-        </button>
+        <!-- Accesos rápidos -->
+        <div class="relative" ref="quickMenuRef">
+            <button
+                @click="quickMenuOpen = !quickMenuOpen"
+                :class="[
+                    'w-8 h-8 rounded-lg flex items-center justify-center transition-all',
+                    quickMenuOpen
+                        ? 'bg-[#1a5c2a] text-white'
+                        : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100',
+                ]"
+            >
+                <i class="fa-solid fa-gear"></i>
+            </button>
+
+            <!-- Dropdown accesos rápidos -->
+            <transition name="dropdown">
+                <div
+                    v-if="quickMenuOpen"
+                    class="absolute right-0 top-full mt-2 w-56 bg-white border border-gray-100 rounded-xl shadow-lg shadow-gray-200/60 py-2 z-50"
+                >
+                    <p
+                        class="px-4 py-1.5 text-[10px] font-semibold text-gray-400 uppercase tracking-widest"
+                    >
+                        Accesos rápidos
+                    </p>
+
+                    <button
+                        v-for="item in quickActions"
+                        :key="item.route"
+                        @click="quickNav(item.route)"
+                        class="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 transition-colors"
+                    >
+                        <div
+                            class="w-8 h-8 rounded-full bg-[#1a5c2a] text-white flex items-center justify-center shrink-0"
+                        >
+                            <i :class="item.icon"></i>
+                        </div>
+                        <span class="text-sm text-gray-700">{{
+                            item.label
+                        }}</span>
+                    </button>
+                </div>
+            </transition>
+        </div>
 
         <!-- Divisor -->
         <div class="w-px h-6 bg-gray-200" />
@@ -198,8 +238,32 @@ const props = defineProps({
 defineEmits(['toggle-sidebar'])
 
 const router = useRouter()
-const userMenuOpen = ref(false)
 const userMenuRef = ref(null)
+const userMenuOpen = ref(false)
+const quickMenuOpen = ref(false)
+
+const quickActions = [
+    {
+        label: 'Nuevo cliente',
+        route: '/clientes/nuevo',
+        icon: 'fa-regular fa-user',
+    },
+    {
+        label: 'Crear crédito',
+        route: '/creditos/nuevo',
+        icon: 'fa-solid fa-wallet',
+    },
+    {
+        label: 'Generar abono',
+        route: '/abonos/nuevo',
+        icon: 'fa-solid fa-dollar-sign',
+    },
+]
+
+function quickNav(route) {
+    quickMenuOpen.value = false
+    router.push(route)
+}
 
 const userInitials = computed(() => {
     return props.user.name

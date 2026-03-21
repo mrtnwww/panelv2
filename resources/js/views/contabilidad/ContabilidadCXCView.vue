@@ -25,8 +25,9 @@
                 </div>
 
                 <div class="flex flex-col gap-1.5">
-                    <label :class="labelClass">Establecimiento</label>
-                    <FormSelect
+                    <FormInput
+                        label="Establecimiento"
+                        type="select"
                         v-model="filters.establecimiento"
                         :options="establecimientosOpts"
                         placeholder="Seleccione un aliado"
@@ -149,8 +150,10 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
+
+// -- Componentes ------------------------------------------
 import DataTable from '@/components/table/DataTable.vue'
-import FormSelect from '@/components/form/FormSelect.vue'
+import FormInput from '@/components/form/FormInput.vue'
 
 // ── Columnas ───────────────────────────────────────────────────────────────
 const columns = [

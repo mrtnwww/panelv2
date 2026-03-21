@@ -512,20 +512,20 @@
 <script setup>
 import { ref, reactive, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import CollapsibleCard from '@/components/CollapsibleCard.vue'
+import CollapsibleCard from '@/components/cards/CollapsibleCard.vue'
 import FileUpload from '@/components/form/FileUpload.vue'
 import FormInput from '@/components/form/FormInput.vue'
 import ReferenciaCard from '@/components/form/ReferenciaCard.vue'
 
 const router = useRouter()
 
-// ── Estado global ──────────────────────────────────────────────────────────
+// -- Estado global ----------------------------------------------------------
 const loading = ref(false)
 const errorMessage = ref('')
 const loadingReenvio = ref(null)
 const errors = reactive({})
 
-// ── Formulario ─────────────────────────────────────────────────────────────
+// -- Formulario ----------------------------------------------------------
 const form = reactive({
     // 1. Crear cliente
     cedula: '',
@@ -583,7 +583,7 @@ const form = reactive({
     documentosFirma: [],
 })
 
-// ── Computed: secciones completadas ───────────────────────────────────────
+// -- Secciones completadas ----------------------------------------------------------
 const completado = computed(() => ({
     cliente: !!form.cedula,
     personal: !!form.nombres && !!form.apellidos && !!form.telefono,
@@ -596,7 +596,7 @@ const completado = computed(() => ({
     firma: form.documentosFirma.length > 0,
 }))
 
-// ── Opciones ───────────────────────────────────────────────────────────────
+// -- Opciones ----------------------------------------------------------
 const productosOpts = []
 
 const ciudadesOpts = [
@@ -631,7 +631,7 @@ const estadoConsultaOpts = [
     { value: 'revision', label: 'En revisión' },
 ]
 
-// ── Acciones ───────────────────────────────────────────────────────────────
+// -- Acciones ----------------------------------------------------------
 async function reenviarAutorizacion(tipo) {
     loadingReenvio.value = tipo
     try {
