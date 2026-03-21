@@ -1,7 +1,7 @@
 <template>
     <div class="flex flex-col gap-5">
         <!-- Encabezado -->
-        <h1 class="text-lg font-semibold text-[#0A2540]">Generar crédito</h1>
+        <h1 class="text-lg font-semibold text-[#0A2540]">Crear crédito</h1>
 
         <!-- Barra de selección de cliente -->
         <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">

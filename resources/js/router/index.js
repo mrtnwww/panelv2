@@ -66,6 +66,12 @@ const routes = [
                 name: 'creditos.estado',
                 component: () => import('@/views/creditos/CreditosEstadoView.vue'),
             },
+            // -- ABONOS --------------------------------------------------------------------
+            {
+                path: 'abonos/nuevo',
+                name: 'abonos.nuevo',
+                component: () => import('@/views/abonos/AbonosCrearView.vue'),
+            },
             // -- INFORMES --------------------------------------------------------------------
             {
                 path: 'informes/creditos',
