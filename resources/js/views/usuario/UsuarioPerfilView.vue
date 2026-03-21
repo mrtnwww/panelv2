@@ -166,7 +166,7 @@
                             <input
                                 v-model="form.rol"
                                 type="text"
-                                placeholder="Administrador"
+                                placeholder="Asesor"
                                 :class="inputClass"
                             />
                         </div>

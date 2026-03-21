@@ -95,7 +95,7 @@
                     <button
                         @click="fetchData"
                         :disabled="loadingRefresh"
-                        class="h-9 w-9 rounded-lg bg-orange-500 hover:bg-orange-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white transition-all flex items-center justify-center flex-shrink-0"
+                        class="h-9 w-9 rounded-lg bg-orange-500 hover:bg-orange-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white transition-all flex items-center justify-center shrink-0"
                         title="Actualizar valores"
                     >
                         <i class="fa-solid fa-arrow-rotate-right"></i>

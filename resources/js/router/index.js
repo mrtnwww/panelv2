@@ -1,11 +1,11 @@
-import { createRouter, createWebHistory } from "vue-router";
+import { createRouter, createWebHistory } from 'vue-router'
 
 // Vistas
-import LoginView from "@/views/auth/LoginView.vue";
-import RegisterView from "@/views/auth/RegistroView.vue";
+import LoginView from '@/views/auth/LoginView.vue'
+import RegisterView from '@/views/auth/RegistroView.vue'
 
 // Layouts
-import AuthenticatedLayout from "@/layouts/AuthenticatedLayout.vue";
+import AuthenticatedLayout from '@/layouts/AuthenticatedLayout.vue'
 
 const routes = [
     {
@@ -15,13 +15,13 @@ const routes = [
         },
     },
     {
-        path: "/login",
-        name: "login",
+        path: '/login',
+        name: 'login',
         component: LoginView,
     },
     {
-        path: "/registro",
-        name: "registro",
+        path: '/registro',
+        name: 'registro',
         component: RegisterView,
     },
     // -- Rutas autenticadas ----------------------------------------------------------------
@@ -38,33 +38,39 @@ const routes = [
             {
                 path: 'clientes/nuevo',
                 name: 'clientes.nuevo',
-                component: () => import('@/views/clientes/ClienteCrearView.vue'),
+                component: () =>
+                    import('@/views/clientes/ClienteCrearView.vue'),
             },
             {
                 path: 'clientes/validar',
                 name: 'clientes.validar',
-                component: () => import('@/views/clientes/ClientesValidarView.vue'),
+                component: () =>
+                    import('@/views/clientes/ClientesValidarView.vue'),
             },
             {
                 path: 'clientes/analisis',
                 name: 'clientes.analisis',
-                component: () => import('@/views/clientes/ClientesAnalisisView.vue'),
+                component: () =>
+                    import('@/views/clientes/ClientesAnalisisView.vue'),
             },
             {
                 path: 'clientes',
                 name: 'clientes',
-                component: () => import('@/views/clientes/ClientesListaView.vue'),
+                component: () =>
+                    import('@/views/clientes/ClientesListaView.vue'),
             },
             // -- CREDITOS --------------------------------------------------------------------
             {
                 path: 'creditos/nuevo',
                 name: 'creditos.nuevo',
-                component: () => import('@/views/creditos/CreditosCrearView.vue'),
+                component: () =>
+                    import('@/views/creditos/CreditosCrearView.vue'),
             },
             {
                 path: 'creditos/estado',
                 name: 'creditos.estado',
-                component: () => import('@/views/creditos/CreditosEstadoView.vue'),
+                component: () =>
+                    import('@/views/creditos/CreditosEstadoView.vue'),
             },
             // -- ABONOS --------------------------------------------------------------------
             {
@@ -72,11 +78,39 @@ const routes = [
                 name: 'abonos.nuevo',
                 component: () => import('@/views/abonos/AbonosCrearView.vue'),
             },
+            // -- PRODUCTOS --------------------------------------------------------------------
+            {
+                path: 'productos/nuevo',
+                name: 'productos.nuevo',
+                component: () =>
+                    import('@/views/productos/ProductosCrearView.vue'),
+            },
+            // -- COBRANZA --------------------------------------------------------------------
+            {
+                path: 'cobranza/creditos',
+                name: 'cobranza.creditos',
+                component: () =>
+                    import('@/views/cobranza/CobranzaCreditosView.vue'),
+            },
+            {
+                path: 'cobranza/tareas',
+                name: 'cobranza.tareas',
+                component: () =>
+                    import('@/views/cobranza/CobranzaTareasView.vue'),
+            },
+            // -- CONTABILIDAD --------------------------------------------------------------------
+            {
+                path: 'contabilidad/recibo-cxc',
+                name: 'cobranza.reciboCXC',
+                component: () =>
+                    import('@/views/contabilidad/ContabilidadCXCView.vue'),
+            },
             // -- INFORMES --------------------------------------------------------------------
             {
                 path: 'informes/creditos',
                 name: 'informes.creditos',
-                component: () => import('@/views/informes/CreditosListaView.vue'),
+                component: () =>
+                    import('@/views/informes/CreditosListaView.vue'),
             },
             {
                 path: 'informes/abonos',
@@ -86,18 +120,21 @@ const routes = [
             {
                 path: 'informes/cartera',
                 name: 'informes.cartera',
-                component: () => import('@/views/informes/CarteraListaView.vue'),
+                component: () =>
+                    import('@/views/informes/CarteraListaView.vue'),
             },
             // -- USUARIO --------------------------------------------------------------------
             {
                 path: 'usuario/perfil',
                 name: 'usuario.perfil',
-                component: () => import('@/views/usuario/UsuarioPerfilView.vue'),
+                component: () =>
+                    import('@/views/usuario/UsuarioPerfilView.vue'),
             },
             {
                 path: 'usuario/cambiar-clave',
                 name: 'usuario.cambiarClave',
-                component: () => import('@/views/usuario/CambiarContraseñaView.vue'),
+                component: () =>
+                    import('@/views/usuario/CambiarContraseñaView.vue'),
             },
         ],
     },
@@ -105,13 +142,13 @@ const routes = [
         path: '/:pathMatch(.*)*',
         name: 'notFound',
         component: () => import('@/views/NotFoundView.vue'),
-    }
-];
+    },
+]
 
 const router = createRouter({
     history: createWebHistory(),
     routes,
-});
+})
 
 // -- Helper: comprueba si hay sesión activa ----------------------------------
 function isAuthenticated() {
