@@ -55,6 +55,17 @@ const routes = [
                 name: 'clientes',
                 component: () => import('@/views/clientes/ClientesListaView.vue'),
             },
+            // -- CREDITOS --------------------------------------------------------------------
+            {
+                path: 'creditos/nuevo',
+                name: 'creditos.nuevo',
+                component: () => import('@/views/creditos/CreditosCrearView.vue'),
+            },
+            {
+                path: 'creditos/estado',
+                name: 'creditos.estado',
+                component: () => import('@/views/creditos/CreditosEstadoView.vue'),
+            },
             // -- INFORMES --------------------------------------------------------------------
             {
                 path: 'informes/creditos',
