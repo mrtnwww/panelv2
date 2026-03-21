@@ -8,7 +8,7 @@
             <div class="flex flex-col sm:flex-row gap-8">
                 <!-- Panel izquierdo: avatar -->
                 <div
-                    class="flex flex-col items-center gap-3 sm:w-56 flex-shrink-0"
+                    class="flex flex-col items-center gap-3 sm:w-56 shrink-0"
                 >
                     <div class="flex flex-col items-start gap-1 w-full mb-2">
                         <p class="text-base font-semibold text-[#0A2540]">

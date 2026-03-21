@@ -5,7 +5,7 @@
         <div class="bg-white rounded-xl border border-gray-200 p-6 sm:p-8">
             <div class="flex flex-col sm:flex-row gap-8">
                 <!-- Descripción -->
-                <div class="sm:w-56 flex-shrink-0">
+                <div class="sm:w-56 shrink-0">
                     <p class="text-base font-semibold text-[#0A2540]">
                         Seguridad
                     </p>
@@ -25,7 +25,7 @@
                             <input
                                 v-model="password.actual"
                                 :type="showPass.actual ? 'text' : 'password'"
-                                placeholder="••••••••"
+                                placeholder="********"
                                 :class="inputClass"
                             />
                             <button
@@ -161,77 +161,14 @@ import EyeIcon from '@/components/form/EyeIcon.vue'
 
 import { ref, reactive, computed } from 'vue'
 
-// ── Estilos compartidos ────────────────────────────────────────────────────
+// -- Estilos compartidos ---------------------------
 const labelClass = 'text-sm font-medium text-gray-500'
 const inputClass =
     'w-full h-10 px-3 rounded-lg border border-gray-200 bg-gray-50 text-[#0A2540] text-sm outline-none transition-all placeholder:text-gray-300 focus:bg-white focus:border-[#1a5c2a] focus:ring-2 focus:ring-[#1a5c2a]/10'
 
-// ── Avatar ─────────────────────────────────────────────────────────────────
-const avatarInputRef = ref(null)
-const avatarPreview = ref(null)
-const avatarFile = ref(null)
-
-function triggerAvatarInput() {
-    avatarInputRef.value?.click()
-}
-
-function onAvatarChange(e) {
-    const file = e.target.files[0]
-    if (!file) return
-    avatarFile.value = file
-    avatarPreview.value = URL.createObjectURL(file)
-}
-
-function clearAvatar() {
-    avatarPreview.value = null
-    avatarFile.value = null
-    if (avatarInputRef.value) avatarInputRef.value.value = ''
-}
-
-// ── Formulario perfil ──────────────────────────────────────────────────────
-const form = reactive({
-    nombre: 'Martin desarrollo',
-    apellidos: '',
-    empresa: '',
-    rol: '',
-    telefono: '',
-    correo: 'martindesarrollo@creditransito.com',
-})
-
-const loading = ref(false)
 const feedback = reactive({ message: '', type: '' })
 
-async function handleSave() {
-    loading.value = true
-    feedback.message = ''
-    try {
-        const payload = new FormData()
-        Object.entries(form).forEach(([k, v]) => payload.append(k, v ?? ''))
-        if (avatarFile.value) payload.append('avatar', avatarFile.value)
-
-        const response = await fetch('/api/perfil', {
-            method: 'POST',
-            headers: {
-                Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
-            },
-            body: payload,
-        })
-
-        if (!response.ok) throw new Error()
-
-        feedback.message = 'Información guardada correctamente.'
-        feedback.type = 'success'
-    } catch {
-        feedback.message =
-            'No se pudo guardar la información. Intenta nuevamente.'
-        feedback.type = 'error'
-    } finally {
-        loading.value = false
-        setTimeout(() => (feedback.message = ''), 4000)
-    }
-}
-
-// ── Cambio de contraseña ───────────────────────────────────────────────────
+// -- Cambio de contraseña ----------------------------------------
 const password = reactive({ actual: '', nueva: '', confirmar: '' })
 const showPass = reactive({ actual: false, nueva: false, confirmar: false })
 const loadingPass = ref(false)

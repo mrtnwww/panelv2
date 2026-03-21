@@ -93,7 +93,7 @@
                             id="password"
                             v-model="form.password"
                             :type="showPassword ? 'text' : 'password'"
-                            placeholder="••••••••"
+                            placeholder="********"
                             autocomplete="current-password"
                             required
                             :class="[
