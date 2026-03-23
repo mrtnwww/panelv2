@@ -183,38 +183,38 @@ async function handleLogin() {
     loading.value = true
 
     try {
-        await fetch('/sanctum/csrf-cookie', { credentials: 'include' })
+        // await fetch('/sanctum/csrf-cookie', { credentials: 'include' })
 
-        const response = await fetch('/api/login', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                Accept: 'application/json',
-                'X-XSRF-TOKEN': getCookie('XSRF-TOKEN'),
-            },
-            credentials: 'include',
-            body: JSON.stringify({
-                email: form.email,
-                password: form.password,
-            }),
-        })
+        // const response = await fetch('/api/login', {
+        //     method: 'POST',
+        //     headers: {
+        //         'Content-Type': 'application/json',
+        //         Accept: 'application/json',
+        //         'X-XSRF-TOKEN': getCookie('XSRF-TOKEN'),
+        //     },
+        //     credentials: 'include',
+        //     body: JSON.stringify({
+        //         email: form.email,
+        //         password: form.password,
+        //     }),
+        // })
 
-        const data = await response.json()
+        // const data = await response.json()
 
-        if (response.status === 422 && data.errors) {
-            if (data.errors.email) fieldErrors.email = data.errors.email[0]
-            if (data.errors.password)
-                fieldErrors.password = data.errors.password[0]
-            return
-        }
+        // if (response.status === 422 && data.errors) {
+        //     if (data.errors.email) fieldErrors.email = data.errors.email[0]
+        //     if (data.errors.password)
+        //         fieldErrors.password = data.errors.password[0]
+        //     return
+        // }
 
-        if (!response.ok) {
-            errorMessage.value =
-                data.message || 'Correo o contraseña incorrectos.'
-            return
-        }
+        // if (!response.ok) {
+        //     errorMessage.value =
+        //         data.message || 'Correo o contraseña incorrectos.'
+        //     return
+        // }
 
-        if (data.token) localStorage.setItem('auth_token', data.token)
+        // if (data.token) localStorage.setItem('auth_token', data.token)
 
         router.push('/dashboard')
     } catch {

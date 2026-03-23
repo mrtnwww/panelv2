@@ -10,15 +10,13 @@
             <!-- Fila 1 -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <!-- Estado de crédito -->
-                <div class="flex flex-col gap-1.5">
-                    <FormInput
-                        label="Estado de crédito"
-                        type="select"
-                        v-model="filters.estadoCredito"
-                        :options="estadoCreditoOpts"
-                        placeholder="Seleccionar estado de crédito"
-                    />
-                </div>
+                <FormInput
+                    label="Estado de crédito"
+                    type="select"
+                    v-model="filters.estadoCredito"
+                    :options="estadoCreditoOpts"
+                    placeholder="Seleccionar estado de crédito"
+                />
 
                 <!-- Meses pagados + Por rango -->
                 <div class="flex flex-col gap-1.5">
@@ -37,84 +35,68 @@
                                 : 'grid-cols-1'
                         "
                     >
-                        <input
+                        <FormInput
                             v-model="filters.mesesPagados"
                             type="number"
-                            min="0"
                             placeholder="Digite el número de meses"
-                            :class="inputClass"
                         />
-                        <input
+                        <FormInput
                             v-if="filters.mesesPorRango"
                             v-model="filters.mesesPagadosHasta"
                             type="number"
-                            min="0"
                             placeholder="Hasta"
-                            :class="inputClass"
                         />
                     </div>
                 </div>
 
                 <!-- Notificación -->
-                <div class="flex flex-col gap-1.5">
-                    <FormInput
-                        label="Notificación"
-                        type="select"
-                        v-model="filters.notificacion"
-                        :options="notificacionOpts"
-                        placeholder="Seleccionar notificación"
-                    />
-                </div>
+                <FormInput
+                    label="Notificación"
+                    type="select"
+                    v-model="filters.notificacion"
+                    :options="notificacionOpts"
+                    placeholder="Seleccionar notificación"
+                />
             </div>
 
             <!-- Fila 2 -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <!-- Reporte -->
-                <div class="flex flex-col gap-1.5">
-                    <FormInput
-                        label="Reporte"
-                        type="select"
-                        v-model="filters.reporte"
-                        :options="reporteOpts"
-                        placeholder="Seleccionar reporte"
-                    />
-                </div>
+                <FormInput
+                    label="Reporte"
+                    type="select"
+                    v-model="filters.reporte"
+                    :options="reporteOpts"
+                    placeholder="Seleccionar reporte"
+                />
 
                 <!-- Aliado -->
-                <div class="flex flex-col gap-1.5">
-                    <FormInput
-                        label="Aliado"
-                        type="select"
-                        v-model="filters.aliado"
-                        :options="aliadoOpts"
-                        placeholder="Seleccione un aliado"
-                    />
-                </div>
+                <FormInput
+                    label="Aliado"
+                    type="select"
+                    v-model="filters.aliado"
+                    :options="aliadoOpts"
+                    placeholder="Seleccione un aliado"
+                />
 
                 <!-- Mes de corte -->
-                <div class="flex flex-col gap-1.5">
-                    <label :class="labelClass">Mes de corte</label>
-                    <input
-                        v-model="filters.mesCorte"
-                        type="month"
-                        :class="inputClass"
-                    />
-                </div>
+                <FormInput
+                    label="Mes de corte"
+                    type="month"
+                    v-model="filters.mesCorte"
+                />
             </div>
 
             <!-- Fila 3 -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <!-- Estado de cliente -->
-                <div class="flex flex-col gap-1.5">
-                    <label :class="labelClass">Estado de cliente</label>
-                    <FormInput
-                        label="Aliado"
-                        type="select"
-                        v-model="filters.estadoCliente"
-                        :options="estadoClienteOpts"
-                        placeholder="Seleccione un estado"
-                    />
-                </div>
+                <FormInput
+                    label="Estado de cliente"
+                    type="select"
+                    v-model="filters.estadoCliente"
+                    :options="estadoClienteOpts"
+                    placeholder="Seleccione un estado"
+                />
             </div>
 
             <!-- Búsqueda avanzada toggle -->
@@ -146,9 +128,9 @@
                             </svg>
                         </div>
                     </div>
-                    <span class="text-sm font-medium text-gray-600"
-                        >Búsqueda avanzada</span
-                    >
+                    <span class="text-sm font-medium text-gray-600">
+                        Búsqueda avanzada
+                    </span>
                 </label>
             </div>
 
@@ -175,20 +157,16 @@
                                         : 'grid-cols-1'
                                 "
                             >
-                                <input
+                                <FormInput
                                     v-model="filters.cuotasPagadas"
                                     type="number"
-                                    min="0"
                                     placeholder="Digite el número de cuotas"
-                                    :class="inputClass"
                                 />
-                                <input
+                                <FormInput
                                     v-if="filters.cuotasPorRango"
                                     v-model="filters.cuotasPagadasHasta"
                                     type="number"
-                                    min="0"
                                     placeholder="Hasta"
-                                    :class="inputClass"
                                 />
                             </div>
                         </div>
@@ -212,20 +190,16 @@
                                         : 'grid-cols-1'
                                 "
                             >
-                                <input
+                                <FormInput
                                     v-model="filters.numeroDias"
                                     type="number"
-                                    min="0"
                                     placeholder="Digite el número de días"
-                                    :class="inputClass"
                                 />
-                                <input
+                                <FormInput
                                     v-if="filters.diasPorRango"
                                     v-model="filters.numeroDiasHasta"
                                     type="number"
-                                    min="0"
                                     placeholder="Hasta"
-                                    :class="inputClass"
                                 />
                             </div>
                         </div>
@@ -249,16 +223,14 @@
                                         : 'grid-cols-1'
                                 "
                             >
-                                <input
+                                <FormInput
                                     v-model="filters.vencimientoCuota"
                                     type="date"
-                                    :class="inputClass"
                                 />
-                                <input
+                                <FormInput
                                     v-if="filters.vencimientoPorRango"
                                     v-model="filters.vencimientoCuotaHasta"
                                     type="date"
-                                    :class="inputClass"
                                 />
                             </div>
                         </div>
@@ -271,35 +243,11 @@
                 class="flex flex-col sm:flex-row sm:items-end gap-4 pt-3 border-t border-gray-100"
             >
                 <!-- Radio tipo informe -->
-                <div class="flex flex-col gap-2">
-                    <label
-                        v-for="tipo in tiposInforme"
-                        :key="tipo.value"
-                        class="flex items-center gap-2.5 cursor-pointer group"
-                    >
-                        <div class="relative shrink-0">
-                            <input
-                                v-model="filters.tipoInforme"
-                                type="radio"
-                                :value="tipo.value"
-                                class="peer sr-only"
-                            />
-                            <div
-                                class="w-4 h-4 rounded-full border-2 border-gray-200 bg-gray-50 peer-checked:border-[#1a5c2a] transition-all flex items-center justify-center"
-                            >
-                                <div
-                                    v-if="filters.tipoInforme === tipo.value"
-                                    class="w-2 h-2 rounded-full bg-[#1a5c2a]"
-                                />
-                            </div>
-                        </div>
-                        <span
-                            class="text-sm text-gray-600 group-hover:text-gray-800 transition-colors"
-                        >
-                            {{ tipo.label }}
-                        </span>
-                    </label>
-                </div>
+                <FormRadioGroup
+                    v-model="filters.tipoInforme"
+                    :options="tiposInforme"
+                    :vertical="true"
+                />
 
                 <!-- Botones descarga -->
                 <div class="flex flex-wrap gap-2 sm:ml-auto">
@@ -421,7 +369,7 @@
                 </span>
             </template>
 
-            <!-- Valor compra + crédito como moneda -->
+            <!-- Columnas de moneda -->
             <template #cell-valorCompra="{ value }">
                 <span class="tabular-nums text-gray-600">{{
                     formatCurrency(value)
@@ -455,17 +403,17 @@
 </template>
 
 <script setup>
-// -- Componentes ----------------------------------------------
+import { ref, reactive, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+
+import FormRadioGroup from '@/components/form/FormRadioGroup.vue'
 import FormCheckbox from '@/components/form/FormCheckbox.vue'
 import DataTable from '@/components/table/DataTable.vue'
 import FormInput from '@/components/form/FormInput.vue'
 
-import { ref, reactive, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-
 const router = useRouter()
 
-// -- Columnas ----------------------------------------------
+// ── Columnas ───────────────────────────────────────────────────────────────
 const columns = [
     {
         key: 'numCredito',
@@ -659,8 +607,6 @@ function onToggleRow(id) {
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 const labelClass = 'text-xs font-medium text-gray-400 uppercase tracking-wide'
-const inputClass =
-    'w-full h-9 px-3 rounded-lg border border-gray-200 bg-gray-50 text-sm text-gray-600 outline-none focus:border-[#1a5c2a] focus:ring-2 focus:ring-[#1a5c2a]/10 transition-all placeholder:text-gray-300'
 
 function formatCurrency(value) {
     if (value == null) return '—'
@@ -731,9 +677,7 @@ async function fetchCreditos() {
     try {
         const response = await fetch(
             `/api/cobranza/vencimientos?${buildParams()}`,
-            {
-                headers: authHeaders(),
-            }
+            { headers: authHeaders() }
         )
         if (!response.ok) throw new Error()
         const data = await response.json()

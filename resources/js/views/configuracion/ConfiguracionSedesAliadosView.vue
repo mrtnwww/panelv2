@@ -101,7 +101,7 @@
                     </div>
                 </template>
 
-                <!-- Acciones: 3 botones + configuración (tab Aliados/Sedes) -->
+                <!-- Acciones aliados/sedes -->
                 <template #cell-acciones="{ row }">
                     <div class="flex items-center gap-1.5 flex-wrap">
                         <button
@@ -250,6 +250,7 @@
                 <div
                     class="bg-white rounded-2xl w-full max-w-lg p-6 flex flex-col gap-5 shadow-xl"
                 >
+                    <!-- Cabecera modal -->
                     <div class="flex items-center justify-between">
                         <h2 class="text-base font-semibold text-[#0A2540]">
                             {{
@@ -278,71 +279,53 @@
                         </button>
                     </div>
 
+                    <!-- Campos -->
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div class="sm:col-span-2 flex flex-col gap-1.5">
-                            <label :class="labelClass"
-                                >Nombre del establecimiento
-                                <span class="text-red-400">*</span></label
-                            >
-                            <input
-                                v-model="modal.form.establecimiento"
-                                type="text"
-                                placeholder="Nombre del aliado o sede"
-                                :class="inputClass"
-                            />
-                        </div>
-                        <div class="flex flex-col gap-1.5">
-                            <label :class="labelClass"
-                                >Correo electrónico</label
-                            >
-                            <input
-                                v-model="modal.form.email"
-                                type="email"
-                                placeholder="contacto@empresa.com"
-                                :class="inputClass"
-                            />
-                        </div>
-                        <div class="flex flex-col gap-1.5">
-                            <FormInput
-                                label="Periodicidad"
-                                type="select"
-                                v-model="modal.form.periodicidad"
-                                :options="periodicidadOpts"
-                                placeholder="Seleccione"
-                            />
-                        </div>
-                        <div class="flex flex-col gap-1.5">
-                            <FormInput
-                                label="Tipo"
-                                type="select"
-                                v-model="modal.form.tipo"
-                                :options="tipoOpts"
-                                placeholder="Aliado o Sede"
-                            />
-                        </div>
-                        <div class="flex flex-col gap-1.5">
-                            <label :class="labelClass"
-                                >Vigencia usuarios (días)</label
-                            >
-                            <input
-                                v-model="modal.form.vigenciaDias"
-                                type="number"
-                                min="0"
-                                placeholder="—"
-                                :class="inputClass"
-                            />
-                        </div>
-                        <div class="sm:col-span-2">
-                            <FileUpload
-                                label="Logo del establecimiento"
-                                v-model="modal.form.logo"
-                                accept="image/*"
-                                accept-label="PNG o JPG — máx. 2MB"
-                                placeholder="Sube el logo"
-                            />
-                        </div>
+                        <FormInput
+                            label="Nombre del establecimiento"
+                            v-model="modal.form.establecimiento"
+                            placeholder="Nombre del aliado o sede"
+                            :required="true"
+                            wrapper-class="sm:col-span-2"
+                        />
+                        <FormInput
+                            label="Correo electrónico"
+                            type="email"
+                            v-model="modal.form.email"
+                            placeholder="contacto@empresa.com"
+                        />
+                        <FormInput
+                            label="Periodicidad"
+                            type="select"
+                            v-model="modal.form.periodicidad"
+                            :options="periodicidadOpts"
+                            placeholder="Seleccione"
+                        />
+                        <FormInput
+                            label="Tipo"
+                            type="select"
+                            v-model="modal.form.tipo"
+                            :options="tipoOpts"
+                            placeholder="Aliado o Sede"
+                        />
+                        <FormInput
+                            label="Vigencia usuarios (días)"
+                            type="number"
+                            v-model="modal.form.vigenciaDias"
+                            placeholder="—"
+                        />
+                        <FormInput
+                            label="Logo del establecimiento"
+                            type="file"
+                            v-model="modal.form.logo"
+                            accept="image/*"
+                            button-label="Subir logo"
+                            placeholder="PNG o JPG — máx. 2MB"
+                            wrapper-class="sm:col-span-2"
+                        />
                     </div>
 
+                    <!-- Error -->
                     <transition name="fade">
                         <div
                             v-if="modal.error"
@@ -352,6 +335,7 @@
                         </div>
                     </transition>
 
+                    <!-- Acciones modal -->
                     <div class="flex justify-end gap-2 pt-1">
                         <button
                             @click="modal.open = false"
@@ -400,9 +384,6 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-
-// -- Componentes -------------------------------------------
-import FileUpload from '@/components/form/FileUpload.vue'
 import DataTable from '@/components/table/DataTable.vue'
 import FormInput from '@/components/form/FormInput.vue'
 
@@ -433,11 +414,11 @@ const columnsAlianzas = [
     { key: 'accionesAlianza', label: 'Acciones', sortable: false },
 ]
 
-const activeColumns = computed(() => {
-    if (activeTab.value === 'aliados' || activeTab.value === 'sedes')
-        return columnsAliados
-    return columnsAlianzas
-})
+const activeColumns = computed(() =>
+    activeTab.value === 'aliados' || activeTab.value === 'sedes'
+        ? columnsAliados
+        : columnsAlianzas
+)
 
 // ── Estado ─────────────────────────────────────────────────────────────────
 const registros = ref([])
@@ -461,10 +442,6 @@ const tipoOpts = [
 ]
 
 // ── Helpers ────────────────────────────────────────────────────────────────
-const labelClass = 'text-xs font-medium text-gray-500 uppercase tracking-wide'
-const inputClass =
-    'w-full h-9 px-3 rounded-lg border border-gray-200 bg-gray-50 text-[#0A2540] text-sm outline-none transition-all placeholder:text-gray-300 focus:bg-white focus:border-[#1a5c2a] focus:ring-2 focus:ring-[#1a5c2a]/10'
-
 function authHeaders() {
     return {
         Accept: 'application/json',
@@ -484,12 +461,10 @@ async function fetchRegistros() {
             search: search.value,
             tab: activeTab.value,
         })
-
         const response = await fetch(`/api/sedes-aliados?${params}`, {
             headers: authHeaders(),
         })
         if (!response.ok) throw new Error()
-
         const data = await response.json()
         registros.value = data.data
         pagination.total = data.meta.total
@@ -567,7 +542,7 @@ const modal = reactive({
 })
 
 function abrirModalCrear() {
-    modal.form = {
+    Object.assign(modal.form, {
         id: null,
         establecimiento: '',
         email: '',
@@ -575,14 +550,14 @@ function abrirModalCrear() {
         tipo: '',
         vigenciaDias: '',
         logo: null,
-    }
+    })
     modal.mode = 'crear'
     modal.error = ''
     modal.open = true
 }
 
 function abrirModalEditar(row) {
-    modal.form = { ...row, logo: null }
+    Object.assign(modal.form, { ...row, logo: null })
     modal.mode = 'editar'
     modal.error = ''
     modal.open = true
@@ -602,16 +577,11 @@ async function guardar() {
             if (k === 'logo' && v) payload.append('logo', v)
             else if (k !== 'logo') payload.append(k, v ?? '')
         })
-
         const response = await fetch(
             isEditar
                 ? `/api/sedes-aliados/${modal.form.id}`
                 : '/api/sedes-aliados',
-            {
-                method: isEditar ? 'POST' : 'POST',
-                headers: authHeaders(),
-                body: payload,
-            }
+            { method: 'POST', headers: authHeaders(), body: payload }
         )
         if (!response.ok) throw new Error()
         modal.open = false
@@ -631,16 +601,19 @@ onMounted(fetchRegistros)
 .modal-leave-active {
     transition: opacity 0.15s ease;
 }
+
 .modal-enter-from,
 .modal-leave-to {
     opacity: 0;
 }
+
 .fade-enter-active,
 .fade-leave-active {
     transition:
         opacity 0.2s ease,
         transform 0.2s ease;
 }
+
 .fade-enter-from,
 .fade-leave-to {
     opacity: 0;

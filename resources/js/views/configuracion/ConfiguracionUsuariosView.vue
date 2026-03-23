@@ -41,7 +41,6 @@
             <!-- Nombre + email con avatar -->
             <template #cell-nombre="{ row }">
                 <div class="flex items-center gap-3">
-                    <!-- Avatar -->
                     <div
                         class="w-9 h-9 rounded-full bg-gray-200 flex-shrink-0 overflow-hidden"
                     >
@@ -67,7 +66,6 @@
                             />
                         </svg>
                     </div>
-                    <!-- Texto -->
                     <div class="flex flex-col leading-tight">
                         <span class="text-sm font-semibold text-[#0A2540]">{{
                             row.nombre
@@ -79,12 +77,12 @@
                 </div>
             </template>
 
-            <!-- Roles como lista separada por comas -->
+            <!-- Tipo de usuario -->
             <template #cell-tipoUsuario="{ value }">
                 <span class="text-sm text-gray-600">{{ value }}</span>
             </template>
 
-            <!-- Fecha de caducidad con dash si no hay -->
+            <!-- Fecha de caducidad -->
             <template #cell-fechaCaducidad="{ value }">
                 <span :class="value ? caducidadClass(value) : 'text-gray-300'">
                     {{ value || '—' }}
@@ -155,6 +153,7 @@
                 <div
                     class="bg-white rounded-2xl w-full max-w-lg p-6 flex flex-col gap-5 shadow-xl"
                 >
+                    <!-- Cabecera modal -->
                     <div class="flex items-center justify-between">
                         <h2 class="text-base font-semibold text-[#0A2540]">
                             {{
@@ -183,55 +182,39 @@
                         </button>
                     </div>
 
+                    <!-- Campos -->
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <!-- Nombre -->
-                        <div class="flex flex-col gap-1.5">
-                            <label :class="labelClass"
-                                >Nombre
-                                <span class="text-red-400">*</span></label
-                            >
-                            <input
-                                v-model="modal.form.nombre"
-                                type="text"
-                                placeholder="Nombre completo"
-                                :class="inputClass"
-                            />
-                        </div>
+                        <FormInput
+                            label="Nombre"
+                            v-model="modal.form.nombre"
+                            placeholder="Nombre completo"
+                            :required="true"
+                        />
 
                         <!-- Email -->
-                        <div class="flex flex-col gap-1.5">
-                            <label :class="labelClass"
-                                >Correo electrónico
-                                <span class="text-red-400">*</span></label
-                            >
-                            <input
-                                v-model="modal.form.email"
-                                type="email"
-                                placeholder="correo@empresa.com"
-                                :class="inputClass"
-                            />
-                        </div>
+                        <FormInput
+                            label="Correo electrónico"
+                            type="email"
+                            v-model="modal.form.email"
+                            placeholder="correo@empresa.com"
+                            :required="true"
+                        />
 
-                        <!-- Contraseña (solo en crear) -->
-                        <div
+                        <!-- Contraseña (solo en crear) con toggle ojo -->
+                        <FormInput
                             v-if="modal.mode === 'crear'"
-                            class="flex flex-col gap-1.5"
+                            label="Contraseña"
+                            :type="modal.showPass ? 'text' : 'password'"
+                            v-model="modal.form.password"
+                            placeholder="Mínimo 8 caracteres"
+                            :required="true"
                         >
-                            <label :class="labelClass"
-                                >Contraseña
-                                <span class="text-red-400">*</span></label
-                            >
-                            <div class="relative">
-                                <input
-                                    v-model="modal.form.password"
-                                    :type="modal.showPass ? 'text' : 'password'"
-                                    placeholder="Mínimo 8 caracteres"
-                                    :class="inputClass"
-                                />
+                            <template #icon-right>
                                 <button
                                     type="button"
                                     @click="modal.showPass = !modal.showPass"
-                                    class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-300 hover:text-gray-500 transition-colors"
+                                    class="text-gray-300 hover:text-gray-500 transition-colors"
                                 >
                                     <svg
                                         width="15"
@@ -256,74 +239,39 @@
                                         />
                                     </svg>
                                 </button>
-                            </div>
-                        </div>
+                            </template>
+                        </FormInput>
 
                         <!-- Fecha caducidad -->
-                        <div class="flex flex-col gap-1.5">
-                            <label :class="labelClass"
-                                >Fecha de caducidad</label
-                            >
-                            <input
-                                v-model="modal.form.fechaCaducidad"
-                                type="date"
-                                :class="inputClass"
-                            />
-                        </div>
+                        <FormInput
+                            label="Fecha de caducidad"
+                            type="date"
+                            v-model="modal.form.fechaCaducidad"
+                        />
 
-                        <!-- Roles -->
+                        <!-- Roles (checkboxes) -->
                         <div class="sm:col-span-2 flex flex-col gap-2">
-                            <label :class="labelClass"
-                                >Tipo de usuario
-                                <span class="text-red-400">*</span></label
+                            <label
+                                class="text-xs font-medium text-gray-500 uppercase tracking-wide"
                             >
+                                Tipo de usuario
+                                <span class="text-red-400">*</span>
+                            </label>
                             <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                                <label
+                                <FormCheckbox
                                     v-for="rol in rolesOpts"
                                     :key="rol.value"
-                                    class="flex items-center gap-2 cursor-pointer group"
-                                >
-                                    <div class="relative flex-shrink-0">
-                                        <input
-                                            v-model="modal.form.roles"
-                                            type="checkbox"
-                                            :value="rol.value"
-                                            class="peer sr-only"
-                                        />
-                                        <div
-                                            class="w-4 h-4 rounded border-2 border-gray-200 bg-gray-50 peer-checked:bg-[#1a5c2a] peer-checked:border-[#1a5c2a] transition-all flex items-center justify-center"
-                                        >
-                                            <svg
-                                                v-if="
-                                                    modal.form.roles.includes(
-                                                        rol.value
-                                                    )
-                                                "
-                                                width="8"
-                                                height="8"
-                                                viewBox="0 0 8 8"
-                                                fill="none"
-                                            >
-                                                <path
-                                                    d="M1 4L3 6.5L7 1.5"
-                                                    stroke="white"
-                                                    stroke-width="1.5"
-                                                    stroke-linecap="round"
-                                                    stroke-linejoin="round"
-                                                />
-                                            </svg>
-                                        </div>
-                                    </div>
-                                    <span
-                                        class="text-sm text-gray-600 group-hover:text-gray-800 transition-colors"
-                                    >
-                                        {{ rol.label }}
-                                    </span>
-                                </label>
+                                    :label="rol.label"
+                                    :model-value="
+                                        modal.form.roles.includes(rol.value)
+                                    "
+                                    @update:model-value="toggleRol(rol.value)"
+                                />
                             </div>
                         </div>
                     </div>
 
+                    <!-- Error -->
                     <transition name="fade">
                         <div
                             v-if="modal.error"
@@ -333,6 +281,7 @@
                         </div>
                     </transition>
 
+                    <!-- Acciones modal -->
                     <div class="flex justify-end gap-2 pt-1">
                         <button
                             @click="modal.open = false"
@@ -471,6 +420,8 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import DataTable from '@/components/table/DataTable.vue'
+import FormInput from '@/components/form/FormInput.vue'
+import FormCheckbox from '@/components/form/FormCheckbox.vue'
 
 // ── Columnas ───────────────────────────────────────────────────────────────
 const columns = [
@@ -501,14 +452,9 @@ const rolesOpts = [
 ]
 
 // ── Helpers ────────────────────────────────────────────────────────────────
-const labelClass = 'text-xs font-medium text-gray-500 uppercase tracking-wide'
-const inputClass =
-    'w-full h-9 px-3 rounded-lg border border-gray-200 bg-gray-50 text-[#0A2540] text-sm outline-none transition-all placeholder:text-gray-300 focus:bg-white focus:border-[#1a5c2a] focus:ring-2 focus:ring-[#1a5c2a]/10'
-
 function caducidadClass(fecha) {
     if (!fecha) return 'text-gray-300'
-    const diff = new Date(fecha) - new Date()
-    const dias = diff / (1000 * 60 * 60 * 24)
+    const dias = (new Date(fecha) - new Date()) / (1000 * 60 * 60 * 24)
     if (dias < 0) return 'text-red-500 font-medium'
     if (dias < 15) return 'text-orange-500 font-medium'
     return 'text-gray-600'
@@ -532,12 +478,10 @@ async function fetchUsuarios() {
             sort_dir: sort.dir,
             search: search.value,
         })
-
         const response = await fetch(`/api/usuarios?${params}`, {
             headers: authHeaders(),
         })
         if (!response.ok) throw new Error()
-
         const data = await response.json()
         usuarios.value = data.data
         pagination.total = data.meta.total
@@ -591,15 +535,20 @@ const modal = reactive({
     },
 })
 
+function toggleRol(value) {
+    const idx = modal.form.roles.indexOf(value)
+    idx === -1 ? modal.form.roles.push(value) : modal.form.roles.splice(idx, 1)
+}
+
 function abrirModalCrear() {
-    modal.form = {
+    Object.assign(modal.form, {
         id: null,
         nombre: '',
         email: '',
         password: '',
         fechaCaducidad: '',
         roles: [],
-    }
+    })
     modal.mode = 'crear'
     modal.error = ''
     modal.showPass = false
@@ -607,14 +556,14 @@ function abrirModalCrear() {
 }
 
 function abrirModalEditar(row) {
-    modal.form = {
+    Object.assign(modal.form, {
         id: row.id,
         nombre: row.nombre,
         email: row.email,
         password: '',
         fechaCaducidad: row.fechaCaducidad ?? '',
         roles: row.roles ?? [],
-    }
+    })
     modal.mode = 'editar'
     modal.error = ''
     modal.showPass = false
@@ -698,16 +647,19 @@ onMounted(fetchUsuarios)
 .modal-leave-active {
     transition: opacity 0.15s ease;
 }
+
 .modal-enter-from,
 .modal-leave-to {
     opacity: 0;
 }
+
 .fade-enter-active,
 .fade-leave-active {
     transition:
         opacity 0.2s ease,
         transform 0.2s ease;
 }
+
 .fade-enter-from,
 .fade-leave-to {
     opacity: 0;

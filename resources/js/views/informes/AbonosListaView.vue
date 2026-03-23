@@ -11,121 +11,44 @@
             <div
                 class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4"
             >
-                <!-- Fecha inicial -->
-                <div class="flex flex-col gap-1.5">
-                    <label :class="labelClass">Fecha inicial</label>
-                    <input
-                        v-model="filters.fechaInicial"
-                        type="date"
-                        :class="inputClass"
-                    />
-                </div>
-
-                <!-- Fecha final -->
-                <div class="flex flex-col gap-1.5">
-                    <label :class="labelClass">Fecha final</label>
-                    <input
-                        v-model="filters.fechaFinal"
-                        type="date"
-                        :class="inputClass"
-                    />
-                </div>
-
-                <!-- Recibido en -->
-                <div class="flex flex-col gap-1.5">
-                    <label :class="labelClass">Recibido en</label>
-                    <div class="relative">
-                        <select
-                            v-model="filters.recibidoEn"
-                            :class="[
-                                inputClass,
-                                'appearance-none pr-8 cursor-pointer',
-                            ]"
-                        >
-                            <option value="">Seleccione un filtro</option>
-                            <option
-                                v-for="r in recibidoEnOpts"
-                                :key="r.value"
-                                :value="r.value"
-                            >
-                                {{ r.label }}
-                            </option>
-                        </select>
-                        <ChevronIcon />
-                    </div>
-                </div>
-
-                <!-- Cliente -->
-                <div class="flex flex-col gap-1.5">
-                    <label :class="labelClass">Cliente</label>
-                    <div class="relative">
-                        <select
-                            v-model="filters.cliente"
-                            :class="[
-                                inputClass,
-                                'appearance-none pr-8 cursor-pointer',
-                            ]"
-                        >
-                            <option value="">Seleccione un cliente</option>
-                            <option
-                                v-for="c in clientesOpts"
-                                :key="c.value"
-                                :value="c.value"
-                            >
-                                {{ c.label }}
-                            </option>
-                        </select>
-                        <ChevronIcon />
-                    </div>
-                </div>
-
-                <!-- Cajero(a) -->
-                <div class="flex flex-col gap-1.5">
-                    <label :class="labelClass">Cajera(o)</label>
-                    <div class="relative">
-                        <select
-                            v-model="filters.cajero"
-                            :class="[
-                                inputClass,
-                                'appearance-none pr-8 cursor-pointer',
-                            ]"
-                        >
-                            <option value="">Seleccione una cajera(o)</option>
-                            <option
-                                v-for="c in cajerosOpts"
-                                :key="c.value"
-                                :value="c.value"
-                            >
-                                {{ c.label }}
-                            </option>
-                        </select>
-                        <ChevronIcon />
-                    </div>
-                </div>
-
-                <!-- Aliado -->
-                <div class="flex flex-col gap-1.5">
-                    <label :class="labelClass">Aliado</label>
-                    <div class="relative">
-                        <select
-                            v-model="filters.aliado"
-                            :class="[
-                                inputClass,
-                                'appearance-none pr-8 cursor-pointer',
-                            ]"
-                        >
-                            <option value="">Seleccione un aliado</option>
-                            <option
-                                v-for="a in aliadosOpts"
-                                :key="a.value"
-                                :value="a.value"
-                            >
-                                {{ a.label }}
-                            </option>
-                        </select>
-                        <ChevronIcon />
-                    </div>
-                </div>
+                <FormInput
+                    label="Fecha inicial"
+                    type="date"
+                    v-model="filters.fechaInicial"
+                />
+                <FormInput
+                    label="Fecha final"
+                    type="date"
+                    v-model="filters.fechaFinal"
+                />
+                <FormInput
+                    label="Recibido en"
+                    type="select"
+                    v-model="filters.recibidoEn"
+                    :options="recibidoEnOpts"
+                    placeholder="Seleccione un filtro"
+                />
+                <FormInput
+                    label="Cliente"
+                    type="select"
+                    v-model="filters.cliente"
+                    :options="clientesOpts"
+                    placeholder="Seleccione un cliente"
+                />
+                <FormInput
+                    label="Cajera"
+                    type="select"
+                    v-model="filters.cajero"
+                    :options="cajerosOpts"
+                    placeholder="Seleccione una cajera(o)"
+                />
+                <FormInput
+                    label="Aliado"
+                    type="select"
+                    v-model="filters.aliado"
+                    :options="aliadosOpts"
+                    placeholder="Seleccione un aliado"
+                />
             </div>
 
             <!-- Fila 2: checkboxes + botones -->
@@ -133,23 +56,8 @@
                 class="flex flex-wrap items-center gap-x-5 gap-y-3 pt-3 border-t border-gray-100"
             >
                 <!-- Checkboxes -->
-                <label class="flex items-center gap-2 cursor-pointer">
-                    <input
-                        v-model="filters.diasMora"
-                        type="checkbox"
-                        class="w-3.5 h-3.5 rounded border-gray-300 accent-[#1a5c2a] cursor-pointer"
-                    />
-                    <span class="text-xs text-gray-500">Días de mora</span>
-                </label>
-
-                <label class="flex items-center gap-2 cursor-pointer">
-                    <input
-                        v-model="filters.abonoAval"
-                        type="checkbox"
-                        class="w-3.5 h-3.5 rounded border-gray-300 accent-[#1a5c2a] cursor-pointer"
-                    />
-                    <span class="text-xs text-gray-500">Abono aval</span>
-                </label>
+                <FormCheckbox v-model="filters.diasMora" label="Días de mora" />
+                <FormCheckbox v-model="filters.abonoAval" label="Abono aval" />
 
                 <!-- Botones -->
                 <div class="flex flex-wrap items-center gap-2 sm:ml-auto">
@@ -158,25 +66,80 @@
                         :disabled="loadingInforme === 'resumido'"
                         class="h-9 px-4 rounded-lg bg-[#1a5c2a] hover:bg-[#154d22] disabled:bg-gray-300 text-white text-sm font-medium transition-all flex items-center gap-2"
                     >
-                        <SpinnerIcon v-if="loadingInforme === 'resumido'" />
+                        <svg
+                            v-if="loadingInforme === 'resumido'"
+                            class="animate-spin w-3.5 h-3.5"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                        >
+                            <circle
+                                class="opacity-25"
+                                cx="12"
+                                cy="12"
+                                r="10"
+                                stroke="currentColor"
+                                stroke-width="4"
+                            />
+                            <path
+                                class="opacity-75"
+                                fill="currentColor"
+                                d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                            />
+                        </svg>
                         Generar informe resumido
                     </button>
-
                     <button
                         @click="generarInforme('detallado')"
                         :disabled="loadingInforme === 'detallado'"
                         class="h-9 px-4 rounded-lg bg-emerald-500 hover:bg-emerald-600 disabled:bg-gray-300 text-white text-sm font-medium transition-all flex items-center gap-2"
                     >
-                        <SpinnerIcon v-if="loadingInforme === 'detallado'" />
+                        <svg
+                            v-if="loadingInforme === 'detallado'"
+                            class="animate-spin w-3.5 h-3.5"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                        >
+                            <circle
+                                class="opacity-25"
+                                cx="12"
+                                cy="12"
+                                r="10"
+                                stroke="currentColor"
+                                stroke-width="4"
+                            />
+                            <path
+                                class="opacity-75"
+                                fill="currentColor"
+                                d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                            />
+                        </svg>
                         Generar informe detallado
                     </button>
-
                     <button
                         @click="generarFactura"
                         :disabled="loadingInforme === 'factura'"
                         class="h-9 px-4 rounded-lg bg-orange-500 hover:bg-orange-600 disabled:bg-gray-300 text-white text-sm font-medium transition-all flex items-center gap-2"
                     >
-                        <SpinnerIcon v-if="loadingInforme === 'factura'" />
+                        <svg
+                            v-if="loadingInforme === 'factura'"
+                            class="animate-spin w-3.5 h-3.5"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                        >
+                            <circle
+                                class="opacity-25"
+                                cx="12"
+                                cy="12"
+                                r="10"
+                                stroke="currentColor"
+                                stroke-width="4"
+                            />
+                            <path
+                                class="opacity-75"
+                                fill="currentColor"
+                                d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                            />
+                        </svg>
                         Generar factura
                     </button>
                 </div>
@@ -206,7 +169,21 @@
                     @click="fetchAbonos"
                     class="h-8 px-3 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium transition-all flex items-center gap-1.5"
                 >
-                    <i class="fa-solid fa-arrow-rotate-right"></i>
+                    <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+                        <path
+                            d="M11 6.5A4.5 4.5 0 1 1 6.5 2"
+                            stroke="currentColor"
+                            stroke-width="1.3"
+                            stroke-linecap="round"
+                        />
+                        <path
+                            d="M9 2h2.5V4.5"
+                            stroke="currentColor"
+                            stroke-width="1.3"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        />
+                    </svg>
                     Actualizar adicionales
                 </button>
             </template>
@@ -236,6 +213,8 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import DataTable from '@/components/table/DataTable.vue'
+import FormInput from '@/components/form/FormInput.vue'
+import FormCheckbox from '@/components/form/FormCheckbox.vue'
 
 // ── Columnas ───────────────────────────────────────────────────────────────
 const columns = [
@@ -267,11 +246,6 @@ const columns = [
     { key: 'intMoratorio', label: 'Int. moratorio', sortable: false },
     { key: 'gasCobranza', label: 'Gastos cobranza', sortable: false },
     { key: 'ivaGasCobranza', label: 'IVA gastos cobranza', sortable: false },
-    {
-        key: 'valorCondonacion',
-        label: 'Valor condonación crédito',
-        sortable: false,
-    },
     {
         key: 'valorCondonacion',
         label: 'Valor condonación crédito',
@@ -332,10 +306,6 @@ const aliadosOpts = [
 ]
 
 // ── Helpers ────────────────────────────────────────────────────────────────
-const labelClass = 'text-xs font-medium text-gray-400 uppercase tracking-wide'
-const inputClass =
-    'w-full h-9 px-3 rounded-lg border border-gray-200 bg-gray-50 text-sm text-gray-600 outline-none focus:border-[#1a5c2a] focus:ring-2 focus:ring-[#1a5c2a]/10 transition-all'
-
 function formatCurrency(value) {
     if (value == null) return '$0'
     return new Intl.NumberFormat('es-CO', {
@@ -354,24 +324,11 @@ function estadoBadgeClass(estado) {
     return 'bg-blue-50 text-blue-600'
 }
 
-// ── Componentes inline ─────────────────────────────────────────────────────
-const ChevronIcon = {
-    template: `
-        <span class="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-300 pointer-events-none">
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
-            </svg>
-        </span>
-    `,
-}
-
-const SpinnerIcon = {
-    template: `
-        <svg class="animate-spin w-3.5 h-3.5" viewBox="0 0 24 24" fill="none">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/>
-        </svg>
-    `,
+function authHeaders() {
+    return {
+        Accept: 'application/json',
+        Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
+    }
 }
 
 // ── Backend ────────────────────────────────────────────────────────────────
@@ -397,12 +354,8 @@ async function fetchAbonos() {
         })
 
         const response = await fetch(`/api/abonos?${params}`, {
-            headers: {
-                Accept: 'application/json',
-                Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
-            },
+            headers: authHeaders(),
         })
-
         if (!response.ok) throw new Error('Error al cargar abonos')
 
         const data = await response.json()
@@ -417,11 +370,7 @@ async function fetchAbonos() {
 }
 
 async function descargarArchivo(url, nombre) {
-    const response = await fetch(url, {
-        headers: {
-            Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
-        },
-    })
+    const response = await fetch(url, { headers: authHeaders() })
     if (!response.ok) throw new Error('Error al generar archivo')
     const blob = await response.blob()
     const a = document.createElement('a')
@@ -468,13 +417,11 @@ function onPageChange(page) {
     pagination.currentPage = page
     fetchAbonos()
 }
-
 function onPerPageChange(val) {
     pagination.perPage = val
     pagination.currentPage = 1
     fetchAbonos()
 }
-
 function onSearch(val) {
     search.value = val
     clearTimeout(searchTimeout)
@@ -483,7 +430,6 @@ function onSearch(val) {
         fetchAbonos()
     }, 400)
 }
-
 function onSort({ key, dir }) {
     sort.key = key
     sort.dir = dir

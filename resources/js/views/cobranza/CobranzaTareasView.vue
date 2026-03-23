@@ -9,166 +9,68 @@
         >
             <!-- Fila 1: fechas creación + vencimiento -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div class="flex flex-col gap-1.5">
-                    <label :class="labelClass"
-                        >Fecha
-                        <strong class="font-semibold text-gray-500"
-                            >creación</strong
-                        >
-                        desde</label
-                    >
-                    <input
-                        v-model="filters.creacionDesde"
-                        type="date"
-                        :class="inputClass"
-                    />
-                </div>
-                <div class="flex flex-col gap-1.5">
-                    <label :class="labelClass"
-                        >Fecha
-                        <strong class="font-semibold text-gray-500"
-                            >creación</strong
-                        >
-                        hasta</label
-                    >
-                    <input
-                        v-model="filters.creacionHasta"
-                        type="date"
-                        :class="inputClass"
-                    />
-                </div>
-                <div class="flex flex-col gap-1.5">
-                    <label :class="labelClass"
-                        >Fecha
-                        <strong class="font-semibold text-gray-500"
-                            >vencimiento</strong
-                        >
-                        desde</label
-                    >
-                    <input
-                        v-model="filters.vencimientoDesde"
-                        type="date"
-                        :class="inputClass"
-                    />
-                </div>
-                <div class="flex flex-col gap-1.5">
-                    <label :class="labelClass"
-                        >Fecha
-                        <strong class="font-semibold text-gray-500"
-                            >vencimiento</strong
-                        >
-                        hasta</label
-                    >
-                    <input
-                        v-model="filters.vencimientoHasta"
-                        type="date"
-                        :class="inputClass"
-                    />
-                </div>
+                <FormInput
+                    label="Fecha creación desde"
+                    v-model="filters.creacionDesde"
+                    type="date"
+                />
+                <FormInput
+                    label="Fecha creación hasta"
+                    v-model="filters.creacionHasta"
+                    type="date"
+                />
+                <FormInput
+                    label="Fecha vencimiento desde"
+                    v-model="filters.vencimientoDesde"
+                    type="date"
+                />
+                <FormInput
+                    label="Fecha vencimiento hasta"
+                    v-model="filters.vencimientoHasta"
+                    type="date"
+                />
             </div>
 
             <!-- Fila 2: fechas completada + cliente + usuario -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div class="flex flex-col gap-1.5">
-                    <label :class="labelClass"
-                        >Fecha
-                        <strong class="font-semibold text-gray-500"
-                            >completada</strong
-                        >
-                        desde</label
-                    >
-                    <input
-                        v-model="filters.completadaDesde"
-                        type="date"
-                        :class="inputClass"
-                    />
-                </div>
-                <div class="flex flex-col gap-1.5">
-                    <label :class="labelClass"
-                        >Fecha
-                        <strong class="font-semibold text-gray-500"
-                            >completada</strong
-                        >
-                        hasta</label
-                    >
-                    <input
-                        v-model="filters.completadaHasta"
-                        type="date"
-                        :class="inputClass"
-                    />
-                </div>
-                <div class="flex flex-col gap-1.5">
-                    <label :class="labelClass">Cliente</label>
-                    <div class="relative">
-                        <select
-                            v-model="filters.cliente"
-                            :class="[
-                                inputClass,
-                                'appearance-none pr-8 cursor-pointer',
-                            ]"
-                        >
-                            <option value="">Seleccione un cliente</option>
-                            <option
-                                v-for="c in clientesOpts"
-                                :key="c.value"
-                                :value="c.value"
-                            >
-                                {{ c.label }}
-                            </option>
-                        </select>
-                        <ChevronIcon />
-                    </div>
-                </div>
-                <div class="flex flex-col gap-1.5">
-                    <label :class="labelClass">Usuario asignado</label>
-                    <div class="relative">
-                        <select
-                            v-model="filters.usuarioAsignado"
-                            :class="[
-                                inputClass,
-                                'appearance-none pr-8 cursor-pointer',
-                            ]"
-                        >
-                            <option value="">Seleccione el usuario</option>
-                            <option
-                                v-for="u in usuariosOpts"
-                                :key="u.value"
-                                :value="u.value"
-                            >
-                                {{ u.label }}
-                            </option>
-                        </select>
-                        <ChevronIcon />
-                    </div>
-                </div>
+                <FormInput
+                    label="Fecha completada desde"
+                    v-model="filters.completadaDesde"
+                    type="date"
+                />
+                <FormInput
+                    label="Fecha completada hasta"
+                    v-model="filters.completadaHasta"
+                    type="date"
+                />
+                <FormInput
+                    label="Cliente"
+                    type="select"
+                    v-model="filters.cliente"
+                    :options="clientesOpts"
+                    placeholder="Seleccione un cliente"
+                />
+                <FormInput
+                    label="Usuario asignado"
+                    type="select"
+                    v-model="filters.usuarioAsignado"
+                    :options="usuariosOpts"
+                    placeholder="Seleccione el usuario"
+                />
             </div>
 
             <!-- Fila 3: tipo de tarea + botones -->
             <div class="flex flex-wrap items-end gap-4">
-                <div class="flex flex-col gap-1.5 min-w-[200px]">
-                    <label :class="labelClass">Tipo de tarea</label>
-                    <div class="relative">
-                        <select
-                            v-model="filters.tipoTarea"
-                            :class="[
-                                inputClass,
-                                'appearance-none pr-8 cursor-pointer',
-                            ]"
-                        >
-                            <option value="">Seleccionar tipo</option>
-                            <option
-                                v-for="t in tipoTareaOpts"
-                                :key="t.value"
-                                :value="t.value"
-                            >
-                                {{ t.label }}
-                            </option>
-                        </select>
-                        <ChevronIcon />
-                    </div>
-                </div>
+                <FormInput
+                    label="Tipo de tarea"
+                    type="select"
+                    v-model="filters.tipoTarea"
+                    :options="tipoTareaOpts"
+                    placeholder="Seleccionar tipo"
+                    wrapper-class="min-w-[200px]"
+                />
 
-                <div class="flex items-center gap-2 sm:ml-0">
+                <div class="flex items-center gap-2">
                     <button
                         @click="abrirModalCrear"
                         class="h-9 px-4 rounded-lg bg-[#1a5c2a] hover:bg-[#154d22] text-white text-sm font-medium transition-all flex items-center gap-2"
@@ -285,6 +187,7 @@
                 <div
                     class="bg-white rounded-2xl w-full max-w-lg p-6 flex flex-col gap-5 shadow-xl"
                 >
+                    <!-- Cabecera modal -->
                     <div class="flex items-center justify-between">
                         <h2 class="text-base font-semibold text-[#0A2540]">
                             Nueva tarea
@@ -309,112 +212,51 @@
                         </button>
                     </div>
 
+                    <!-- Campos del modal -->
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div class="sm:col-span-2 flex flex-col gap-1.5">
-                            <label :class="modalLabelClass"
-                                >Título
-                                <span class="text-red-400">*</span></label
-                            >
-                            <input
-                                v-model="modal.form.titulo"
-                                type="text"
-                                placeholder="Descripción de la tarea"
-                                :class="inputClass"
-                            />
-                        </div>
-                        <div class="flex flex-col gap-1.5">
-                            <label :class="modalLabelClass">Cliente</label>
-                            <div class="relative">
-                                <select
-                                    v-model="modal.form.cliente"
-                                    :class="[
-                                        inputClass,
-                                        'appearance-none pr-8 cursor-pointer',
-                                    ]"
-                                >
-                                    <option value="">
-                                        Seleccione un cliente
-                                    </option>
-                                    <option
-                                        v-for="c in clientesOpts"
-                                        :key="c.value"
-                                        :value="c.value"
-                                    >
-                                        {{ c.label }}
-                                    </option>
-                                </select>
-                                <ChevronIcon />
-                            </div>
-                        </div>
-                        <div class="flex flex-col gap-1.5">
-                            <label :class="modalLabelClass">Asignar a</label>
-                            <div class="relative">
-                                <select
-                                    v-model="modal.form.usuarioAsignado"
-                                    :class="[
-                                        inputClass,
-                                        'appearance-none pr-8 cursor-pointer',
-                                    ]"
-                                >
-                                    <option value="">
-                                        Seleccione el usuario
-                                    </option>
-                                    <option
-                                        v-for="u in usuariosOpts"
-                                        :key="u.value"
-                                        :value="u.value"
-                                    >
-                                        {{ u.label }}
-                                    </option>
-                                </select>
-                                <ChevronIcon />
-                            </div>
-                        </div>
-                        <div class="flex flex-col gap-1.5">
-                            <label :class="modalLabelClass"
-                                >Tipo de tarea</label
-                            >
-                            <div class="relative">
-                                <select
-                                    v-model="modal.form.tipoTarea"
-                                    :class="[
-                                        inputClass,
-                                        'appearance-none pr-8 cursor-pointer',
-                                    ]"
-                                >
-                                    <option value="">Seleccionar tipo</option>
-                                    <option
-                                        v-for="t in tipoTareaOpts"
-                                        :key="t.value"
-                                        :value="t.value"
-                                    >
-                                        {{ t.label }}
-                                    </option>
-                                </select>
-                                <ChevronIcon />
-                            </div>
-                        </div>
-                        <div class="flex flex-col gap-1.5">
-                            <label :class="modalLabelClass"
-                                >Fecha vencimiento</label
-                            >
-                            <input
-                                v-model="modal.form.vencimiento"
-                                type="date"
-                                :class="inputClass"
-                            />
-                        </div>
-                        <div class="sm:col-span-2 flex flex-col gap-1.5">
-                            <label :class="modalLabelClass">Nota</label>
-                            <textarea
-                                v-model="modal.form.nota"
-                                rows="3"
-                                placeholder="Observaciones..."
-                                class="w-full px-3 py-2.5 rounded-lg border border-gray-200 bg-gray-50 text-sm text-[#0A2540] resize-none outline-none transition-all placeholder:text-gray-300 focus:bg-white focus:border-[#1a5c2a] focus:ring-2 focus:ring-[#1a5c2a]/10"
-                            />
-                        </div>
+                        <FormInput
+                            label="Título"
+                            v-model="modal.form.titulo"
+                            placeholder="Descripción de la tarea"
+                            :required="true"
+                            wrapper-class="sm:col-span-2"
+                        />
+                        <FormInput
+                            label="Cliente"
+                            type="select"
+                            v-model="modal.form.cliente"
+                            :options="clientesOpts"
+                            placeholder="Seleccione un cliente"
+                        />
+                        <FormInput
+                            label="Asignar a"
+                            type="select"
+                            v-model="modal.form.usuarioAsignado"
+                            :options="usuariosOpts"
+                            placeholder="Seleccione el usuario"
+                        />
+                        <FormInput
+                            label="Tipo de tarea"
+                            type="select"
+                            v-model="modal.form.tipoTarea"
+                            :options="tipoTareaOpts"
+                            placeholder="Seleccionar tipo"
+                        />
+                        <FormInput
+                            label="Fecha vencimiento"
+                            type="date"
+                            v-model="modal.form.vencimiento"
+                        />
+                        <FormInput
+                            label="Nota"
+                            type="textarea"
+                            v-model="modal.form.nota"
+                            placeholder="Observaciones..."
+                            wrapper-class="sm:col-span-2"
+                        />
                     </div>
 
+                    <!-- Error -->
                     <transition name="fade">
                         <div
                             v-if="modal.error"
@@ -424,6 +266,7 @@
                         </div>
                     </transition>
 
+                    <!-- Acciones modal -->
                     <div class="flex justify-end gap-2 pt-1">
                         <button
                             @click="modal.open = false"
@@ -468,6 +311,7 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 import DataTable from '@/components/table/DataTable.vue'
+import FormInput from '@/components/form/FormInput.vue'
 
 // ── Columnas ───────────────────────────────────────────────────────────────
 const columns = [
@@ -543,13 +387,23 @@ const tipoTareaOpts = [
     { value: 'otro', label: 'Otro' },
 ]
 
-// ── Helpers ────────────────────────────────────────────────────────────────
-const labelClass = 'text-xs font-medium text-gray-400 uppercase tracking-wide'
-const modalLabelClass =
-    'text-xs font-medium text-gray-500 uppercase tracking-wide'
-const inputClass =
-    'w-full h-9 px-3 rounded-lg border border-gray-200 bg-gray-50 text-sm text-gray-600 outline-none focus:border-[#1a5c2a] focus:ring-2 focus:ring-[#1a5c2a]/10 transition-all placeholder:text-gray-300'
+// ── Selección ──────────────────────────────────────────────────────────────
+const allSelected = computed(
+    () =>
+        tareas.value.length > 0 &&
+        tareas.value.every(t => selected.value.includes(t.id))
+)
 
+function onToggleAll(checked) {
+    selected.value = checked ? tareas.value.map(t => t.id) : []
+}
+
+function onToggleRow(id) {
+    const idx = selected.value.indexOf(id)
+    idx === -1 ? selected.value.push(id) : selected.value.splice(idx, 1)
+}
+
+// ── Helpers ────────────────────────────────────────────────────────────────
 function estadoBadge(estado) {
     if (!estado) return 'bg-gray-100 text-gray-500'
     const s = String(estado).toLowerCase()
@@ -566,22 +420,6 @@ function authHeaders() {
         Accept: 'application/json',
         Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
     }
-}
-
-// ── Selección ──────────────────────────────────────────────────────────────
-const allSelected = computed(
-    () =>
-        tareas.value.length > 0 &&
-        tareas.value.every(t => selected.value.includes(t.id))
-)
-
-function onToggleAll(checked) {
-    selected.value = checked ? tareas.value.map(t => t.id) : []
-}
-
-function onToggleRow(id) {
-    const idx = selected.value.indexOf(id)
-    idx === -1 ? selected.value.push(id) : selected.value.splice(idx, 1)
 }
 
 // ── Backend ────────────────────────────────────────────────────────────────
@@ -686,14 +524,14 @@ const modal = reactive({
 })
 
 function abrirModalCrear() {
-    modal.form = {
+    Object.assign(modal.form, {
         titulo: '',
         cliente: '',
         usuarioAsignado: '',
         tipoTarea: '',
         vencimiento: '',
         nota: '',
-    }
+    })
     modal.error = ''
     modal.open = true
 }
@@ -722,19 +560,8 @@ async function guardarTarea() {
 }
 
 function iniciarTarea() {
-    // Inicia las tareas seleccionadas
+    // TODO: iniciar las tareas seleccionadas
     console.log('Iniciar tareas:', selected.value)
-}
-
-// ── Componente inline chevron ──────────────────────────────────────────────
-const ChevronIcon = {
-    template: `
-        <span class="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-300 pointer-events-none">
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
-            </svg>
-        </span>
-    `,
 }
 
 onMounted(fetchTareas)
@@ -745,16 +572,19 @@ onMounted(fetchTareas)
 .modal-leave-active {
     transition: opacity 0.15s ease;
 }
+
 .modal-enter-from,
 .modal-leave-to {
     opacity: 0;
 }
+
 .fade-enter-active,
 .fade-leave-active {
     transition:
         opacity 0.2s ease,
         transform 0.2s ease;
 }
+
 .fade-enter-from,
 .fade-leave-to {
     opacity: 0;

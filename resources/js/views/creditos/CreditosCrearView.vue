@@ -9,27 +9,14 @@
             <div
                 class="p-3 border-b border-gray-100 sm:border-b-0 sm:border-r sm:flex-none"
             >
-                <label
-                    class="text-xs font-medium text-gray-400 uppercase tracking-wide"
-                >
-                    Cliente
-                </label>
-                <div class="relative mt-1">
-                    <select
-                        v-model="form.cliente_id"
-                        @change="onClienteChange"
-                        :class="[
-                            inputClass,
-                            'appearance-none pr-8 cursor-pointer',
-                        ]"
-                    >
-                        <option value="">Seleccione un cliente</option>
-                        <option v-for="c in clientes" :key="c.id" :value="c.id">
-                            {{ c.nombre }} ({{ c.cedula }})
-                        </option>
-                    </select>
-                    <ChevronIcon />
-                </div>
+                <FormInput
+                    label="Cliente"
+                    type="select"
+                    v-model="form.cliente_id"
+                    @update:modelValue="onClienteChange"
+                    :options="clientesOpts"
+                    placeholder="Seleccione un cliente"
+                />
             </div>
 
             <!-- Celdas informativas: apiladas en móvil, fila en desktop -->
@@ -81,110 +68,42 @@
                         </div>
 
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                            <!-- Valor de compra -->
-                            <div class="flex flex-col gap-1.5">
-                                <label
-                                    class="text-xs font-medium text-gray-400 uppercase tracking-wide"
-                                    >Valor de compra</label
-                                >
-                                <input
-                                    v-model.number="form.valor_compra"
-                                    @input="onValorCompra"
-                                    type="number"
-                                    placeholder="Digite el valor"
-                                    :class="inputClass"
-                                />
-                                <span class="text-[11px] text-gray-300"
-                                    >Mínimo — — Máximo $600.000</span
-                                >
-                            </div>
-
-                            <!-- Producto / servicio -->
-                            <div class="flex flex-col gap-1.5">
-                                <label
-                                    class="text-xs font-medium text-gray-400 uppercase tracking-wide"
-                                    >Producto / servicio</label
-                                >
-                                <div class="relative">
-                                    <select
-                                        v-model="form.producto"
-                                        :class="[
-                                            inputClass,
-                                            'appearance-none pr-8 cursor-pointer',
-                                        ]"
-                                    >
-                                        <option value="">
-                                            Seleccione un producto o servicio
-                                        </option>
-                                        <option
-                                            v-for="p in productos"
-                                            :key="p.value"
-                                            :value="p.value"
-                                        >
-                                            {{ p.label }}
-                                        </option>
-                                    </select>
-                                    <ChevronIcon />
-                                </div>
-                            </div>
-
-                            <!-- Línea / aliado -->
-                            <div class="flex flex-col gap-1.5">
-                                <label
-                                    class="text-xs font-medium text-gray-400 uppercase tracking-wide"
-                                    >Línea</label
-                                >
-                                <div class="relative">
-                                    <select
-                                        v-model="form.linea"
-                                        :class="[
-                                            inputClass,
-                                            'appearance-none pr-8 cursor-pointer',
-                                        ]"
-                                    >
-                                        <option
-                                            v-for="l in lineas"
-                                            :key="l.value"
-                                            :value="l.value"
-                                        >
-                                            {{ l.label }}
-                                        </option>
-                                    </select>
-                                    <ChevronIcon />
-                                </div>
-                            </div>
+                            <FormInput
+                                label="Valor de compra"
+                                type="number"
+                                v-model="form.valor_compra"
+                                @input="onValorCompra"
+                                placeholder="Digite el valor"
+                                hint="Mínimo — — Máximo $600.000"
+                            />
+                            <FormInput
+                                label="Producto / servicio"
+                                type="select"
+                                v-model="form.producto"
+                                :options="productos"
+                                placeholder="Seleccione un producto o servicio"
+                            />
+                            <FormInput
+                                label="Línea"
+                                type="select"
+                                v-model="form.linea"
+                                :options="lineas"
+                            />
                         </div>
 
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <!-- Observación -->
-                            <div class="flex flex-col gap-1.5">
-                                <label
-                                    class="text-xs font-medium text-gray-400 uppercase tracking-wide"
-                                    >Observación (Opcional)</label
-                                >
-                                <input
-                                    v-model="form.observacion"
-                                    type="text"
-                                    :class="inputClass"
-                                />
-                            </div>
-
-                            <!-- Nº de placa -->
-                            <div class="flex flex-col gap-1.5">
-                                <label
-                                    class="text-xs font-medium text-gray-400 uppercase tracking-wide"
-                                    >Nº de placa</label
-                                >
-                                <input
-                                    v-model="form.placa"
-                                    type="text"
-                                    placeholder="ABC123"
-                                    :class="inputClass"
-                                />
-                            </div>
+                            <FormInput
+                                label="Observación (Opcional)"
+                                v-model="form.observacion"
+                            />
+                            <FormInput
+                                label="Nº de placa"
+                                v-model="form.placa"
+                                placeholder="ABC123"
+                            />
                         </div>
 
-                        <!-- Día preferible de pago -->
+                        <!-- Día preferible de pago — se mantiene manual por ser un control inline con texto a los lados -->
                         <div
                             class="flex items-center gap-2 text-sm text-gray-500"
                         >
@@ -234,7 +153,7 @@
                                 class="w-48 h-8 px-3 text-sm text-right rounded-lg border border-gray-100 bg-gray-50 text-gray-400 outline-none"
                             />
 
-                            <!-- Select editable -->
+                            <!-- Select editable — se mantiene manual por el diseño de fila compacto (h-8, w-48 fijo) -->
                             <div v-else class="relative w-48">
                                 <select
                                     v-model="form[row.key]"
@@ -311,7 +230,7 @@
                 <div
                     class="bg-white rounded-xl border border-gray-200 p-5 flex flex-col gap-4"
                 >
-                    <!-- Header del panel -->
+                    <!-- Header -->
                     <div class="flex items-baseline justify-between">
                         <p class="text-sm font-semibold text-[#1a5c2a]">
                             Plan de pagos
@@ -414,6 +333,7 @@
 
 <script setup>
 import { ref, reactive, computed } from 'vue'
+import FormInput from '@/components/form/FormInput.vue'
 import ChevronIcon from '@/components/form/ChevronIcon.vue'
 
 // ── Opciones de selects ────────────────────────────────────────────────────
@@ -450,6 +370,12 @@ const clientes = [
     },
 ]
 
+// Opciones formateadas para FormInput type="select"
+const clientesOpts = clientes.map(c => ({
+    value: c.id,
+    label: `${c.nombre} (${c.cedula})`,
+}))
+
 const productos = [
     { value: 'soat', label: 'SOAT' },
     { value: 'tecno', label: 'Tecnomecánica' },
@@ -463,7 +389,6 @@ const lineas = [
 ]
 
 const diasPago = [1, 5, 10, 15, 20, 25]
-
 const mesesOpciones = [1, 2, 3, 6, 12, 18, 24, 36].map(v => ({
     value: v,
     label: String(v),
@@ -476,8 +401,6 @@ const periodicidades = [
 
 // Celdas informativas de la barra superior
 const topCells = [{ key: 'cupo' }, { key: 'creditos' }, { key: 'tipo' }]
-
-// Cabeceras tabla plan de pagos
 const planHeaders = ['Saldo', 'Capital', 'Interés (1.91% N.M.)', 'Valor cuotas']
 
 // ── Estado ─────────────────────────────────────────────────────────────────
@@ -513,12 +436,13 @@ const valorCreditoFmt = computed(() =>
 
 const valorCuotasFmt = computed(() => {
     if (!form.valor_compra || !clienteInfo.value) return ''
-    const cuota = calcCuota(
-        form.valor_compra,
-        clienteInfo.value.tasa / 100,
-        form.num_meses
+    return formatCurrency(
+        calcCuota(
+            form.valor_compra,
+            clienteInfo.value.tasa / 100,
+            form.num_meses
+        )
     )
-    return formatCurrency(cuota)
 })
 
 // Filas de la sección "Descripción / Valores"
@@ -550,9 +474,6 @@ const descripcionRows = computed(() => [
 ])
 
 // ── Helpers ────────────────────────────────────────────────────────────────
-const inputClass =
-    'w-full h-9 px-3 rounded-lg border border-gray-200 bg-gray-50 text-sm text-gray-600 outline-none focus:border-[#1a5c2a] focus:ring-2 focus:ring-[#1a5c2a]/10 transition-all'
-
 function formatCurrency(value) {
     if (value == null) return '$0'
     return new Intl.NumberFormat('es-CO', {
@@ -572,7 +493,8 @@ function calcCuota(monto, tasa, meses) {
 
 // ── Handlers ───────────────────────────────────────────────────────────────
 function onClienteChange() {
-    clienteInfo.value = clientes.find(c => c.id === form.cliente_id) || null
+    clienteInfo.value =
+        clientes.find(c => c.id === Number(form.cliente_id)) || null
     calcPlan()
 }
 
@@ -592,7 +514,6 @@ function calcPlan() {
     const tasa = clienteInfo.value.tasa / 100
     const dia = form.dia_pago
     const cuota = calcCuota(monto, tasa, meses)
-
     let saldo = monto
     const rows = []
     const venc = []
@@ -602,7 +523,6 @@ function calcPlan() {
         const interes = saldo * tasa
         const capital = cuota - interes
         saldo -= capital
-
         const fecha = new Date(hoy.getFullYear(), hoy.getMonth() + i, dia)
         venc.push(
             fecha.toLocaleDateString('es-CO', {
@@ -611,7 +531,6 @@ function calcPlan() {
                 year: 'numeric',
             })
         )
-
         rows.push([
             formatCurrency(Math.max(saldo, 0)),
             formatCurrency(capital),
@@ -629,8 +548,7 @@ async function handleSubmit() {
     loading.value = true
     try {
         // TODO: llamar al endpoint de generación de crédito y envío de OTP
-        const payload = { ...form }
-        console.log('Payload:', payload)
+        console.log('Payload:', { ...form })
     } catch (err) {
         console.error(err)
     } finally {

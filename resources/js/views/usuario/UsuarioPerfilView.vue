@@ -6,7 +6,7 @@
         <!-- Tarjeta de perfil -->
         <div class="bg-white rounded-xl border border-gray-200 p-6 sm:p-8">
             <div class="flex flex-col sm:flex-row gap-8">
-                <!-- Panel izquierdo: avatar -->
+                <!-- ── Panel izquierdo: avatar ── -->
                 <div class="flex flex-col items-center gap-3 sm:w-56 shrink-0">
                     <div class="flex flex-col items-start gap-1 w-full mb-2">
                         <p class="text-base font-semibold text-[#0A2540]">
@@ -29,7 +29,6 @@
                                 alt="Foto de perfil"
                                 class="w-full h-full object-cover"
                             />
-                            <!-- Silueta por defecto -->
                             <svg
                                 v-else
                                 viewBox="0 0 100 100"
@@ -120,84 +119,56 @@
                     </button>
                 </div>
 
-                <!-- Divisor vertical -->
+                <!-- Divisor vertical / horizontal -->
                 <div class="hidden sm:block w-px bg-gray-100 self-stretch" />
                 <div class="block sm:hidden h-px bg-gray-100 w-full" />
 
-                <!-- Panel derecho: campos -->
+                <!-- ── Panel derecho: campos ── -->
                 <div class="flex-1 flex flex-col gap-5">
                     <!-- Nombre + Apellidos -->
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div class="flex flex-col gap-1.5">
-                            <label :class="labelClass">Nombre</label>
-                            <input
-                                v-model="form.nombre"
-                                type="text"
-                                placeholder="Tu nombre"
-                                :class="inputClass"
-                            />
-                        </div>
-                        <div class="flex flex-col gap-1.5">
-                            <label :class="labelClass">Apellidos</label>
-                            <input
-                                v-model="form.apellidos"
-                                type="text"
-                                placeholder="Tus apellidos"
-                                :class="inputClass"
-                            />
-                        </div>
+                        <FormInput
+                            label="Nombre"
+                            v-model="form.nombre"
+                            placeholder="Tu nombre"
+                        />
+                        <FormInput
+                            label="Apellidos"
+                            v-model="form.apellidos"
+                            placeholder="Tus apellidos"
+                        />
                     </div>
 
                     <!-- Empresa + Rol -->
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div class="flex flex-col gap-1.5">
-                            <label :class="labelClass"
-                                >Nombre de la empresa</label
-                            >
-                            <input
-                                v-model="form.empresa"
-                                type="text"
-                                placeholder="Mi Empresa S.A.S"
-                                :class="inputClass"
-                            />
-                        </div>
-                        <div class="flex flex-col gap-1.5">
-                            <label :class="labelClass">Rol en la empresa</label>
-                            <input
-                                v-model="form.rol"
-                                type="text"
-                                placeholder="Asesor"
-                                :class="inputClass"
-                            />
-                        </div>
+                        <FormInput
+                            label="Nombre de la empresa"
+                            v-model="form.empresa"
+                            placeholder="Mi Empresa S.A.S"
+                        />
+                        <FormInput
+                            label="Rol en la empresa"
+                            v-model="form.rol"
+                            placeholder="Asesor"
+                        />
                     </div>
 
                     <!-- Teléfono + Correo -->
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div class="flex flex-col gap-1.5">
-                            <label :class="labelClass">Teléfono</label>
-                            <input
-                                v-model="form.telefono"
-                                type="tel"
-                                placeholder="300 123 4567"
-                                :class="inputClass"
-                            />
-                        </div>
-                        <div class="flex flex-col gap-1.5">
-                            <label :class="labelClass"
-                                >Correo electrónico</label
-                            >
-                            <input
-                                v-model="form.correo"
-                                type="email"
-                                placeholder="correo@empresa.com"
-                                :class="[
-                                    inputClass,
-                                    'bg-gray-100 text-gray-400 cursor-not-allowed',
-                                ]"
-                                disabled
-                            />
-                        </div>
+                        <FormInput
+                            label="Teléfono"
+                            type="tel"
+                            v-model="form.telefono"
+                            placeholder="300 123 4567"
+                        />
+                        <!-- Correo deshabilitado — se mantiene con FormInput usando :disabled -->
+                        <FormInput
+                            label="Correo electrónico"
+                            type="email"
+                            v-model="form.correo"
+                            placeholder="correo@empresa.com"
+                            :disabled="true"
+                        />
                     </div>
 
                     <!-- Alerta feedback -->
@@ -253,14 +224,8 @@
 </template>
 
 <script setup>
-import EyeIcon from '@/components/form/EyeIcon.vue'
-
 import { ref, reactive, computed } from 'vue'
-
-// ── Estilos compartidos ────────────────────────────────────────────────────
-const labelClass = 'text-sm font-medium text-gray-500'
-const inputClass =
-    'w-full h-10 px-3 rounded-lg border border-gray-200 bg-gray-50 text-[#0A2540] text-sm outline-none transition-all placeholder:text-gray-300 focus:bg-white focus:border-[#1a5c2a] focus:ring-2 focus:ring-[#1a5c2a]/10'
+import FormInput from '@/components/form/FormInput.vue'
 
 // ── Avatar ─────────────────────────────────────────────────────────────────
 const avatarInputRef = ref(null)
@@ -312,7 +277,6 @@ async function handleSave() {
             },
             body: payload,
         })
-
         if (!response.ok) throw new Error()
 
         feedback.message = 'Información guardada correctamente.'
