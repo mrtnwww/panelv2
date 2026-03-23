@@ -2,12 +2,20 @@
 
 namespace App\Models;
 
+use App\Models\Empresa;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 
 class Usuario extends Authenticatable
 {
     protected $table = 'usuario';
 	public $timestamps = false;
+
+    protected $casts = [
+		'subtipousuario_id' => 'int',
+		'persona_id'        => 'int',
+		'empresa_id'        => 'int',
+		'client_id'         => 'int'
+	];
 
     protected $fillable = [
 		'correo',
@@ -28,6 +36,10 @@ class Usuario extends Authenticatable
 
     public function persona()
     {
-        // return $this->belongsTo(Persona::class, 'persona_id');
+        return $this->belongsTo(Persona::class, 'persona_id');
+    }
+
+    public function empresa() {
+        return $this->belongsTo(Empresa::class, 'empresa_id');
     }
 }

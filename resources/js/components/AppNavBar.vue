@@ -105,9 +105,9 @@
                     class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center shrink-0 overflow-hidden"
                 >
                     <img
-                        v-if="user.avatar"
-                        :src="user.avatar"
-                        :alt="user.name"
+                        v-if="user?.image"
+                        :src="user.image"
+                        :alt="user?.persona?.nombre"
                         class="w-full h-full object-cover"
                     />
                     <span v-else class="text-xs font-semibold text-gray-500">{{
@@ -116,10 +116,10 @@
                 </div>
                 <div class="hidden md:flex flex-col items-start leading-tight">
                     <span class="text-sm font-medium text-gray-700">{{
-                        user.name
+                        user?.persona?.nombre
                     }}</span>
                     <span class="text-xs text-gray-400 max-w-35 truncate">{{
-                        user.company
+                        user?.empresa?.razon_social
                     }}</span>
                 </div>
                 <svg
@@ -146,10 +146,10 @@
                 >
                     <div class="px-4 py-2.5 border-b border-gray-100">
                         <p class="text-sm font-medium text-gray-700">
-                            {{ user.name }}
+                            {{ user?.persona?.nombre }}
                         </p>
                         <p class="text-xs text-gray-400 truncate">
-                            {{ user.email }}
+                            {{ user?.correo }}
                         </p>
                     </div>
                     <button
@@ -220,12 +220,7 @@ const props = defineProps({
     },
     user: {
         type: Object,
-        default: () => ({
-            name: 'Martín Desarrollo',
-            email: 'martin@credigital.com',
-            company: 'IMPULSA CORP SAS / CREDITRANSITO',
-            avatar: null,
-        }),
+        default: () => ({}),
     },
     notifications: {
         type: Number,
@@ -270,7 +265,7 @@ function quickNav(route) {
 }
 
 const userInitials = computed(() => {
-    return props.user.name
+    return props.user?.persona?.nombre
         .split(' ')
         .slice(0, 2)
         .map(n => n[0])
@@ -306,6 +301,7 @@ onUnmounted(() => document.removeEventListener('mousedown', handleClickOutside))
         opacity 0.15s ease,
         transform 0.15s ease;
 }
+
 .dropdown-enter-from,
 .dropdown-leave-to {
     opacity: 0;

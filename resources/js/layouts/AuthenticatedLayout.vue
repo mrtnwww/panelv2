@@ -33,14 +33,18 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import AppSidebar from '@/components/AppSideBar.vue'
 import AppNavbar from '@/components/AppNavbar.vue'
 
+import { useAuthStore } from '@/stores/auth'
+
 // -- Estado del sidebar ----------------------------------------------------------
 
 const BREAKPOINT = 1024 // lg
 const SIDEBAR_W = 224 // w-56 = 224px
 const SIDEBAR_COL = 64 // w-16  = 64px (colapsado)
 
+const auth = useAuthStore()
 const isMobile = ref(false)
 const sidebarOpen = ref(true)
+const currentUser = ref(null)
 
 function checkMobile() {
     isMobile.value = window.innerWidth < BREAKPOINT
@@ -53,9 +57,12 @@ function toggleSidebar() {
     sidebarOpen.value = !sidebarOpen.value
 }
 
-onMounted(() => {
+onMounted(async () => {
     checkMobile()
     window.addEventListener('resize', checkMobile)
+
+    // Usuario actual
+    currentUser.value = await auth.fetchUser()
 })
 onUnmounted(() => window.removeEventListener('resize', checkMobile))
 
@@ -69,14 +76,5 @@ const navbarLeft = computed(() => {
 const mainMargin = computed(() => {
     if (isMobile.value) return '0px'
     return sidebarOpen.value ? `${SIDEBAR_W}px` : `${SIDEBAR_COL}px`
-})
-
-// -- Usuario actual ----------------------------------------------------------
-
-const currentUser = ref({
-    name: 'Martín Desarrollo',
-    email: 'martin@credigital.com',
-    company: 'IMPULSA CORP SAS / CREDITRANSITO',
-    avatar: null,
 })
 </script>

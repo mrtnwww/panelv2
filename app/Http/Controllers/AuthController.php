@@ -58,6 +58,11 @@ class AuthController extends Controller
         $user->ult_acceso = now();
         $user->save();
 
+        $user->load([
+            'persona:id,nombre',
+            'empresa:id,razon_social'
+        ]);
+
         return response()->json([
             'user' => $user
         ]);
