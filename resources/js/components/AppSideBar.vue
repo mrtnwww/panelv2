@@ -91,7 +91,10 @@
 
 <script setup>
 import { computed } from 'vue'
+
+import { useAuthStore } from '@/stores/auth'
 import { useRouter, useRoute } from 'vue-router'
+
 import NavGroup from '@/components/sidebar/NavGroup.vue'
 import NavItem from '@/components/sidebar/NavItem.vue'
 
@@ -108,6 +111,7 @@ defineProps({
 
 defineEmits(['close'])
 
+const auth = useAuthStore()
 const router = useRouter()
 const route = useRoute()
 const currentPath = computed(() => route.path)
@@ -225,8 +229,8 @@ function navigate(path) {
     router.push(path)
 }
 
-function handleLogout() {
-    localStorage.removeItem('auth_token')
+async function handleLogout() {
+    await auth.logout()
     router.push('/login')
 }
 </script>

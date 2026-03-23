@@ -9,203 +9,84 @@
         >
             <!-- Fila 1 -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <!-- Fecha inicial -->
-                <div class="flex flex-col gap-1.5">
-                    <label
-                        class="text-xs font-medium text-gray-400 uppercase tracking-wide"
-                        >Fecha inicial</label
-                    >
-                    <input
-                        v-model="filters.fechaInicial"
-                        type="date"
-                        :class="inputClass"
-                    />
-                </div>
-
-                <!-- Fecha final -->
-                <div class="flex flex-col gap-1.5">
-                    <label
-                        class="text-xs font-medium text-gray-400 uppercase tracking-wide"
-                        >Fecha final</label
-                    >
-                    <input
-                        v-model="filters.fechaFinal"
-                        type="date"
-                        :class="inputClass"
-                    />
-                </div>
-
-                <!-- Cliente -->
-                <div class="flex flex-col gap-1.5">
-                    <label
-                        class="text-xs font-medium text-gray-400 uppercase tracking-wide"
-                        >Cliente</label
-                    >
-                    <div class="relative">
-                        <select
-                            v-model="filters.cliente"
-                            :class="[
-                                inputClass,
-                                'appearance-none pr-8 cursor-pointer',
-                            ]"
-                        >
-                            <option value="">Seleccione un cliente</option>
-                            <option
-                                v-for="c in clientes"
-                                :key="c.value"
-                                :value="c.value"
-                            >
-                                {{ c.label }}
-                            </option>
-                        </select>
-                        <ChevronIcon />
-                    </div>
-                </div>
-
-                <!-- Estado crédito -->
-                <div class="flex flex-col gap-1.5">
-                    <label
-                        class="text-xs font-medium text-gray-400 uppercase tracking-wide"
-                        >Estado crédito</label
-                    >
-                    <div class="relative">
-                        <select
-                            v-model="filters.estado"
-                            :class="[
-                                inputClass,
-                                'appearance-none pr-8 cursor-pointer',
-                            ]"
-                        >
-                            <option value="">Seleccione un estado</option>
-                            <option
-                                v-for="e in estadosCredito"
-                                :key="e.value"
-                                :value="e.value"
-                            >
-                                {{ e.label }}
-                            </option>
-                        </select>
-                        <ChevronIcon />
-                    </div>
-                </div>
+                <FormInput
+                    label="Fecha inicial"
+                    type="date"
+                    v-model="filters.fechaInicial"
+                />
+                <FormInput
+                    label="Fecha final"
+                    type="date"
+                    v-model="filters.fechaFinal"
+                />
+                <FormInput
+                    label="Cliente"
+                    type="select"
+                    v-model="filters.cliente"
+                    :options="clientes"
+                    placeholder="Seleccione un cliente"
+                />
+                <FormInput
+                    label="Estado crédito"
+                    type="select"
+                    v-model="filters.estado"
+                    :options="estadosCredito"
+                    placeholder="Seleccione un estado"
+                />
             </div>
 
             <!-- Fila 2 -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <!-- Vencimiento de cuota -->
+                <!-- Vencimiento de cuota + checkbox Por rango -->
                 <div class="flex flex-col gap-1.5">
                     <div class="flex items-center justify-between">
                         <label
                             class="text-xs font-medium text-gray-400 uppercase tracking-wide"
-                            >Vencimiento de cuota</label
                         >
-                        <label class="flex items-center gap-1.5 cursor-pointer">
-                            <input
-                                v-model="filters.porRango"
-                                type="checkbox"
-                                class="w-3.5 h-3.5 rounded border-gray-300 accent-[#1a5c2a] cursor-pointer"
-                            />
-                            <span class="text-xs text-gray-400">Por rango</span>
+                            Vencimiento de cuota
                         </label>
+                        <FormCheckbox
+                            v-model="filters.porRango"
+                            label="Por rango"
+                        />
                     </div>
-                    <input
-                        v-model="filters.vencimientoCuota"
-                        type="date"
-                        :class="inputClass"
+                    <FormInput v-model="filters.vencimientoCuota" type="date" />
+                </div>
+
+                <FormInput
+                    label="Destino"
+                    type="select"
+                    v-model="filters.destino"
+                    :options="destinos"
+                    placeholder="Seleccione un destino"
+                />
+                <FormInput
+                    label="Periodicidad"
+                    type="select"
+                    v-model="filters.periodicidad"
+                    :options="periodicidades"
+                    placeholder="Seleccione la periodicidad"
+                />
+
+                <!-- Aliado + checkbox Solo aliados -->
+                <div class="flex flex-col gap-1.5">
+                    <div class="flex items-center justify-between">
+                        <label
+                            class="text-xs font-medium text-gray-400 uppercase tracking-wide"
+                        >
+                            Aliado
+                        </label>
+                        <FormCheckbox
+                            v-model="filters.soloAliados"
+                            label="Solo aliados"
+                        />
+                    </div>
+                    <FormInput
+                        v-model="filters.aliado"
+                        type="select"
+                        :options="aliados"
+                        placeholder="Seleccione un aliado"
                     />
-                </div>
-
-                <!-- Destino -->
-                <div class="flex flex-col gap-1.5">
-                    <label
-                        class="text-xs font-medium text-gray-400 uppercase tracking-wide"
-                        >Destino</label
-                    >
-                    <div class="relative">
-                        <select
-                            v-model="filters.destino"
-                            :class="[
-                                inputClass,
-                                'appearance-none pr-8 cursor-pointer',
-                            ]"
-                        >
-                            <option value="">Seleccione un destino</option>
-                            <option
-                                v-for="d in destinos"
-                                :key="d.value"
-                                :value="d.value"
-                            >
-                                {{ d.label }}
-                            </option>
-                        </select>
-                        <ChevronIcon />
-                    </div>
-                </div>
-
-                <!-- Periodicidad -->
-                <div class="flex flex-col gap-1.5">
-                    <label
-                        class="text-xs font-medium text-gray-400 uppercase tracking-wide"
-                        >Periodicidad</label
-                    >
-                    <div class="relative">
-                        <select
-                            v-model="filters.periodicidad"
-                            :class="[
-                                inputClass,
-                                'appearance-none pr-8 cursor-pointer',
-                            ]"
-                        >
-                            <option value="">Seleccione la periodicidad</option>
-                            <option
-                                v-for="p in periodicidades"
-                                :key="p.value"
-                                :value="p.value"
-                            >
-                                {{ p.label }}
-                            </option>
-                        </select>
-                        <ChevronIcon />
-                    </div>
-                </div>
-
-                <!-- Aliado -->
-                <div class="flex flex-col gap-1.5">
-                    <div class="flex items-center justify-between">
-                        <label
-                            class="text-xs font-medium text-gray-400 uppercase tracking-wide"
-                            >Aliado</label
-                        >
-                        <label class="flex items-center gap-1.5 cursor-pointer">
-                            <input
-                                v-model="filters.soloAliados"
-                                type="checkbox"
-                                class="w-3.5 h-3.5 rounded border-gray-300 accent-[#1a5c2a] cursor-pointer"
-                            />
-                            <span class="text-xs text-gray-400"
-                                >Solo aliados</span
-                            >
-                        </label>
-                    </div>
-                    <div class="relative">
-                        <select
-                            v-model="filters.aliado"
-                            :class="[
-                                inputClass,
-                                'appearance-none pr-8 cursor-pointer',
-                            ]"
-                        >
-                            <option value="">Seleccione un aliado</option>
-                            <option
-                                v-for="a in aliados"
-                                :key="a.value"
-                                :value="a.value"
-                            >
-                                {{ a.label }}
-                            </option>
-                        </select>
-                        <ChevronIcon />
-                    </div>
                 </div>
             </div>
 
@@ -240,7 +121,6 @@
                     </svg>
                     Generar informe resumido
                 </button>
-
                 <button
                     @click="generarInforme('detallado')"
                     :disabled="loadingInforme === 'detallado'"
@@ -294,7 +174,21 @@
                     @click="fetchCreditos"
                     class="h-8 px-3 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium transition-all flex items-center gap-1.5"
                 >
-                    <i class="fa-solid fa-arrow-rotate-right"></i>
+                    <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+                        <path
+                            d="M11 6.5A4.5 4.5 0 1 1 6.5 2"
+                            stroke="currentColor"
+                            stroke-width="1.3"
+                            stroke-linecap="round"
+                        />
+                        <path
+                            d="M9 2h2.5V4.5"
+                            stroke="currentColor"
+                            stroke-width="1.3"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        />
+                    </svg>
                     Actualizar valores
                 </button>
             </template>
@@ -391,9 +285,9 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-
 import DataTable from '@/components/table/DataTable.vue'
-import ChevronIcon from '@/components/form/ChevronIcon.vue'
+import FormInput from '@/components/form/FormInput.vue'
+import FormCheckbox from '@/components/form/FormCheckbox.vue'
 
 const router = useRouter()
 
@@ -550,9 +444,6 @@ const totales = computed(() => {
 })
 
 // ── Helpers ────────────────────────────────────────────────────────────────
-const inputClass =
-    'w-full h-9 px-3 rounded-lg border border-gray-200 bg-gray-50 text-sm text-gray-600 outline-none focus:border-[#1a5c2a] focus:ring-2 focus:ring-[#1a5c2a]/10 transition-all'
-
 function formatCurrency(value) {
     if (value == null) return '$0'
     return new Intl.NumberFormat('es-CO', {
@@ -562,7 +453,14 @@ function formatCurrency(value) {
     }).format(value)
 }
 
-// ── Llamada al backend ─────────────────────────────────────────────────────
+function authHeaders() {
+    return {
+        Accept: 'application/json',
+        Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
+    }
+}
+
+// ── Backend ────────────────────────────────────────────────────────────────
 async function fetchCreditos() {
     loading.value = true
     try {
@@ -589,12 +487,8 @@ async function fetchCreditos() {
         })
 
         const response = await fetch(`/api/creditos?${params}`, {
-            headers: {
-                Accept: 'application/json',
-                Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
-            },
+            headers: authHeaders(),
         })
-
         if (!response.ok) throw new Error('Error al cargar créditos')
 
         const data = await response.json()
@@ -620,21 +514,16 @@ async function generarInforme(tipo) {
         })
 
         const response = await fetch(`/api/creditos/informe?${params}`, {
-            headers: {
-                Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
-            },
+            headers: authHeaders(),
         })
-
         if (!response.ok) throw new Error('Error al generar informe')
 
-        // Descarga el archivo
         const blob = await response.blob()
-        const url = URL.createObjectURL(blob)
         const a = document.createElement('a')
-        a.href = url
+        a.href = URL.createObjectURL(blob)
         a.download = `informe_creditos_${tipo}.xlsx`
         a.click()
-        URL.revokeObjectURL(url)
+        URL.revokeObjectURL(a.href)
     } catch (err) {
         console.error(err)
     } finally {
@@ -647,13 +536,11 @@ function onPageChange(page) {
     pagination.currentPage = page
     fetchCreditos()
 }
-
 function onPerPageChange(val) {
     pagination.perPage = val
     pagination.currentPage = 1
     fetchCreditos()
 }
-
 function onSearch(val) {
     search.value = val
     clearTimeout(searchTimeout)
@@ -662,7 +549,6 @@ function onSearch(val) {
         fetchCreditos()
     }, 400)
 }
-
 function onSort({ key, dir }) {
     sort.key = key
     sort.dir = dir
@@ -674,14 +560,10 @@ function onSort({ key, dir }) {
 function verDetalle(row) {
     router.push(`/dashboard/creditos/${row.id}`)
 }
-
 function generarExtracto(row) {
-    // Llamada al backend para generar PDF del extracto
     console.log('Generar extracto:', row.id)
 }
-
 function anularCredito(row) {
-    // Confirmar y anular
     console.log('Anular crédito:', row.id)
 }
 

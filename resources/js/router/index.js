@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
 
 // Vistas
 import LoginView from '@/views/auth/LoginView.vue'
@@ -19,16 +20,19 @@ const routes = [
         path: '/login',
         name: 'login',
         component: LoginView,
+        meta: { guestOnly: true },
     },
     {
         path: '/registro',
         name: 'registro',
         component: RegisterView,
+        meta: { guestOnly: true },
     },
     // -- Rutas autenticadas ----------------------------------------------------------------
     {
         path: '/',
         component: AuthenticatedLayout,
+        meta: { requiresAuth: true },
         children: [
             {
                 path: 'dashboard',
@@ -176,16 +180,21 @@ function isAuthenticated() {
 }
 
 // -- Guard global ------------------------------------------------------------
-router.beforeEach((to, from) => {
-    const auth = isAuthenticated()
+router.beforeEach(async (to, from) => {
+    const auth = useAuthStore()
 
-    // Ruta protegida y no autenticado → login
-    if (to.meta.requiresAuth && !auth) {
+    // Usuario cargado
+    if (!auth.user) {
+        await auth.fetchUser()
+    }
+
+    // Rutas protegidas
+    if (to.meta.requiresAuth && !auth.isAuthenticated) {
         return { name: 'login' }
     }
 
-    // Ruta solo para guests (login/registro) y ya autenticado → dashboard
-    if (to.meta.guestOnly && auth) {
+    // Usuario autenticado
+    if (to.meta.guestOnly && auth.isAuthenticated) {
         return { name: 'dashboard' }
     }
 })

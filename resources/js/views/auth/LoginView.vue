@@ -161,6 +161,8 @@
 
 <script setup>
 import { ref, reactive } from 'vue'
+
+import { useAuthStore } from '@/stores/auth'
 import { useRouter } from 'vue-router'
 
 // -- Componentes ----------------------------------------
@@ -169,67 +171,43 @@ import FormInput from '@/components/form/FormInput.vue'
 import EyeIcon from '@/components/form/EyeIcon.vue'
 
 const router = useRouter()
+const auth = useAuthStore()
 
 const form = reactive({ email: '', password: '' })
+
+const fieldErrors = reactive({ email: '', password: '' })
+const errorMessage = ref('')
+
 const showPassword = ref(false)
 const loading = ref(false)
-const errorMessage = ref('')
-const fieldErrors = reactive({ email: '', password: '' })
 
 async function handleLogin() {
-    errorMessage.value = ''
-    fieldErrors.email = ''
     fieldErrors.password = ''
+    fieldErrors.email = ''
+
+    errorMessage.value = ''
     loading.value = true
 
     try {
-        // await fetch('/sanctum/csrf-cookie', { credentials: 'include' })
-
-        // const response = await fetch('/api/login', {
-        //     method: 'POST',
-        //     headers: {
-        //         'Content-Type': 'application/json',
-        //         Accept: 'application/json',
-        //         'X-XSRF-TOKEN': getCookie('XSRF-TOKEN'),
-        //     },
-        //     credentials: 'include',
-        //     body: JSON.stringify({
-        //         email: form.email,
-        //         password: form.password,
-        //     }),
-        // })
-
-        // const data = await response.json()
-
-        // if (response.status === 422 && data.errors) {
-        //     if (data.errors.email) fieldErrors.email = data.errors.email[0]
-        //     if (data.errors.password)
-        //         fieldErrors.password = data.errors.password[0]
-        //     return
-        // }
-
-        // if (!response.ok) {
-        //     errorMessage.value =
-        //         data.message || 'Correo o contraseña incorrectos.'
-        //     return
-        // }
-
-        // if (data.token) localStorage.setItem('auth_token', data.token)
+        await auth.login({
+            email: form.email,
+            password: form.password,
+        })
 
         router.push('/dashboard')
-    } catch {
-        errorMessage.value = 'Error de conexión. Intenta nuevamente.'
+    } catch (error) {
+        if (error.response?.status === 422) {
+            const errors = error.response.data.errors
+            if (errors.email) fieldErrors.email = errors.email[0]
+            if (errors.password) fieldErrors.password = errors.password[0]
+        } else {
+            errorMessage.value =
+                error.response?.data?.message ||
+                'Correo o contraseña incorrectos.'
+        }
     } finally {
         loading.value = false
     }
-}
-
-function getCookie(name) {
-    const value = `; ${document.cookie}`
-    const parts = value.split(`; ${name}=`)
-    if (parts.length === 2)
-        return decodeURIComponent(parts.pop().split(';').shift())
-    return ''
 }
 </script>
 
@@ -240,6 +218,7 @@ function getCookie(name) {
         opacity 0.2s ease,
         transform 0.2s ease;
 }
+
 .fade-enter-from,
 .fade-leave-to {
     opacity: 0;

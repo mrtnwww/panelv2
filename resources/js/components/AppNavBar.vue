@@ -209,6 +209,8 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+
+import { useAuthStore } from '@/stores/auth'
 import { useRouter } from 'vue-router'
 
 const props = defineProps({
@@ -238,6 +240,8 @@ const props = defineProps({
 defineEmits(['toggle-sidebar'])
 
 const router = useRouter()
+const auth = useAuthStore()
+
 const userMenuRef = ref(null)
 const userMenuOpen = ref(false)
 const quickMenuOpen = ref(false)
@@ -279,8 +283,8 @@ function goTo(path) {
     router.push(path)
 }
 
-function handleLogout() {
-    localStorage.removeItem('auth_token')
+async function handleLogout() {
+    await auth.logout()
     router.push('/login')
 }
 
