@@ -41,10 +41,20 @@ const routes = [
             },
             // -- CLIENTES --------------------------------------------------------------------
             {
+                path: 'clientes',
+                name: 'clientes',
+                component: () =>
+                    import('@/views/clientes/ClientesListaView.vue'),
+            },
+            {
                 path: 'clientes/nuevo',
                 name: 'clientes.nuevo',
-                component: () =>
-                    import('@/views/clientes/ClienteCrearView.vue'),
+                component: () => import('@/views/clientes/ClienteFormView.vue'),
+            },
+            {
+                path: 'clientes/:cliente_id/editar',
+                name: 'clientes.editar',
+                component: () => import('@/views/clientes/ClienteFormView.vue'),
             },
             {
                 path: 'clientes/validar',
@@ -57,12 +67,6 @@ const routes = [
                 name: 'clientes.analisis',
                 component: () =>
                     import('@/views/clientes/ClientesAnalisisView.vue'),
-            },
-            {
-                path: 'clientes',
-                name: 'clientes',
-                component: () =>
-                    import('@/views/clientes/ClientesListaView.vue'),
             },
             // -- CREDITOS --------------------------------------------------------------------
             {

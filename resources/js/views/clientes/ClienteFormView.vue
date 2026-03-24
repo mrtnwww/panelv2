@@ -12,7 +12,7 @@
 
         <!-- 1. Crear cliente -------------------------------------------------------------------- -->
         <CollapsibleCard
-            title="Crear cliente"
+            :title="isEditing ? 'Editar cliente' : 'Nuevo cliente'"
             :step="1"
             :open="true"
             :completed="completado.cliente"
@@ -106,14 +106,8 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <FormInput
                     label="Nombres"
-                    v-model="form.nombres"
-                    placeholder="Juan Andrés"
-                    required
-                />
-                <FormInput
-                    label="Apellidos"
-                    v-model="form.apellidos"
-                    placeholder="Pérez López"
+                    v-model="form.nombre"
+                    placeholder="Maria Perez"
                     required
                 />
                 <FormInput
@@ -510,12 +504,26 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, reactive, computed, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+
+const route = useRoute()
+
+// -- Detectar el modo --------------------------------------------
+const isEditing = computed(() => !!route.params.cliente_id)
+const clienteId = computed(() => route.params.cliente_id)
+
+// -- Componentes -------------------------------------------------
 import CollapsibleCard from '@/components/cards/CollapsibleCard.vue'
+import ReferenciaCard from '@/components/form/ReferenciaCard.vue'
 import FileUpload from '@/components/form/FileUpload.vue'
 import FormInput from '@/components/form/FormInput.vue'
-import ReferenciaCard from '@/components/form/ReferenciaCard.vue'
+
+// -- Loader -------------------------------------------------
+import { useLoader } from '@/composables/useLoader'
+const { start, stop } = useLoader()
+
+import api from '@/services/api'
 
 const router = useRouter()
 
@@ -534,8 +542,7 @@ const form = reactive({
     fotoCliente: null,
 
     // 2. Datos personales
-    nombres: '',
-    apellidos: '',
+    nombre: '',
     fechaNacimiento: '',
     telefono: '',
     correo: '',
@@ -586,7 +593,7 @@ const form = reactive({
 // -- Secciones completadas ----------------------------------------------------------
 const completado = computed(() => ({
     cliente: !!form.cedula,
-    personal: !!form.nombres && !!form.apellidos && !!form.telefono,
+    personal: !!form.nombre && !!form.telefono,
     laboral: !!form.salario || !!form.nombreEmpleador,
     documentos: !!(form.cedulaFrontal && form.cedulaPosterior),
     referencias: form.referencias.every(r => r.nombre && r.telefono),
@@ -669,8 +676,7 @@ async function handleSubmit() {
         const textFields = [
             'cedula',
             'cupo',
-            'nombres',
-            'apellidos',
+            'nombre',
             'fechaNacimiento',
             'telefono',
             'correo',
@@ -743,4 +749,58 @@ async function handleSubmit() {
         loading.value = false
     }
 }
+
+async function fetchCliente() {
+    if (!isEditing.value) return
+    loading.value = true
+
+    try {
+        const { data } = await api.get(`/api/clientes/${clienteId.value}`)
+
+        // Mapea los campos del backend al formulario
+        const cliente = data.resultado.cliente
+
+        form.cedula = cliente.cedula ?? ''
+        form.cupo = cliente.cupo ?? ''
+
+        // Datos personales
+        form.fechaNacimiento = cliente.fecha_nacimiento
+            ? cliente.fecha_nacimiento.split('/').reverse().join('-')
+            : ''
+            form.telefono = cliente.telefono ?? ''
+            form.direccion = cliente.direccion ?? ''
+        form.nombre = cliente.nombre ?? ''
+        form.ciudad = cliente.ciudad ?? ''
+        form.barrio = cliente.barrio ?? ''
+        form.correo = cliente.email ?? ''
+
+        // Información laboral
+        form.salario = cliente.salario ?? ''
+        form.nombreEmpleador = cliente.empresa_labora ?? ''
+        form.telefonoEmpleador = cliente.telEmpresa ?? ''
+        form.direccionEmpleador = cliente.direccionEmpresa ?? ''
+        form.tipoCuenta = cliente.tipo_cuenta_bancaria ?? ''
+        form.numeroCuenta = cliente.num_cuenta_bancaria ?? ''
+        form.banco = cliente.nombre_banco ?? ''
+
+        // Analisis de consulta en centrales de riesgo
+        form.analisisNota = cliente.nota ?? ''
+        form.analisisNumeroConsulta = cliente.puntaje_consulta ?? ''
+    } catch (e) {
+        console.log(e)
+        // router.back()
+    } finally {
+        loading.value = false
+    }
+}
+
+onMounted(async () => {
+    start()
+
+    try {
+        await fetchCliente()
+    } finally {
+        stop()
+    }
+})
 </script>
