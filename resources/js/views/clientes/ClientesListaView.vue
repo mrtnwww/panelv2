@@ -223,14 +223,14 @@
                 >
                     <button
                         @click.stop="editCliente(row)"
-                        class="w-7 h-7 rounded-lg border border-gray-200 flex items-center justify-center text-gray-400 hover:text-[#1a5c2a] hover:border-[#1a5c2a]/30 transition-all"
+                        class="btn-table"
                         title="Editar"
                     >
                         <i class="fa-solid fa-pencil"></i>
                     </button>
                     <button
                         @click.stop="viewCliente(row)"
-                        class="w-7 h-7 rounded-lg border border-gray-200 flex items-center justify-center text-gray-400 hover:text-blue-500 hover:border-blue-200 transition-all"
+                        class="btn-table"
                         title="Ver historico"
                     >
                         <i class="fa-solid fa-eye"></i>
@@ -277,7 +277,7 @@ const columns = [
     },
     {
         key: 'autorizacionCentrales',
-        label: 'Autorización centrales',
+        label: 'Autorización consulta centrales',
         sortable: false,
         type: 'boolean',
         align: 'center',
@@ -291,7 +291,7 @@ const columns = [
     },
     {
         key: 'resultado',
-        label: 'Resultado',
+        label: 'Resultado consulta centrales',
         sortable: false,
         type: 'boolean',
         align: 'center',
@@ -304,7 +304,7 @@ const columns = [
         align: 'center',
     },
     { key: 'valorCredito', label: 'Valor ult. crédito', sortable: false },
-    { key: 'acciones', label: 'Acciones', sortable: false },
+    { key: 'acciones', label: 'Acciones', sortable: false, align: 'center' },
 ]
 
 // -- Estado ------------------------------------------------------------------
@@ -431,7 +431,7 @@ async function fetchClientes() {
 async function fetchEmpresas() {
     const { data } = await api.get('/api/empresas')
 
-    aliados.value = data.empresas.map((item) => ({
+    aliados.value = data.empresas.map(item => ({
         value: item.id,
         label: item.razon_social,
     }))
@@ -470,7 +470,7 @@ function viewCliente(row) {
     router.push(`/dashboard/clientes/${row.id}`)
 }
 
-// -- Transformar clientes
+// -- Transformar clientes -------------------------------------------
 function transformClientes(data) {
     clientes.value = data.map(({ cliente, empresa }) => ({
         id: cliente.id,
@@ -490,8 +490,11 @@ function transformClientes(data) {
 
 onMounted(async () => {
     start()
-    await fetchEmpresas()
-    await fetchClientes()
-    stop()
+
+    try {
+        await Promise.all([fetchEmpresas(), fetchClientes()])
+    } finally {
+        stop()
+    }
 })
 </script>

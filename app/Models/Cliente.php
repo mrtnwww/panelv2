@@ -186,24 +186,10 @@ class Cliente extends Model
         }
     }
 
-    public function scopeApplyAliado($query, $aliadoId)
+    public function scopeApplyAliado($query, $aliado)
     {
-        if (!empty($aliadoId)) {
-            $query->where('empresa_id', $aliadoId);
-        }
-    }
-
-    public function scopeApplyCreditoAprobado($query, $param)
-    {
-        if (!empty($param)) {
-            $query->WhereHas('ultCredito', function ($q) {
-                $q->whereNotNull('fecha_cierre');
-            })->where([
-                ['cliente_validado', 1],
-                ['autorizacion', 1],
-                ['estado_aval', 1],
-                ['iscontinue', 0]
-            ])->whereNotNull('comprobar_cliente');
+        if (!empty($aliado)) {
+            $query->where('empresa_id', $aliado);
         }
     }
 
@@ -220,24 +206,6 @@ class Cliente extends Model
             } elseif ($fechaFinal) {
                 $query->where('created_at', '<=', $fechaFinal);
             }
-        }
-    }
-
-    public function scopeApplyConditions($query, $conditions, $validarDatos)
-    {
-        if (count($conditions) > 0) {
-            foreach ($conditions as $field => $value) {
-                if ($field != 'iscontinue') {
-                    $query->where($field, $value)->where('iscontinue', 0); // El proceso aun no se encuentra finalizado
-                } else {
-                    $query->where($field, $value);
-                }
-            }
-        }
-
-        if (!$validarDatos) {
-            $query->where('iscontinue', 0)
-                ->where('cliente_validado', 0);
         }
     }
 
@@ -258,13 +226,17 @@ class Cliente extends Model
                     $column = $estado[$condition];
 
                     $q->orWhere(function ($sub) use ($column) {
-                        if ($column === 'comprobar_cliente') {
-                            $sub->whereNull($column)
-                                ->orWhere($column, '');
-                        } else {
-                            $sub->where($column, 0)
-                                ->orWhereNull($column);
-                        }
+                        $sub->where(function ($inner) use ($column) {
+                            if ($column === 'estado_aval') {
+                                $inner->whereNull($column);
+                            } else if ($column === 'comprobar_cliente') {
+                                $inner->whereNull($column)
+                                    ->orWhere($column, '');
+                            }else {
+                                $inner->where($column, 0)
+                                    ->orWhereNull($column);
+                            }
+                        })->where('iscontinue', 0);
                     });
                 }
             });

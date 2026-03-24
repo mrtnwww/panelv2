@@ -80,11 +80,14 @@
                             :key="col.key"
                             @click="col.sortable && onSort(col.key)"
                             :class="[
-                                'px-3 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide whitespace-nowrap',
+                                'px-3 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide whitespace-nowrap',
                                 col.sortable &&
                                     'cursor-pointer hover:text-gray-600 select-none',
-                                col.align === 'center' && 'text-center',
-                                col.align === 'right' && 'text-right',
+                                col.align === 'center'
+                                    ? 'text-center'
+                                    : col.align === 'right'
+                                      ? 'text-right'
+                                      : 'text-left',
                             ]"
                         >
                             <span

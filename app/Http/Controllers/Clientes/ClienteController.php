@@ -26,7 +26,7 @@ class ClienteController extends Controller
         $searchTerm = $request->input('search', ''); // Termino de busqueda
 
         $tipoCliente = $request->input('filtroTipoCliente', 'cliente');
-        $aliado = $request->input('aliado', '');
+        $aliado = $request->input('aliado', null);
 
         // Filtros checkbox
         $estado = $request['estado'];
@@ -40,25 +40,6 @@ class ClienteController extends Controller
         // Campo de ordenamiento y direccion del ordenamiento
         $sortField = $request->input('sort_key', 'cliente.id');
         $sortDirection = $request->input('sortDirection', 'desc');
-
-        /**
-         * Validar el estado de los checks
-         * - Pendiente por autorizacion centrales de riesgo
-         * - Pendiente por validacion de datos
-         * - Pendiente por consulta centrales de riesgo
-        */
-        $conditions = $request->conditions ?? [];
-        $validConditions = array_filter($conditions, function($value, $key) use (&$pendientesValiDatos) {
-            if ($key == 'validacion_datos') {
-                $pendientesValiDatos = $value == 'false' ? false : true;
-            } else if ($key === 'iscontinue') {
-                return $value == 1;
-            } else {
-                return $value == null;
-            }
-        }, ARRAY_FILTER_USE_BOTH);
-
-        $aliadoId = Empresa::where('razon_social', $aliado)->pluck('id')->first();
 
         // Consulta de las empresas aliadas
         $empresasAliadas = Empresa::where('aliado', $empresaId)
@@ -81,8 +62,8 @@ class ClienteController extends Controller
         $clientQuery = Cliente::with(['referenciaCliente', 'ultCredito'])
             ->where('empresa_id', $empresaId)
             ->applySearch($searchTerm)
-            ->applyAliado($aliadoId)
-            ->applyOrWhereConditions($searchTerm, $empresasAliadas, $aliadoId, $empresaId, $tipoCliente)
+            ->applyAliado($aliado)
+            ->applyOrWhereConditions($searchTerm, $empresasAliadas, $aliado, $empresaId, $tipoCliente)
             ->applyEstado($estado)
             ->applyOrigen($origen)
             ->applyResultado($resultado)

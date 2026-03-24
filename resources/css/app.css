@@ -55,3 +55,7 @@
     opacity: 0;
     transform: translateY(-4px);
 }
+
+.btn-table {
+    @apply h-9 px-4 rounded-lg border border-gray-200 text-sm text-gray-500 hover:bg-gray-50 hover:border-gray-300 transition-all;
+}
