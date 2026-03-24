@@ -239,7 +239,7 @@
                                 col.align === 'center' && 'text-center',
                                 col.align === 'right' && 'text-right',
                                 col.nowrap !== false && 'whitespace-nowrap',
-                                col.truncate && 'max-w-[200px] truncate',
+                                col.truncate && 'max-w-50 truncate',
                             ]"
                         >
                             <!-- Slot personalizado por columna: #cell-{key} -->

@@ -226,47 +226,14 @@
                         class="w-7 h-7 rounded-lg border border-gray-200 flex items-center justify-center text-gray-400 hover:text-[#1a5c2a] hover:border-[#1a5c2a]/30 transition-all"
                         title="Editar"
                     >
-                        <svg
-                            width="13"
-                            height="13"
-                            viewBox="0 0 13 13"
-                            fill="none"
-                        >
-                            <path
-                                d="M9 1.5L11.5 4L4.5 11H2V8.5L9 1.5Z"
-                                stroke="currentColor"
-                                stroke-width="1.2"
-                                stroke-linejoin="round"
-                            />
-                        </svg>
+                        <i class="fa-solid fa-pencil"></i>
                     </button>
                     <button
                         @click.stop="viewCliente(row)"
                         class="w-7 h-7 rounded-lg border border-gray-200 flex items-center justify-center text-gray-400 hover:text-blue-500 hover:border-blue-200 transition-all"
-                        title="Ver detalle"
+                        title="Ver historico"
                     >
-                        <svg
-                            width="13"
-                            height="13"
-                            viewBox="0 0 13 13"
-                            fill="none"
-                        >
-                            <ellipse
-                                cx="6.5"
-                                cy="6.5"
-                                rx="5.5"
-                                ry="3.5"
-                                stroke="currentColor"
-                                stroke-width="1.2"
-                            />
-                            <circle
-                                cx="6.5"
-                                cy="6.5"
-                                r="1.5"
-                                stroke="currentColor"
-                                stroke-width="1.2"
-                            />
-                        </svg>
+                        <i class="fa-solid fa-eye"></i>
                     </button>
                 </div>
             </template>
@@ -283,6 +250,7 @@ import FormCheckbox from '@/components/form/FormCheckbox.vue'
 import DataTable from '@/components/table/DataTable.vue'
 import FormInput from '@/components/form/FormInput.vue'
 
+import { formatCurrency } from '@/utils/format'
 import api from '@/services/api'
 
 const router = useRouter()
@@ -331,7 +299,7 @@ const columns = [
         type: 'boolean',
         align: 'center',
     },
-    { key: 'valorCredito', label: 'Valor crédito', sortable: false },
+    { key: 'valorCredito', label: 'Valor ult. crédito', sortable: false },
     { key: 'acciones', label: 'Acciones', sortable: false },
 ]
 
@@ -403,7 +371,7 @@ function resetFilters() {
     fetchClientes()
 }
 
-// ── Selección ──────────────────────────────────────────────────────────────
+// -- Selección -------------------------------------------------------
 const selected = ref([])
 
 const allSelected = computed(
@@ -421,7 +389,7 @@ function onToggleRow(id) {
     idx === -1 ? selected.value.push(id) : selected.value.splice(idx, 1)
 }
 
-// ── Backend ────────────────────────────────────────────────────────────────
+// -- Backend ----------------------------------------------------------------
 async function fetchClientes() {
     loading.value = true
     try {
@@ -444,9 +412,14 @@ async function fetchClientes() {
 
         const { data } = await api.get('/api/clientes', { params })
 
-        clientes.value = data.data
-        pagination.total = data.meta.total
-        pagination.currentPage = data.meta.current_page
+        const { data: clientesData, total, current_page } = data.clients
+
+        // Lista de clientes
+        transformClients(clientesData)
+
+        // Datos de paginación
+        pagination.currentPage = current_page
+        pagination.total = total
     } catch (err) {
         console.error(err)
     } finally {
@@ -454,7 +427,7 @@ async function fetchClientes() {
     }
 }
 
-// ── Handlers DataTable ─────────────────────────────────────────────────────
+// -- Handlers DataTable ------------------------------------------------
 function onPageChange(page) {
     pagination.currentPage = page
     fetchClientes()
@@ -479,12 +452,30 @@ function onSearch(val) {
     }, 400)
 }
 
-// ── Navegación ─────────────────────────────────────────────────────────────
+// -- Navegación -----------------------------------------------------
 function editCliente(row) {
     router.push(`/dashboard/clientes/${row.id}/editar`)
 }
 function viewCliente(row) {
     router.push(`/dashboard/clientes/${row.id}`)
+}
+
+// -- Transformar clientes
+function transformClients(data) {
+    clientes.value = data.map(({ cliente, empresa }) => ({
+        id: cliente.id,
+        nombre: cliente.nombre,
+        identificacion: cliente.cedula,
+        aliado: empresa?.razon_social,
+        correo: cliente.email,
+        telefono: cliente.telefono,
+        fechaRegistro: cliente.fecha_creacion,
+        autorizacionCentrales: cliente.autorizacion,
+        validacionDatos: cliente.cliente_validado,
+        resultado: cliente.estado_aval,
+        fotoCliente: cliente.comprobar_cliente,
+        valorCredito: formatCurrency(cliente.ult_credito_valor),
+    }))
 }
 
 onMounted(fetchClientes)
