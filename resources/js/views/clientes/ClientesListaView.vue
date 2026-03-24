@@ -250,6 +250,10 @@ import FormCheckbox from '@/components/form/FormCheckbox.vue'
 import DataTable from '@/components/table/DataTable.vue'
 import FormInput from '@/components/form/FormInput.vue'
 
+// -- Loader -------------------------------------------------
+import { useLoader } from '@/composables/useLoader'
+const { start, stop } = useLoader()
+
 import { formatCurrency } from '@/utils/format'
 import api from '@/services/api'
 
@@ -485,7 +489,9 @@ function transformClientes(data) {
 }
 
 onMounted(async () => {
+    start()
     await fetchEmpresas()
     await fetchClientes()
+    stop()
 })
 </script>
