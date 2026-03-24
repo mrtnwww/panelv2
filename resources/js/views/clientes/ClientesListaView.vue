@@ -464,7 +464,7 @@ function onSearch(val) {
 
 // -- Navegación -----------------------------------------------------
 function editCliente(row) {
-    router.push(`/dashboard/clientes/${row.id}/editar`)
+    router.push(`/clientes/${row.id}/editar`)
 }
 function viewCliente(row) {
     router.push(`/dashboard/clientes/${row.id}`)

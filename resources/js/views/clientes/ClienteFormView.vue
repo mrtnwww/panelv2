@@ -507,6 +507,8 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
+import { formatDateToISO } from '@/utils/format'
+
 const route = useRoute()
 
 // -- Detectar el modo --------------------------------------------
@@ -632,10 +634,8 @@ const bancosOpts = [
 ]
 
 const estadoConsultaOpts = [
-    { value: 'aprobado', label: 'Aprobado' },
-    { value: 'rechazado', label: 'Rechazado' },
-    { value: 'pendiente', label: 'Pendiente de análisis' },
-    { value: 'revision', label: 'En revisión' },
+    { value: 1, label: 'Aprobado' },
+    { value: 0, label: 'Rechazado' }
 ]
 
 // -- Acciones ----------------------------------------------------------
@@ -759,33 +759,35 @@ async function fetchCliente() {
 
         // Mapea los campos del backend al formulario
         const cliente = data.resultado.cliente
+        const referencias = data.resultado.referencia
 
-        form.cedula = cliente.cedula ?? ''
-        form.cupo = cliente.cupo ?? ''
+        Object.assign(form, {
+            cedula: cliente.cedula ?? '',
+            cupo: cliente.cupo ?? '',
 
-        // Datos personales
-        form.fechaNacimiento = cliente.fecha_nacimiento
-            ? cliente.fecha_nacimiento.split('/').reverse().join('-')
-            : ''
-            form.telefono = cliente.telefono ?? ''
-            form.direccion = cliente.direccion ?? ''
-        form.nombre = cliente.nombre ?? ''
-        form.ciudad = cliente.ciudad ?? ''
-        form.barrio = cliente.barrio ?? ''
-        form.correo = cliente.email ?? ''
+            // Datos personales
+            nombre: cliente.nombre ?? '',
+            fechaNacimiento: formatDateToISO(cliente.fecha_nacimiento),
+            telefono: cliente.telefono ?? '',
+            correo: cliente.email ?? '',
+            direccion: cliente.direccion ?? '',
+            barrio: cliente.barrio ?? '',
+            ciudad: cliente.ciudad ?? '',
 
-        // Información laboral
-        form.salario = cliente.salario ?? ''
-        form.nombreEmpleador = cliente.empresa_labora ?? ''
-        form.telefonoEmpleador = cliente.telEmpresa ?? ''
-        form.direccionEmpleador = cliente.direccionEmpresa ?? ''
-        form.tipoCuenta = cliente.tipo_cuenta_bancaria ?? ''
-        form.numeroCuenta = cliente.num_cuenta_bancaria ?? ''
-        form.banco = cliente.nombre_banco ?? ''
+            // Información laboral
+            salario: cliente.salario ?? '',
+            nombreEmpleador: cliente.empresa_labora ?? '',
+            telefonoEmpleador: cliente.telEmpresa ?? '',
+            direccionEmpleador: cliente.direccionEmpresa ?? '',
+            tipoCuenta: cliente.tipo_cuenta_bancaria ?? '',
+            numeroCuenta: cliente.num_cuenta_bancaria ?? '',
+            banco: cliente.nombre_banco ?? '',
 
-        // Analisis de consulta en centrales de riesgo
-        form.analisisNota = cliente.nota ?? ''
-        form.analisisNumeroConsulta = cliente.puntaje_consulta ?? ''
+            // Análisis
+            analisisNota: cliente.nota ?? '',
+            analisisEstado: cliente.estado_aval ?? 0,
+            analisisNumeroConsulta: cliente.no_aval ?? '',
+        })
     } catch (e) {
         console.log(e)
         // router.back()

@@ -4,12 +4,18 @@ export function formatCurrency(value, options = {}) {
     const {
         locale = 'es-CO',
         currency = 'COP',
-        minimumFractionDigits = 0
+        minimumFractionDigits = 0,
     } = options
 
     return new Intl.NumberFormat(locale, {
         style: 'currency',
         currency,
-        minimumFractionDigits
+        minimumFractionDigits,
     }).format(value)
+}
+
+export function formatDateToISO(date) {
+    if (!date) return ''
+    const [d, m, y] = date.split('/')
+    return `${y}-${m}-${d}`
 }
