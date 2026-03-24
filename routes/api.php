@@ -1,11 +1,19 @@
 <?php
 
+use App\Http\Controllers\Clientes\ClienteController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    return $request->user()->load([
+// -- Rutas protegidas --------------------------------------------------------
+Route::middleware('auth:sanctum')->group(function () {
+    // Usuario autenticado
+    Route::get('/user', fn(Request $request) => $request->user()->load([
         'persona:id,nombre',
-        'empresa:id,razon_social'
-    ]);
+        'empresa:id,razon_social',
+    ]));
+
+    // Clientes
+    Route::prefix('clientes')->group(function () {
+        Route::get('/', [ClienteController::class, 'listMyClients']);
+    });
 });

@@ -641,28 +641,3 @@ async function eliminarUsuario() {
 
 onMounted(fetchUsuarios)
 </script>
-
-<style scoped>
-.modal-enter-active,
-.modal-leave-active {
-    transition: opacity 0.15s ease;
-}
-
-.modal-enter-from,
-.modal-leave-to {
-    opacity: 0;
-}
-
-.fade-enter-active,
-.fade-leave-active {
-    transition:
-        opacity 0.2s ease,
-        transform 0.2s ease;
-}
-
-.fade-enter-from,
-.fade-leave-to {
-    opacity: 0;
-    transform: translateY(-4px);
-}
-</style>

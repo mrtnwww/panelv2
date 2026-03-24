@@ -93,19 +93,7 @@
                         class="flex items-center gap-1.5 text-sm text-gray-500 hover:text-[#1a5c2a] transition-colors"
                     >
                         Editar foto de perfil
-                        <svg
-                            width="13"
-                            height="13"
-                            viewBox="0 0 13 13"
-                            fill="none"
-                        >
-                            <path
-                                d="M9 1.5L11.5 4L4.5 11H2V8.5L9 1.5Z"
-                                stroke="currentColor"
-                                stroke-width="1.2"
-                                stroke-linejoin="round"
-                            />
-                        </svg>
+                        <i class="fa-solid fa-pencil"></i>
                     </button>
 
                     <!-- Quitar foto -->
@@ -371,17 +359,3 @@ async function handleChangePassword() {
     }
 }
 </script>
-
-<style scoped>
-.fade-enter-active,
-.fade-leave-active {
-    transition:
-        opacity 0.2s ease,
-        transform 0.2s ease;
-}
-.fade-enter-from,
-.fade-leave-to {
-    opacity: 0;
-    transform: translateY(-4px);
-}
-</style>

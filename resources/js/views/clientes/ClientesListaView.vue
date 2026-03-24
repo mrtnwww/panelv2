@@ -283,12 +283,14 @@ import FormCheckbox from '@/components/form/FormCheckbox.vue'
 import DataTable from '@/components/table/DataTable.vue'
 import FormInput from '@/components/form/FormInput.vue'
 
+import api from '@/services/api'
+
 const router = useRouter()
 
-// ── Vista ──────────────────────────────────────────────────────────────────
+// -- Vista ------------------------------------------------------------------
 const viewMode = ref('list')
 
-// ── Columnas ───────────────────────────────────────────────────────────────
+// -- Columnas ------------------------------------------------------------------
 const columns = [
     { key: 'nombre', label: 'Nombre', sortable: false },
     { key: 'identificacion', label: 'Identificación', sortable: false },
@@ -333,7 +335,7 @@ const columns = [
     { key: 'acciones', label: 'Acciones', sortable: false },
 ]
 
-// ── Estado ─────────────────────────────────────────────────────────────────
+// -- Estado ------------------------------------------------------------------
 const clientes = ref([])
 const loading = ref(false)
 const search = ref('')
@@ -342,7 +344,7 @@ let searchTimeout = null
 const pagination = reactive({ currentPage: 1, perPage: 10, total: 0 })
 const sort = reactive({ key: 'fechaRegistro', dir: 'desc' })
 
-// ── Filtros ────────────────────────────────────────────────────────────────
+// --  Filtros ------------------------------------------------------------------
 const filters = reactive({
     estado: [],
     origen: [],
@@ -440,16 +442,8 @@ async function fetchClientes() {
         filters.origen.forEach(v => params.append('origen[]', v))
         filters.resultado.forEach(v => params.append('resultado[]', v))
 
-        const response = await fetch(`/api/clientes?${params}`, {
-            headers: {
-                Accept: 'application/json',
-                Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
-            },
-        })
+        const { data } = await api.get('/api/clientes', { params })
 
-        if (!response.ok) throw new Error('Error al cargar clientes')
-
-        const data = await response.json()
         clientes.value = data.data
         pagination.total = data.meta.total
         pagination.currentPage = data.meta.current_page

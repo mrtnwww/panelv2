@@ -2,11 +2,30 @@
 
 namespace App\Models;
 
-use App\Models\Empresa;
+use Carbon\Carbon;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 
+/**
+ * Class Usuario
+ *
+ * @property int $id
+ * @property string|null $correo
+ * @property string|null $password
+ * @property int $subtipousuario_id
+ * @property int $persona_id
+ * @property int $empresa_id
+ * @property Carbon $created_at
+ * @property Carbon|null $update_at
+ * @property string|null $deleted_at
+ * @property string|null $image
+ * @property int|null $client_id
+ *
+ * @package App\Models
+ */
 class Usuario extends Authenticatable
 {
+    use SoftDeletes;
     protected $table = 'usuario';
 	public $timestamps = false;
 
