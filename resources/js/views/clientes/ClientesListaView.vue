@@ -205,7 +205,7 @@
             :sort-key="sort.key"
             :sort-dir="sort.dir"
             :search="search"
-            :selectable="true"
+            :selectable="false"
             :selected-rows="selected"
             :all-selected="allSelected"
             empty-message="No se encontraron clientes con los filtros aplicados."
@@ -310,7 +310,7 @@ const search = ref('')
 let searchTimeout = null
 
 const pagination = reactive({ currentPage: 1, perPage: 10, total: 0 })
-const sort = reactive({ key: 'fechaRegistro', dir: 'desc' })
+const sort = reactive({ key: 'cliente.id', dir: 'desc' })
 
 // --  Filtros ------------------------------------------------------------------
 const filters = reactive({
@@ -354,12 +354,6 @@ const resultadoOpts = [
     { value: 'proceso_finalizado', label: 'Proceso finalizado' },
 ]
 
-const aliados = [
-    { value: 'impulsa', label: 'IMPULSA CORP SAS / CREDITRANSITO' },
-    { value: 'cda', label: 'CDA LEBRIJA' },
-    { value: 'ampara', label: 'AMPARA SEGUROS Y SERVICIOS S.A.S.' },
-]
-
 function resetFilters() {
     filters.estado = []
     filters.origen = []
@@ -370,6 +364,9 @@ function resetFilters() {
     pagination.currentPage = 1
     fetchClientes()
 }
+
+// -- Lista de aliados -----------------------------------------------------
+const aliados = ref([])
 
 // -- Selección -------------------------------------------------------
 const selected = ref([])
@@ -415,7 +412,7 @@ async function fetchClientes() {
         const { data: clientesData, total, current_page } = data.clients
 
         // Lista de clientes
-        transformClients(clientesData)
+        transformClientes(clientesData)
 
         // Datos de paginación
         pagination.currentPage = current_page
@@ -425,6 +422,15 @@ async function fetchClientes() {
     } finally {
         loading.value = false
     }
+}
+
+async function fetchEmpresas() {
+    const { data } = await api.get('/api/empresas')
+
+    aliados.value = data.empresas.map((item) => ({
+        value: item.id,
+        label: item.razon_social,
+    }))
 }
 
 // -- Handlers DataTable ------------------------------------------------
@@ -461,7 +467,7 @@ function viewCliente(row) {
 }
 
 // -- Transformar clientes
-function transformClients(data) {
+function transformClientes(data) {
     clientes.value = data.map(({ cliente, empresa }) => ({
         id: cliente.id,
         nombre: cliente.nombre,
@@ -478,5 +484,8 @@ function transformClients(data) {
     }))
 }
 
-onMounted(fetchClientes)
+onMounted(async () => {
+    await fetchEmpresas()
+    await fetchClientes()
+})
 </script>

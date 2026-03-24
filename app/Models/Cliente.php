@@ -207,31 +207,18 @@ class Cliente extends Model
         }
     }
 
-    public function scopeApplyRegistroWeb($query, $registroWeb, $validacionAutomatica)
+    public function scopeApplyRegistroClientes($query, $fechaInicial, $fechaFinal)
     {
-        if (!empty($registroWeb)) {
-            $query->where('isformulario', 1);
-        }
+        if (!empty($fechaInicial) || !empty($fechaFinal)) {
+            $fechaInicial = !empty($fechaInicial) ? Carbon::parse($fechaInicial)->startOfDay()->addHours(5) : null;
+            $fechaFinal = !empty($fechaFinal) ? Carbon::parse($fechaFinal)->endOfDay()->addHours(5) : null;
 
-        if (!empty($validacionAutomatica)) {
-            $query->where('cliente_validado_automatico', 1);
-        }
-    }
-
-    public function scopeApplyRegistroClientes($query, $param)
-    {
-        if (count($param) > 0) {
-            if (!empty($param['fecha_inicial']) || !empty($param['fecha_final'])) {
-                $fechaInicial = !empty($param['fecha_inicial']) ? Carbon::parse($param['fecha_inicial'])->startOfDay()->addHours(5) : null;
-                $fechaFinal = !empty($param['fecha_final']) ? Carbon::parse($param['fecha_final'])->endOfDay()->addHours(5) : null;
-
-                if ($fechaInicial && $fechaFinal) {
-                    $query->whereBetween('created_at', [$fechaInicial, $fechaFinal]);
-                } elseif ($fechaInicial) {
-                    $query->where('created_at', '>=', $fechaInicial);
-                } elseif ($fechaFinal) {
-                    $query->where('created_at', '<=', $fechaFinal);
-                }
+            if ($fechaInicial && $fechaFinal) {
+                $query->whereBetween('created_at', [$fechaInicial, $fechaFinal]);
+            } elseif ($fechaInicial) {
+                $query->where('created_at', '>=', $fechaInicial);
+            } elseif ($fechaFinal) {
+                $query->where('created_at', '<=', $fechaFinal);
             }
         }
     }
@@ -251,6 +238,92 @@ class Cliente extends Model
         if (!$validarDatos) {
             $query->where('iscontinue', 0)
                 ->where('cliente_validado', 0);
+        }
+    }
+
+    // -- Filtros cliente --------------------------------------------------------
+    public function scopeApplyEstado($query, $conditions) {
+        if (!empty($conditions)) {
+            $estado = [
+                'pendiente_autorizacion' => 'autorizacion',
+                'pendiente_identidad'    => 'cliente_validado',
+                'pendiente_centrales'    => 'estado_aval',
+                'pendiente_foto'         => 'comprobar_cliente'
+            ];
+
+            return $query->where(function ($q) use ($conditions, $estado) {
+                foreach ($conditions as $condition) {
+                    if (!isset($estado[$condition])) continue;
+
+                    $column = $estado[$condition];
+
+                    $q->orWhere(function ($sub) use ($column) {
+                        if ($column === 'comprobar_cliente') {
+                            $sub->whereNull($column)
+                                ->orWhere($column, '');
+                        } else {
+                            $sub->where($column, 0)
+                                ->orWhereNull($column);
+                        }
+                    });
+                }
+            });
+        }
+    }
+
+    public function scopeApplyOrigen($query, $conditions)
+    {
+        if (!empty($conditions)) {
+            $estado = [
+                'formulario_web' => 'isformulario',
+                'validacion_automatica' => 'cliente_validado_automatico',
+            ];
+
+            return $query->where(function ($q) use ($conditions, $estado) {
+                foreach ($conditions as $condition) {
+                    if (!isset($estado[$condition])) continue;
+
+                    $column = $estado[$condition];
+
+                    $q->orWhere($column, 1);
+                }
+            });
+        }
+    }
+
+    public function scopeApplyResultado($query, $conditions) {
+        if (!empty($conditions)) {
+            $estado = [
+                'credito_aprobado' => 'credito_aprobado',
+                'proceso_finalizado' => 'iscontinue',
+            ];
+
+            return $query->where(function ($q) use ($conditions, $estado) {
+                foreach ($conditions as $condition) {
+                    if (!isset($estado[$condition])) continue;
+
+                    if ($condition === 'credito_aprobado') {
+                        $q->orWhere(function ($sub) {
+                            $sub->whereHas('ultCredito', function ($q2) {
+                                    $q2->whereNotNull('fecha_cierre');
+                                })
+                                ->where([
+                                    ['cliente_validado', 1],
+                                    ['autorizacion', 1],
+                                    ['estado_aval', 1],
+                                    ['iscontinue', 0]
+                                ])
+                                ->whereNotNull('comprobar_cliente');
+                        });
+                    } else {
+                        $column = $estado[$condition];
+
+                        $q->orWhere(function ($sub) use ($column) {
+                            $sub->where($column, 1);
+                        });
+                    }
+                }
+            });
         }
     }
 

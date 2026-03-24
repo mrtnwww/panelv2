@@ -3,8 +3,7 @@ import api from '@/services/api'
 
 export const useAuthStore = defineStore('auth', {
     state: () => ({
-        user: null,
-        loading: false,
+        user: null
     }),
 
     getters: {
@@ -26,8 +25,6 @@ export const useAuthStore = defineStore('auth', {
         },
 
         async login(credentials) {
-            this.loading = true
-
             try {
                 await api.get('/sanctum/csrf-cookie')
 
@@ -38,8 +35,6 @@ export const useAuthStore = defineStore('auth', {
                 return true
             } catch (error) {
                 throw error
-            } finally {
-                this.loading = false
             }
         },
 

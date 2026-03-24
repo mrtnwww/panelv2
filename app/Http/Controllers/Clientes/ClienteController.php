@@ -22,27 +22,24 @@ class ClienteController extends Controller
         $userId    = $user->id;
         $empresaId = $user->empresa_id;
 
-        // Número de registros por página
-        $perPage = $request->per_page;
-
-        // Validacion pendiente de datos (checkbox en la vista, Pendiente por validacion de datos)
-        $pendientesValiDatos = true;
+        $perPage = $request->per_page; // Número de registros por página
+        $searchTerm = $request->input('search', ''); // Termino de busqueda
 
         $tipoCliente = $request->input('filtroTipoCliente', 'cliente');
-        $searchTerm = $request->input('searchTerm', '');
         $aliado = $request->input('aliado', '');
-        // comprobar si el cliente ya es apto para obtener un credito o ya cuenta con uno
-        $creditoAprobado = $request->input('creditoAprobado', 0);
-        // comprobar si el cliente realizo el registro desde la web
-        $registroWeb = $request->input('registroWeb', 0);
-        // comprobar si la identidad del cliente se valido automaticamente desde la web
-        $validacionAutomatica = $request->input('validacionAutomatica', 0);
+
+        // Filtros checkbox
+        $estado = $request['estado'];
+        $origen = $request['origen'];
+        $resultado = $request['resultado'];
+
         // filtrar por fecha de creacion de los clientes
-        $registroClientes = $request->registroClientes ?? [];
+        $fechaInicial = $request['fecha_inicial'] ?? null;
+        $fechaFinal = $request['fecha_final'] ?? null;
 
         // Campo de ordenamiento y direccion del ordenamiento
-        $sortField = $request->input('sortField', 'cliente.id');
-        $sortDirection = $request->input('sortDirection', 'DESC');
+        $sortField = $request->input('sort_key', 'cliente.id');
+        $sortDirection = $request->input('sortDirection', 'desc');
 
         /**
          * Validar el estado de los checks
@@ -86,10 +83,10 @@ class ClienteController extends Controller
             ->applySearch($searchTerm)
             ->applyAliado($aliadoId)
             ->applyOrWhereConditions($searchTerm, $empresasAliadas, $aliadoId, $empresaId, $tipoCliente)
-            ->applyConditions($validConditions, $pendientesValiDatos)
-            ->applyCreditoAprobado($creditoAprobado)
-            ->applyRegistroWeb($registroWeb, $validacionAutomatica)
-            ->applyRegistroClientes($registroClientes);
+            ->applyEstado($estado)
+            ->applyOrigen($origen)
+            ->applyResultado($resultado)
+            ->applyRegistroClientes($fechaInicial, $fechaFinal);
 
         if ($tipoCliente == 'cliente_libranza' && $empresasAliadas->isEmpty()) $clientQuery->where('cliente_libranza', 1);
 
@@ -112,14 +109,6 @@ class ClienteController extends Controller
         // Procesar los registros para agregar campos adicionales
         $clientsPaginated->getCollection()->transform(function ($item) use ($creditosPorCliente, $aliadoImpulsa) {
             $referencia = $item->referenciaCliente;
-
-            // Comprobar referencias
-            $res = $referencia ? (
-                ($referencia->res_ref_comecial_1 ?? 0) == 1 ||
-                ($referencia->res_ref_comecial_2 ?? 0) == 1 ||
-                ($referencia->res_ref_familiar_1 ?? 0) == 1 ||
-                ($referencia->res_ref_familiar_2 ?? 0) == 1
-            ) : false;
 
             $item->fecha_creacion = Carbon::parse($item->created_at)->subHours(5)->format('Y-m-d H:i:s');
 
@@ -253,7 +242,7 @@ class ClienteController extends Controller
             ->whereRelation('estado_funcion', 'nombre_funcion', 'Validación de datos biométricos')
             ->exists();
 
-        $resultado = [
+        $datos = [
             'clients' => $clientsPaginated,
             'allClientsId' => $allClientsId,
             'isAdmin' => $permisos->contains('id', 2),
@@ -266,6 +255,6 @@ class ClienteController extends Controller
             'datosBiometricos' => $datosBiometricos
         ];
 
-        return response()->json($resultado);
+        return response()->json($datos);
     }
 }

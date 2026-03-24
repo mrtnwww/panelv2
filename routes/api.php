@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Clientes\ClienteController;
+use App\Http\Controllers\Empresas\EmpresaController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -15,5 +16,10 @@ Route::middleware('auth:sanctum')->group(function () {
     // Clientes
     Route::prefix('clientes')->group(function () {
         Route::get('/', [ClienteController::class, 'listMyClients']);
+    });
+
+    // Empresas
+    Route::prefix('empresas')->group(function () {
+        Route::get('/', [EmpresaController::class, 'listMyCompanys']);
     });
 });
