@@ -6,9 +6,9 @@ use App\Http\Controllers\Empresas\EmpresaController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
-// Rutas publicas
+// -- Rutas publicas----------------------------------------
 
-// -- Lista de ciudades CO ----------------------------------
+// Lista de ciudades CO
 Route::get('/ciudades', [CiudadController::class, 'index']);
 
 // -- Rutas protegidas --------------------------------------------------------
