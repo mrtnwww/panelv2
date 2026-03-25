@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Clientes;
 
+use App\Http\Controllers\Abonos\AbonoController;
 use App\Http\Controllers\Controller;
 use App\Models\Abono;
 use App\Models\Cliente;
@@ -245,7 +246,103 @@ class ClienteController extends Controller
         return response()->json($datos);
     }
 
-    public function infoClient(Request $request) {
+    function listMyClientsValidated(Request $request)
+    {
+        $user = $request->user();
+
+        $empresaId = $user->empresa_id;
+
+        // Obtener los id de las empresas aliadas/sedes
+        $empresas = Empresa::where(function ($query) use ($empresaId) {
+                $query->where('aliado', $empresaId)
+                    ->orWhere('sede', $empresaId);
+            })
+            ->pluck('id')
+            ->push($empresaId);
+
+        // validar si la empresa es aliada de CREDITRANSITO
+        $empresaUsuario = Empresa::find($empresaId);
+        $aliadoImpulsa = false;
+        if ($empresaUsuario && in_array(46, [
+            $empresaUsuario->aliado,
+            $empresaUsuario->sede
+        ])) {
+            $empresas->push(46);
+            $aliadoImpulsa = true;
+        }
+
+        // Obtener los clientes asociados a las empresas
+        $clientes = Cliente::with([
+                'credito' => function ($q) {
+                    $q->whereNull('fecha_cierre')
+                    ->select('id', 'client_id', 'valor_compra')
+                    ->with(['proyecciones' => function ($q2) {
+                        $q2->where('pagado', 0)->orderBy('fecha');
+                    }]);
+                },
+                'credito.abonos'
+            ])
+            ->select('id', 'nombre', 'cedula', 'empresa_id', 'cupo')
+            ->whereIn('empresa_id', $empresas)
+            ->where('iscontinue', '!=', 1)
+            ->orderBy('nombre')
+            ->get();
+
+        $clientes->transform(function ($cliente) use ($aliadoImpulsa) {
+            $creditos = $cliente->credito;
+            $cupo = $cliente->cupo ?? 0;
+            $enMora = false;
+
+            foreach ($creditos as $credito) {
+
+                $cupo -= $credito->valor_compra;
+
+                $capital = 0;
+
+                foreach ($credito->abonos as $abono) {
+                    if (!empty($abono->abono_capital)) {
+                        $capital += $abono->abono_capital;
+                    } else {
+                        $abonosAsociados = app(AbonoController::class)->procesarAbonos($abono, true);
+                        $ultimo = end($abonosAsociados) ?: [];
+                        $capital += $ultimo['detalles']['capital'] ?? 0;
+                    }
+                }
+
+                $cupo += $capital;
+
+                $proyeccion = $credito->proyecciones->first();
+                if ($proyeccion) {
+                    $enMora = now()->gt($proyeccion->fecha);
+                }
+            }
+
+            if ($creditos->isEmpty()) {
+                $cupo = $cliente->cupo;
+            }
+
+            // aliado impulsa
+            if ($aliadoImpulsa && $cliente->empresa_id == 46) {
+                $cliente->aliadoImpulsa = true;
+                $cliente->nombre = '**********';
+            } else {
+                $cliente->aliadoImpulsa = false;
+            }
+
+            // nuevos campos
+            $cliente->cupoDisponible = $cupo < 0 ? 0 : $cupo;
+            $cliente->numCreditos = $creditos->count();
+            $cliente->enMora = $enMora;
+
+            return $cliente;
+        });
+
+        return response()->json([
+            'clientes' => $clientes
+        ]);
+    }
+
+    public function listMyClient(Request $request) {
         $user = $request->user();
 
         $usuarioId = $user->id;

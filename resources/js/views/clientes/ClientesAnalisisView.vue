@@ -25,7 +25,20 @@
             @update:search="onSearch"
             @sort="onSort"
         >
-            <!-- Acciones personalizadas en la barra superior -->
+            <!-- Celda acciones -->
+            <template #cell-acciones="{ row }">
+                <div
+                    class="flex items-center gap-2 justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                    <button
+                        class="btn-table"
+                        @click.stop="validateCliente(row)"
+                    >
+                        Analisis
+                        <i class="fa-solid fa-check"></i>
+                    </button>
+                </div>
+            </template>
         </DataTable>
     </div>
 </template>
@@ -72,10 +85,10 @@ const columns = [
         type: 'boolean',
         align: 'center',
     },
-    { key: 'acciones', label: 'Acciones', sortable: false },
+    { key: 'acciones', label: 'Acciones', sortable: false, align: 'center' },
 ]
 
-// ── Datos y estado ─────────────────────────────────────────────────────────
+// -- Datos y estado --------------------------------------------------------
 const clientes = ref([])
 const loading = ref(false)
 const search = ref('')
@@ -165,6 +178,10 @@ function transformClientes(data) {
         validacionDatos: cliente.cliente_validado,
         fotoCliente: cliente.comprobar_cliente,
     }))
+}
+
+function validateCliente(row) {
+    router.push(`/clientes/${row.id}/editar`)
 }
 
 // -- Carga inicial -----------------------------------------------------------

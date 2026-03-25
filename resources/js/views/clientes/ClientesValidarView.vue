@@ -28,7 +28,7 @@
             <!-- Celda acciones -->
             <template #cell-acciones="{ row }">
                 <div
-                    class="flex items-center gap-2 justify-end opacity-0 group-hover:opacity-100 transition-opacity"
+                    class="flex items-center gap-2 justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                 >
                     <button
                         v-if="row.autorizacionConsulta"
@@ -192,7 +192,7 @@ function transformClientes(data) {
 }
 
 function validateCliente(row) {
-    console.log(row)
+    router.push(`/clientes/${row.id}/editar`)
 }
 
 // -- Carga inicial -----------------------------------------------------------

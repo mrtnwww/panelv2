@@ -324,9 +324,9 @@ class Cliente extends Model
         return $this->belongsTo(Empresa::class);
     }
 
-    public function credito(): HasOne
+    public function credito(): HasMany
     {
-        return $this->hasOne(Credito::class, 'client_id');
+        return $this->hasMany(Credito::class, 'client_id');
     }
 
     public function ultCredito(): HasOne

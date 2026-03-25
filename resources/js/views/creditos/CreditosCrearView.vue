@@ -16,6 +16,7 @@
                     @update:modelValue="onClienteChange"
                     :options="clientesOpts"
                     placeholder="Seleccione un cliente"
+                    :searchable="true"
                 />
             </div>
 
@@ -27,9 +28,28 @@
                 <div
                     v-for="cell in topCells"
                     :key="cell.key"
-                    class="flex items-center px-4 py-2.5 text-sm text-gray-600 sm:flex-1 sm:py-0 sm:min-h-[56px] truncate"
+                    class="flex items-center px-4 py-2.5 text-sm text-gray-600 sm:flex-1 sm:py-0 sm:min-h-14 truncate"
                 >
-                    {{ clienteInfo[cell.key] }}
+                    <!-- cupo -->
+                    <span v-if="cell.key === 'cupoDisponible'">
+                        {{
+                            formatCurrency(clienteInfo[cell.key]) +
+                            ' cupo aprobado'
+                        }}
+                    </span>
+
+                    <!-- número de créditos -->
+                    <span v-else-if="cell.key === 'numCreditos'">
+                        {{
+                            clienteInfo[cell.key] > 0
+                                ? clienteInfo[cell.key] + ' crédito(s) vigentes'
+                                : 'No tiene créditos vigentes'
+                        }}
+                    </span>
+
+                    <span v-else>
+                        {{ clienteInfo[cell.key] }}
+                    </span>
                 </div>
             </div>
 
@@ -332,49 +352,22 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed } from 'vue'
-import FormInput from '@/components/form/FormInput.vue'
+import { ref, reactive, computed, onMounted } from 'vue'
+
+// -- Componentes --------------------------------------------
 import ChevronIcon from '@/components/form/ChevronIcon.vue'
+import FormInput from '@/components/form/FormInput.vue'
 
-// ── Opciones de selects ────────────────────────────────────────────────────
-const clientes = [
-    {
-        id: 1,
-        nombre: 'CAROLINA RINCON DELGADO',
-        cedula: '63555661',
-        cupo: '$1.600.000 cupo aprobado',
-        creditos: 'no tiene créditos vigentes',
-        tipo: 'Tipo crédito - SOAT',
-        obs: 'APROBADO',
-        tasa: 1.91,
-    },
-    {
-        id: 2,
-        nombre: 'CARLOS ANDRES GOMEZ',
-        cedula: '10345678',
-        cupo: '$12.000.000 cupo aprobado',
-        creditos: '2 créditos vigentes',
-        tipo: 'Tipo crédito - Libre inversión',
-        obs: 'APROBADO',
-        tasa: 2.5,
-    },
-    {
-        id: 3,
-        nombre: 'MARIA FERNANDA LOPEZ',
-        cedula: '52345678',
-        cupo: '$8.500.000 cupo aprobado',
-        creditos: '1 crédito vigente',
-        tipo: 'Tipo crédito - Vehículo',
-        obs: 'REQUIERE VERIFICACIÓN',
-        tasa: 1.91,
-    },
-]
+// -- Loader -------------------------------------------------
+import { useLoader } from '@/composables/useLoader'
+const { start, stop } = useLoader()
 
-// Opciones formateadas para FormInput type="select"
-const clientesOpts = clientes.map(c => ({
-    value: c.id,
-    label: `${c.nombre} (${c.cedula})`,
-}))
+import { formatCurrency } from '@/utils/format'
+import api from '@/services/api'
+
+// -- Opciones de selects -------------------------------------
+const clientesOpts = ref([])
+const clientes = ref([])
 
 const productos = [
     { value: 'soat', label: 'SOAT' },
@@ -400,10 +393,14 @@ const periodicidades = [
 ]
 
 // Celdas informativas de la barra superior
-const topCells = [{ key: 'cupo' }, { key: 'creditos' }, { key: 'tipo' }]
+const topCells = [
+    { key: 'cupoDisponible' },
+    { key: 'numCreditos' },
+    { key: 'tipo' },
+]
 const planHeaders = ['Saldo', 'Capital', 'Interés (1.91% N.M.)', 'Valor cuotas']
 
-// ── Estado ─────────────────────────────────────────────────────────────────
+// -- Estado --------------------------------------------------------------------
 const loading = ref(false)
 const clienteInfo = ref(null)
 const planRows = ref([])
@@ -421,7 +418,7 @@ const form = reactive({
     num_meses: 12,
 })
 
-// ── Computed ───────────────────────────────────────────────────────────────
+// -- Computed ----------------------------------------------------------------
 const valorAprobadoFmt = computed(() =>
     form.valor_compra ? formatCurrency(form.valor_compra) : '$0'
 )
@@ -473,16 +470,7 @@ const descripcionRows = computed(() => [
     },
 ])
 
-// ── Helpers ────────────────────────────────────────────────────────────────
-function formatCurrency(value) {
-    if (value == null) return '$0'
-    return new Intl.NumberFormat('es-CO', {
-        style: 'currency',
-        currency: 'COP',
-        maximumFractionDigits: 0,
-    }).format(value)
-}
-
+// -- Helpers -----------------------------------------------------------
 function calcCuota(monto, tasa, meses) {
     if (!monto || !tasa || !meses) return 0
     return (
@@ -491,10 +479,10 @@ function calcCuota(monto, tasa, meses) {
     )
 }
 
-// ── Handlers ───────────────────────────────────────────────────────────────
-function onClienteChange() {
+// -- Handlers ----------------------------------------------------------
+async function onClienteChange() {
     clienteInfo.value =
-        clientes.find(c => c.id === Number(form.cliente_id)) || null
+        clientes.value.find(c => c.id === Number(form.cliente_id)) || null
     calcPlan()
 }
 
@@ -555,4 +543,29 @@ async function handleSubmit() {
         loading.value = false
     }
 }
+
+async function fetchClientes() {
+    try {
+        const { data } = await api.get('/api/clientes/listMyClientsValidated')
+        clientes.value = data.clientes
+
+        // Opciones formateadas para FormInput type="select"
+        clientesOpts.value = clientes.value.map(c => ({
+            value: c.id,
+            label: `${c.nombre} (${c.cedula})`,
+        }))
+    } catch (err) {
+        console.error(err)
+    }
+}
+
+onMounted(async () => {
+    start()
+
+    try {
+        await Promise.all([fetchClientes()])
+    } finally {
+        stop()
+    }
+})
 </script>
