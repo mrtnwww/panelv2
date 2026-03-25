@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Route;
 Route::get('/ciudades', [CiudadController::class, 'index']);
 
 // -- Rutas protegidas --------------------------------------------------------
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     // Usuario autenticado
     Route::get('/user', fn(Request $request) => $request->user()->load([
         'persona:id,nombre',
