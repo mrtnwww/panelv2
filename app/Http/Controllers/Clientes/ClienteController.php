@@ -344,7 +344,8 @@ class ClienteController extends Controller
         ]);
     }
 
-    public function listMyClient(Request $request) {
+    public function listMyClient(Request $request)
+    {
         $user = $request->user();
 
         $usuarioId = $user->id;
@@ -531,5 +532,46 @@ class ClienteController extends Controller
         return response()->json([
             'resultado' => $resultado
         ]);
+    }
+
+    public function listCreditsClients()
+    {
+        try {
+            $user = auth()->user();
+
+            $empresaId = $user->empresa_id;
+
+            // Obtener los id de las empresas
+            $empresas = Empresa::where('aliado', $empresaId)
+                ->orWhere('sede', $empresaId)
+                ->pluck('id')
+                ->toArray();
+
+            $empresas[] = $empresaId;
+
+            // Obtener todos los créditos de las empresas
+            $creditos = Credito::whereIn('empresa_id', $empresas)
+                ->with('cliente')
+                ->orderBy('id', 'DESC')
+                ->get();
+
+            $resultado = $creditos->map(function ($credito) {
+                $cliente = $credito->cliente;
+
+                return [
+                    'credito_id'    => $credito->id,
+                    'nombre'        => $cliente->nombre,
+                    'cedula'        => $cliente->cedula,
+                    'cliente_id'    => $cliente->cedula,
+                    'consecutivo'   => $credito->consecutivo
+                ];
+            });
+
+            return response()->json([
+                'clientes' => $resultado
+            ]);
+        } catch (\Exception $ex) {
+            return response()->json(['status' => $ex->getCode(), 'message' => $ex->getMessage()], 422);
+        }
     }
 }

@@ -22,6 +22,7 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     // Clientes
     Route::prefix('clientes')->group(function () {
         Route::get('/', [ClienteController::class, 'listMyClients']);
+        Route::get('/listCreditsClients', [ClienteController::class, 'listCreditsClients']);
         Route::get('/listMyClientsValidated', [ClienteController::class, 'listMyClientsValidated']);
         Route::get('/{cliente_id}/{empresa_id?}/{parametrosValidacion?}', [ClienteController::class, 'listMyClient']);
     });
