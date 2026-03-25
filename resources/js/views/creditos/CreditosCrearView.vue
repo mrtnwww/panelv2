@@ -47,8 +47,8 @@
                         }}
                     </span>
 
-                    <span v-else>
-                        {{ clienteInfo[cell.key] }}
+                    <span v-else-if="cell.key === 'tipoCredito'">
+                        {{ 'Tipo de crédito - ' + clienteInfo[cell.key] }}
                     </span>
                 </div>
             </div>
@@ -58,7 +58,7 @@
                 <div
                     v-for="cell in topCells"
                     :key="cell.key"
-                    class="flex-1 flex items-center px-5 min-h-[56px] text-sm text-gray-300 italic border-r border-gray-100 last:border-r-0"
+                    class="flex-1 flex items-center px-5 min-h-14 text-sm text-gray-300 italic border-r border-gray-100 last:border-r-0"
                 >
                     —
                 </div>
@@ -381,7 +381,7 @@ const lineas = [
     { value: 'seguros', label: 'SEGUROS' },
 ]
 
-const diasPago = [1, 5, 10, 15, 20, 25]
+const diasPago = [15, 30]
 const mesesOpciones = [1, 2, 3, 6, 12, 18, 24, 36].map(v => ({
     value: v,
     label: String(v),
@@ -389,14 +389,13 @@ const mesesOpciones = [1, 2, 3, 6, 12, 18, 24, 36].map(v => ({
 const periodicidades = [
     { value: 'Mensual', label: 'Mensual' },
     { value: 'Quincenal', label: 'Quincenal' },
-    { value: 'Semanal', label: 'Semanal' },
 ]
 
 // Celdas informativas de la barra superior
 const topCells = [
     { key: 'cupoDisponible' },
     { key: 'numCreditos' },
-    { key: 'tipo' },
+    { key: 'tipoCredito' },
 ]
 const planHeaders = ['Saldo', 'Capital', 'Interés (1.91% N.M.)', 'Valor cuotas']
 

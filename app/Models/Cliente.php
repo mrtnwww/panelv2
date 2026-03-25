@@ -357,4 +357,9 @@ class Cliente extends Model
     {
         return $this->hasOne(ClienteLibranza::class, 'cliente_id');
     }
+
+    public function lineaCredito()
+    {
+        return $this->belongsTo(LineasCredito::class, 'lineas_credito_id');
+    }
 }

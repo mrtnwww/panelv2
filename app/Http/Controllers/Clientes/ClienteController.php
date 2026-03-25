@@ -280,9 +280,10 @@ class ClienteController extends Controller
                         $q2->where('pagado', 0)->orderBy('fecha');
                     }]);
                 },
-                'credito.abonos'
+                'credito.abonos',
+                'lineaCredito:id,tipo_credito'
             ])
-            ->select('id', 'nombre', 'cedula', 'empresa_id', 'cupo')
+            ->select('id', 'nombre', 'cedula', 'empresa_id', 'cupo', 'lineas_credito_id')
             ->whereIn('empresa_id', $empresas)
             ->where('iscontinue', '!=', 1)
             ->orderBy('nombre')
@@ -330,9 +331,10 @@ class ClienteController extends Controller
             }
 
             // nuevos campos
-            $cliente->cupoDisponible = $cupo < 0 ? 0 : $cupo;
-            $cliente->numCreditos = $creditos->count();
             $cliente->enMora = $enMora;
+            $cliente->numCreditos = $creditos->count();
+            $cliente->cupoDisponible = $cupo < 0 ? 0 : $cupo;
+            $cliente->tipoCredito = $cliente->lineaCredito->tipo_credito ?? '';
 
             return $cliente;
         });
