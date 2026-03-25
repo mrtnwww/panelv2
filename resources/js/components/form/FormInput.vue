@@ -8,41 +8,140 @@
         </label>
 
         <slot>
-            <!-- ── Select ── -->
-            <div v-if="type === 'select'" class="relative">
-                <select
-                    :value="modelValue"
-                    @change="$emit('update:modelValue', $event.target.value)"
-                    :required="required"
-                    :disabled="disabled"
-                    :class="[fieldClass, 'appearance-none pr-8 cursor-pointer']"
-                >
-                    <option value="">
-                        {{ placeholder || 'Seleccione...' }}
-                    </option>
-                    <option
-                        v-for="opt in options"
-                        :key="opt.value"
-                        :value="opt.value"
+            <!-- Select -->
+            <div v-if="type === 'select'" class="relative" ref="selectWrapRef">
+                <!-- Select normal -->
+                <template v-if="!searchable">
+                    <select
+                        :value="modelValue"
+                        @change="
+                            $emit('update:modelValue', $event.target.value)
+                        "
+                        :required="required"
+                        :disabled="disabled"
+                        :class="[
+                            fieldClass,
+                            'appearance-none pr-8 cursor-pointer',
+                        ]"
                     >
-                        {{ opt.label }}
-                    </option>
-                </select>
-                <span
-                    class="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-300 pointer-events-none"
-                >
-                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                        <path
-                            d="M3 4.5L6 7.5L9 4.5"
-                            stroke="currentColor"
-                            stroke-width="1.3"
-                            stroke-linecap="round"
-                        />
-                    </svg>
-                </span>
+                        <option value="">
+                            {{ placeholder || 'Seleccione...' }}
+                        </option>
+                        <option
+                            v-for="opt in options"
+                            :key="opt.value"
+                            :value="opt.value"
+                        >
+                            {{ opt.label }}
+                        </option>
+                    </select>
+                    <span
+                        class="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-300 pointer-events-none"
+                    >
+                        <svg
+                            width="12"
+                            height="12"
+                            viewBox="0 0 12 12"
+                            fill="none"
+                        >
+                            <path
+                                d="M3 4.5L6 7.5L9 4.5"
+                                stroke="currentColor"
+                                stroke-width="1.3"
+                                stroke-linecap="round"
+                            />
+                        </svg>
+                    </span>
+                </template>
+
+                <!-- Select con búsqueda -->
+                <template v-else>
+                    <!-- Input visible que muestra la selección o el término de búsqueda -->
+                    <div
+                        :class="[
+                            fieldClass,
+                            'flex items-center justify-between cursor-pointer pr-8 select-none',
+                        ]"
+                        @click="toggleDropdown"
+                    >
+                        <span :class="selectedLabel ? '' : 'text-gray-300'">
+                            {{
+                                selectedLabel || placeholder || 'Seleccione...'
+                            }}
+                        </span>
+                    </div>
+
+                    <!-- Ícono chevron -->
+                    <span
+                        class="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-300 pointer-events-none"
+                    >
+                        <svg
+                            width="12"
+                            height="12"
+                            viewBox="0 0 12 12"
+                            fill="none"
+                        >
+                            <path
+                                d="M3 4.5L6 7.5L9 4.5"
+                                stroke="currentColor"
+                                stroke-width="1.3"
+                                stroke-linecap="round"
+                            />
+                        </svg>
+                    </span>
+
+                    <!-- Dropdown -->
+                    <Teleport to="body">
+                        <div
+                            v-if="dropdownOpen"
+                            :style="dropdownStyle"
+                            class="fixed z-[9999] bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden"
+                        >
+                            <!-- Input de búsqueda -->
+                            <div class="p-2 border-b border-gray-100">
+                                <input
+                                    ref="searchInputRef"
+                                    v-model="searchQuery"
+                                    type="text"
+                                    placeholder="Buscar..."
+                                    class="w-full h-8 px-3 text-sm rounded-md border border-gray-200 bg-gray-50 outline-none focus:border-[#1a5c2a] focus:ring-1 focus:ring-[#1a5c2a]/10"
+                                    @click.stop
+                                />
+                            </div>
+
+                            <!-- Lista de opciones -->
+                            <ul class="max-h-52 overflow-y-auto">
+                                <li
+                                    class="px-3 py-2 text-sm text-gray-300 cursor-pointer hover:bg-gray-50"
+                                    @click="selectOption('', '')"
+                                >
+                                    {{ placeholder || 'Seleccione...' }}
+                                </li>
+                                <li
+                                    v-for="opt in filteredOptions"
+                                    :key="opt.value"
+                                    class="px-3 py-2 text-sm text-gray-600 cursor-pointer hover:bg-gray-50 transition-colors"
+                                    :class="{
+                                        'bg-emerald-50 text-emerald-700 font-medium':
+                                            opt.value == modelValue,
+                                    }"
+                                    @click="selectOption(opt.value, opt.label)"
+                                >
+                                    {{ opt.label }}
+                                </li>
+                                <li
+                                    v-if="filteredOptions.length === 0"
+                                    class="px-3 py-2 text-sm text-gray-300 text-center"
+                                >
+                                    Sin resultados
+                                </li>
+                            </ul>
+                        </div>
+                    </Teleport>
+                </template>
             </div>
 
-            <!-- ── Textarea ── -->
+            <!-- Textarea -->
             <textarea
                 v-else-if="type === 'textarea'"
                 :value="modelValue"
@@ -54,14 +153,14 @@
                 :class="[fieldClass, 'resize-none h-auto py-2.5']"
             />
 
-            <!-- ── File ── -->
+            <!-- File -->
             <div v-else-if="type === 'file'">
                 <!-- Sin archivo: botón + placeholder -->
                 <div v-if="!fileName" class="flex items-center gap-2">
                     <label
                         :class="[
                             'flex items-center gap-1.5 cursor-pointer rounded-lg border border-gray-200',
-                            'bg-gray-50 hover:bg-gray-100 text-gray-600 transition-all select-none flex-shrink-0',
+                            'bg-gray-50 hover:bg-gray-100 text-gray-600 transition-all select-none shrink-0',
                             heightClass,
                             'px-3',
                         ]"
@@ -115,7 +214,7 @@
                             height="13"
                             viewBox="0 0 13 13"
                             fill="none"
-                            class="flex-shrink-0"
+                            class="shrink-0"
                         >
                             <path
                                 d="M8 1H3a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1V4L8 1Z"
@@ -140,7 +239,7 @@
                     <button
                         type="button"
                         @click="clearFile"
-                        class="flex-shrink-0 w-8 h-8 rounded-lg border border-gray-200 flex items-center justify-center text-gray-400 hover:text-red-500 hover:border-red-200 transition-all"
+                        class="shrink-0 w-8 h-8 rounded-lg border border-gray-200 flex items-center justify-center text-gray-400 hover:text-red-500 hover:border-red-200 transition-all"
                         title="Quitar archivo"
                     >
                         <svg
@@ -159,7 +258,7 @@
                     </button>
 
                     <label
-                        class="flex-shrink-0 flex items-center gap-1 px-3 h-8 rounded-lg border border-gray-200 text-xs text-gray-500 hover:bg-gray-50 cursor-pointer transition-all"
+                        class="shrink-0 flex items-center gap-1 px-3 h-8 rounded-lg border border-gray-200 text-xs text-gray-500 hover:bg-gray-50 cursor-pointer transition-all"
                     >
                         <svg
                             width="11"
@@ -188,7 +287,7 @@
                 </div>
             </div>
 
-            <!-- ── Input normal con íconos ── -->
+            <!-- Input normal con íconos -->
             <div v-else class="relative">
                 <span
                     v-if="$slots['icon-left'] || iconLeft"
@@ -249,7 +348,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, nextTick, onMounted, onUnmounted } from 'vue'
 
 const props = defineProps({
     label: { type: String, default: '' },
@@ -262,6 +361,7 @@ const props = defineProps({
     hint: { type: String, default: '' },
     options: { type: Array, default: () => [] },
     rows: { type: Number, default: 3 },
+    searchable: { type: Boolean, default: false },
 
     // Tamaño: 'sm' (h-8) | 'md' (h-10, default) | 'lg' (h-11)
     size: { type: String, default: 'md' },
@@ -281,7 +381,7 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue', 'change'])
 
-// ── File state ─────────────────────────────────────────────────────────────
+// -- File state --------------------------------------------------
 const fileRef = ref(null)
 const fileName = ref('')
 
@@ -306,7 +406,7 @@ function clearFile() {
 
 defineExpose({ clearFile })
 
-// ── Clases ─────────────────────────────────────────────────────────────────
+// -- Clases -----------------------------------------------------------------------------
 const heightClass = computed(
     () =>
         ({
@@ -325,4 +425,61 @@ const fieldClass = computed(() => [
     props.error ? 'border-red-400' : 'border-gray-200 hover:border-gray-300',
     props.disabled ? 'opacity-50 cursor-not-allowed bg-gray-100' : '',
 ])
+
+// -- Estado del select con búsqueda ------------------------------------------
+const dropdownOpen = ref(false)
+const searchInputRef = ref(null)
+const selectWrapRef = ref(null)
+const dropdownStyle = ref({})
+const searchQuery = ref('')
+
+const selectedLabel = computed(
+    () => props.options.find(o => o.value == props.modelValue)?.label ?? ''
+)
+
+const filteredOptions = computed(() =>
+    props.options.filter(o =>
+        o.label.toLowerCase().includes(searchQuery.value.toLowerCase())
+    )
+)
+
+function toggleDropdown() {
+    if (props.disabled) return
+    dropdownOpen.value = !dropdownOpen.value
+    if (dropdownOpen.value) {
+        searchQuery.value = ''
+        nextTick(() => {
+            // Calcular posición del dropdown relativa al trigger
+            const rect = selectWrapRef.value?.getBoundingClientRect()
+            if (rect) {
+                dropdownStyle.value = {
+                    top: `${rect.bottom + window.scrollY}px`,
+                    left: `${rect.left + window.scrollX}px`,
+                    width: `${rect.width}px`,
+                }
+            }
+            searchInputRef.value?.focus()
+        })
+    }
+}
+
+function selectOption(value, label) {
+    emit('update:modelValue', value)
+    dropdownOpen.value = false
+    searchQuery.value = ''
+}
+
+// Cerrar al hacer click fuera
+onMounted(() => {
+    document.addEventListener('click', onClickOutside)
+})
+onUnmounted(() => {
+    document.removeEventListener('click', onClickOutside)
+})
+
+function onClickOutside(e) {
+    if (selectWrapRef.value && !selectWrapRef.value.contains(e.target)) {
+        dropdownOpen.value = false
+    }
+}
 </script>

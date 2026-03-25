@@ -1,9 +1,15 @@
 <?php
 
+use App\Http\Controllers\CiudadController;
 use App\Http\Controllers\Clientes\ClienteController;
 use App\Http\Controllers\Empresas\EmpresaController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+
+// Rutas publicas
+
+// -- Lista de ciudades CO ----------------------------------
+Route::get('/ciudades', [CiudadController::class, 'index']);
 
 // -- Rutas protegidas --------------------------------------------------------
 Route::middleware('auth:sanctum')->group(function () {

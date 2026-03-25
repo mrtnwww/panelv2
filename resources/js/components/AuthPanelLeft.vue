@@ -56,7 +56,7 @@
 
 <script setup>
 const features = [
-    'Crea créditos y registra abonos en segundos',
+    'Crea créditos y registra abonos en minutos',
     'Configura recordatorios de pago automatizados',
     'Gestiona vencimientos y descarga informes detallados',
     'Tus clientes consultan sus cuotas desde la App',

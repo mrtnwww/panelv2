@@ -162,7 +162,8 @@
                     v-model="filters.aliado"
                     :options="aliados"
                     placeholder="Seleccione un aliado"
-                    wrapper-class="min-w-[200px]"
+                    wrapper-class="w-full xl:max-w-[40%]"
+                    :searchable="true"
                 />
 
                 <FormInput

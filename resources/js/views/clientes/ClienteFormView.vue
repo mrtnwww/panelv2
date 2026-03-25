@@ -144,6 +144,7 @@
                     v-model="form.ciudad"
                     :options="ciudadesOpts"
                     placeholder="Seleccione una ciudad"
+                    :searchable="true"
                 />
             </div>
         </CollapsibleCard>
@@ -191,11 +192,8 @@
                 />
                 <FormInput
                     label="Banco"
-                    type="select"
                     v-model="form.banco"
-                    :options="bancosOpts"
-                    placeholder="Seleccione un banco"
-                    class="sm:col-span-2"
+                    placeholder="Nombre del banco"
                 />
             </div>
         </CollapsibleCard>
@@ -468,6 +466,7 @@
             <button
                 type="button"
                 class="h-9 px-4 rounded-lg border border-gray-200 text-sm text-gray-500 hover:bg-gray-50 transition-all"
+                @click="router.push('/clientes')"
             >
                 Cancelar
             </button>
@@ -526,6 +525,7 @@ import { useLoader } from '@/composables/useLoader'
 const { start, stop } = useLoader()
 
 import api from '@/services/api'
+import axios from 'axios'
 
 const router = useRouter()
 
@@ -606,36 +606,17 @@ const completado = computed(() => ({
 }))
 
 // -- Opciones ----------------------------------------------------------
-const productosOpts = []
-
-const ciudadesOpts = [
-    { value: 'bogota', label: 'Bogotá D.C.' },
-    { value: 'medellin', label: 'Medellín' },
-    { value: 'cali', label: 'Cali' },
-    { value: 'barranquilla', label: 'Barranquilla' },
-    { value: 'bucaramanga', label: 'Bucaramanga' },
-    { value: 'pereira', label: 'Pereira' },
-    { value: 'manizales', label: 'Manizales' },
-]
+const productosOpts = ref([])
+const ciudadesOpts = ref([])
 
 const tipoCuentaOpts = [
     { value: 'ahorros', label: 'Ahorros' },
     { value: 'corriente', label: 'Corriente' },
 ]
 
-const bancosOpts = [
-    { value: 'bancolombia', label: 'Bancolombia' },
-    { value: 'davivienda', label: 'Davivienda' },
-    { value: 'bogota', label: 'Banco de Bogotá' },
-    { value: 'bbva', label: 'BBVA Colombia' },
-    { value: 'occidente', label: 'Banco de Occidente' },
-    { value: 'nequi', label: 'Nequi' },
-    { value: 'daviplata', label: 'Daviplata' },
-]
-
 const estadoConsultaOpts = [
     { value: 1, label: 'Aprobado' },
-    { value: 0, label: 'Rechazado' }
+    { value: 0, label: 'Rechazado' },
 ]
 
 // -- Acciones ----------------------------------------------------------
@@ -759,13 +740,13 @@ async function fetchCliente() {
 
         // Mapea los campos del backend al formulario
         const cliente = data.resultado.cliente
-        const referencias = data.resultado.referencia
+        const referencia = data.resultado.referencia
 
         Object.assign(form, {
             cedula: cliente.cedula ?? '',
             cupo: cliente.cupo ?? '',
 
-            // Datos personales
+            // 1. Datos personales
             nombre: cliente.nombre ?? '',
             fechaNacimiento: formatDateToISO(cliente.fecha_nacimiento),
             telefono: cliente.telefono ?? '',
@@ -774,7 +755,7 @@ async function fetchCliente() {
             barrio: cliente.barrio ?? '',
             ciudad: cliente.ciudad ?? '',
 
-            // Información laboral
+            // 2. Información laboral
             salario: cliente.salario ?? '',
             nombreEmpleador: cliente.empresa_labora ?? '',
             telefonoEmpleador: cliente.telEmpresa ?? '',
@@ -783,24 +764,64 @@ async function fetchCliente() {
             numeroCuenta: cliente.num_cuenta_bancaria ?? '',
             banco: cliente.nombre_banco ?? '',
 
-            // Análisis
+            // 3. Análisis
             analisisNota: cliente.nota ?? '',
             analisisEstado: cliente.estado_aval ?? 0,
             analisisNumeroConsulta: cliente.no_aval ?? '',
+
+            // 5. Referencias
+            referencias: [
+                {
+                    type: 'personal',
+                    nombre: referencia.ref_comecial_1 ?? '',
+                    telefono: referencia.tel_1 ?? '',
+                    nota: referencia.res_ref_comecial_1 ?? '',
+                },
+                {
+                    type: 'personal',
+                    nombre: referencia.ref_comecial_2 ?? '',
+                    telefono: referencia.tel_2 ?? '',
+                    nota: referencia.res_ref_comecial_2 ?? '',
+                },
+                {
+                    type: 'familiar',
+                    nombre: referencia.ref_familiar_1 ?? '',
+                    telefono: referencia.tel_3 ?? '',
+                    nota: referencia.res_ref_familiar_1 ?? '',
+                },
+                {
+                    type: 'familiar',
+                    nombre: referencia.ref_familiar_2 ?? '',
+                    telefono: referencia.tel_4 ?? '',
+                    nota: referencia.res_ref_familiar_2 ?? '',
+                },
+            ],
         })
     } catch (e) {
-        console.log(e)
-        // router.back()
+        router.back()
     } finally {
         loading.value = false
     }
+}
+
+async function fetchCiudades() {
+    const ciudades = localStorage.getItem('ciudades')
+
+    if (ciudades) {
+        ciudadesOpts.value = JSON.parse(ciudades)
+        return
+    }
+
+    const { data } = await axios.get('/api/ciudades')
+
+    localStorage.setItem('ciudades', JSON.stringify(data.ciudades))
 }
 
 onMounted(async () => {
     start()
 
     try {
-        await fetchCliente()
+        await Promise.all([fetchCliente(), fetchCiudades()])
     } finally {
         stop()
     }

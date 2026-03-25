@@ -23,7 +23,7 @@ class ClienteController extends Controller
 {
     function listMyClients(Request $request)
     {
-        $user = auth()->user();
+        $user = $request->user();
 
         $usuarioId    = $user->id;
         $empresaId = $user->empresa_id;
@@ -251,46 +251,7 @@ class ClienteController extends Controller
         $usuarioId = $user->id;
         $empresaId = $user->empresa_id;
 
-        $conditions = [];
         $clienteId = $request['cliente_id'];
-
-        // $hasToken = isset($request['token']) && $request['token'] != "";
-        // $empresaId46 = $empresaId == 46;
-
-        // if ($hasToken) {
-        //     $datos = explode(';;', base64_decode($request['token']));
-        //     $cedula = $datos[0];
-        //     $id = $datos[1];
-        // } else {
-        //     $cedula = $request['cedula'];
-        //     $id = null;
-        // }
-
-        // if (!$empresaId46) {
-        //     // Si la empresa no es CREDIGITAL, se verifica la empresa a la que pertenece el usuario
-        //     $clienteIdEmpresa = Cliente::select('empresa_id')
-        //         ->where('id', $datos[0])->pluck('empresa_id')
-        //         ->first();
-        //     // Se valida si la empresa a la que pertenece el cliente es un aliado de la empresa del usuario
-        //     $empresa = Empresa::where('id', $clienteIdEmpresa)
-        //         ->where('aliado', $empresaId)
-        //         ->first();
-        // }
-
-        // // Si la empresa es CREDIGITAL o el cliente pertenece a un aliado de la empresa del usuario
-        // if ($empresaId46 || isset($empresa) && $empresa) {
-        //     $conditions[] = ['cedula', $cedula];
-        //     if ($id) {
-        //         $conditions[] = ['id', $id];
-        //     }
-        // } else {
-        //     // Si la empresa no es CREDIGITAL y el cliente no pertenece a un aliado de la empresa del usuario se añade como condicion la empresa del usuario
-        //     $conditions[] = ['cedula', $cedula];
-        //     $conditions[] = ['empresa_id', $empresaId];
-        //     if ($id) {
-        //         $conditions[] = ['id', $id];
-        //     }
-        // }
 
         $data = Cliente::where('id', $clienteId)
         ->with([
