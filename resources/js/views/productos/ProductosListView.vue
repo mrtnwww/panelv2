@@ -129,52 +129,21 @@
             <!-- Celda acciones -->
             <template #cell-acciones="{ row }">
                 <div
-                    class="flex items-center gap-1.5 justify-end opacity-0 group-hover:opacity-100 transition-opacity"
+                    class="flex items-center justify-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity"
                 >
                     <button
                         @click.stop="abrirModalEditar(row)"
-                        class="w-7 h-7 rounded-lg border border-gray-200 flex items-center justify-center text-gray-400 hover:text-[#1a5c2a] hover:border-[#1a5c2a]/30 transition-all"
+                        class="btn-table"
                         title="Editar"
                     >
-                        <svg
-                            width="13"
-                            height="13"
-                            viewBox="0 0 13 13"
-                            fill="none"
-                        >
-                            <path
-                                d="M9 1.5L11.5 4L4.5 11H2V8.5L9 1.5Z"
-                                stroke="currentColor"
-                                stroke-width="1.2"
-                                stroke-linejoin="round"
-                            />
-                        </svg>
+                        <i class="fa fa-pencil"></i>
                     </button>
                     <button
                         @click.stop="confirmarEliminar(row)"
-                        class="w-7 h-7 rounded-lg border border-gray-200 flex items-center justify-center text-gray-400 hover:text-red-500 hover:border-red-200 transition-all"
+                        class="btn-table"
                         title="Eliminar"
                     >
-                        <svg
-                            width="13"
-                            height="13"
-                            viewBox="0 0 13 13"
-                            fill="none"
-                        >
-                            <path
-                                d="M2 3.5h9M5 3.5V2h3v1.5M5.5 6v3.5M7.5 6v3.5"
-                                stroke="currentColor"
-                                stroke-width="1.2"
-                                stroke-linecap="round"
-                            />
-                            <path
-                                d="M3 3.5l.5 7h6l.5-7"
-                                stroke="currentColor"
-                                stroke-width="1.2"
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                            />
-                        </svg>
+                        <i class="fa fa-trash"></i>
                     </button>
                 </div>
             </template>
@@ -401,14 +370,28 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
+
+// -- Componentes --------------------------------------------------------------
 import DataTable from '@/components/table/DataTable.vue'
 
-// ── Columnas ───────────────────────────────────────────────────────────────
+// -- Loader -------------------------------------------------
+import { useLoader } from '@/composables/useLoader'
+const { start, stop } = useLoader()
+
+import { formatCurrency } from '@/utils/format'
+import api from '@/services/api'
+
+// -- Columnas -----------------------------------------------------------------
 const columns = [
-    { key: 'referencia', label: 'Referencia', sortable: true, align: 'center' },
-    { key: 'nombre', label: 'Producto', sortable: true },
-    { key: 'precio', label: 'Precio', sortable: true, align: 'right' },
-    { key: 'acciones', label: 'Acciones', sortable: false },
+    {
+        key: 'referencia',
+        label: 'Referencia',
+        sortable: false,
+        align: 'center',
+    },
+    { key: 'nombre', label: 'Producto', sortable: false },
+    { key: 'precio', label: 'Precio', sortable: false, align: 'right' },
+    { key: 'acciones', label: 'Acciones', sortable: false, align: 'center' },
 ]
 
 // ── Estado ─────────────────────────────────────────────────────────────────
@@ -426,15 +409,6 @@ const labelClass = 'text-xs font-medium text-gray-500 uppercase tracking-wide'
 const inputClass =
     'w-full h-10 px-3 rounded-lg border border-gray-200 bg-gray-50 text-[#0A2540] text-sm outline-none transition-all placeholder:text-gray-300 focus:bg-white focus:border-[#1a5c2a] focus:ring-2 focus:ring-[#1a5c2a]/10'
 
-function formatCurrency(value) {
-    if (value == null) return '—'
-    return new Intl.NumberFormat('es-CO', {
-        style: 'currency',
-        currency: 'COP',
-        maximumFractionDigits: 0,
-    }).format(value)
-}
-
 function authHeaders() {
     return {
         Accept: 'application/json',
@@ -442,7 +416,7 @@ function authHeaders() {
     }
 }
 
-// ── Backend ────────────────────────────────────────────────────────────────
+// -- Backend -------------------------------------------------------
 async function fetchProductos() {
     loading.value = true
     try {
@@ -454,15 +428,16 @@ async function fetchProductos() {
             search: search.value,
         })
 
-        const response = await fetch(`/api/productos?${params}`, {
-            headers: authHeaders(),
-        })
-        if (!response.ok) throw new Error()
+        const { data } = await api.get('/api/productos', { params })
 
-        const data = await response.json()
-        productos.value = data.data
-        pagination.total = data.meta.total
-        pagination.currentPage = data.meta.current_page
+        const { data: productosData, total, current_page } = data.productos
+
+        // Lista de productos
+        transformProductos(productosData)
+
+        // Datos de paginación
+        pagination.currentPage = current_page
+        pagination.total = total
     } catch (err) {
         console.error(err)
     } finally {
@@ -630,5 +605,21 @@ async function subirPlantilla(e) {
     }
 }
 
-onMounted(fetchProductos)
+function transformProductos(data) {
+    productos.value = data.map(producto => ({
+        referencia: producto.referencia,
+        nombre: producto.nombre,
+        precio: producto.precio,
+    }))
+}
+
+onMounted(async () => {
+    start()
+
+    try {
+        await fetchProductos()
+    } finally {
+        stop()
+    }
+})
 </script>

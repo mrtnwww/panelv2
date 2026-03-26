@@ -149,7 +149,7 @@ const gestionItems = [
         name: 'Productos',
         path: '/productos',
         icon: 'fa-solid fa-cart-flatbed',
-        children: [{ name: 'Crear producto', path: '/productos/nuevo' }],
+        children: [{ name: 'Crear producto', path: '/productos' }],
     },
     {
         name: 'Cobranza',

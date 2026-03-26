@@ -89,10 +89,10 @@ const routes = [
             },
             // -- PRODUCTOS --------------------------------------------------------------------
             {
-                path: 'productos/nuevo',
-                name: 'productos.nuevo',
+                path: 'productos',
+                name: 'productos',
                 component: () =>
-                    import('@/views/productos/ProductosCrearView.vue'),
+                    import('@/views/productos/ProductosListView.vue'),
             },
             // -- COBRANZA --------------------------------------------------------------------
             {

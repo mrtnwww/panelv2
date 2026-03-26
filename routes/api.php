@@ -5,6 +5,7 @@ use App\Http\Controllers\Ciudades\CiudadController;
 use App\Http\Controllers\Clientes\ClienteController;
 use App\Http\Controllers\Creditos\CreditoController;
 use App\Http\Controllers\Empresas\EmpresaController;
+use App\Http\Controllers\Productos\ProductoController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -44,5 +45,10 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     // Abonos
     Route::prefix('abonos')->group(function () {
         // TODO
+    });
+
+    // Productos
+    Route::prefix('productos')->group(function () {
+        Route::get('/', [ProductoController::class, 'listProducts']);
     });
 });
