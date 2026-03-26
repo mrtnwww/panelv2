@@ -33,7 +33,7 @@ return Application::configure(basePath: dirname(__DIR__))
             return Limit::perMinute(5)
                 ->by($request->ip())
                 ->response(fn() => response()->json([
-                    'message' => 'Demasiados intentos de inicio de sesión. Intenta en 1 minuto.'
+                    'message' => 'Demasiados intentos de inicio de sesión. Intenta nuevamente en 1 minuto.'
                 ], 429));
         });
     }

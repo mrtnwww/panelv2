@@ -1,7 +1,8 @@
 <?php
 
-use App\Http\Controllers\CiudadController;
+use App\Http\Controllers\Ciudades\CiudadController;
 use App\Http\Controllers\Clientes\ClienteController;
+use App\Http\Controllers\Creditos\CreditoController;
 use App\Http\Controllers\Empresas\EmpresaController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -25,6 +26,11 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
         Route::get('/listCreditsClients', [ClienteController::class, 'listCreditsClients']);
         Route::get('/listMyClientsValidated', [ClienteController::class, 'listMyClientsValidated']);
         Route::get('/{cliente_id}/{empresa_id?}/{parametrosValidacion?}', [ClienteController::class, 'listMyClient']);
+    });
+
+    // Creditos
+    Route::prefix('creditos')->group(function () {
+        Route::get('/{id}/details', [CreditoController::class, 'creditDetails']);
     });
 
     // Empresas

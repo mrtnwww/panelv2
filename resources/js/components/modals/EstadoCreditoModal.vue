@@ -124,7 +124,9 @@
                     <div class="grid grid-cols-2">
                         <InfoRow
                             label="Interéses moratorios"
-                            :value="formatCurrency(credito.intereses_moratorios)"
+                            :value="
+                                formatCurrency(credito.intereses_moratorios)
+                            "
                         />
                         <InfoRow
                             label="Gastos cobranza"
@@ -163,41 +165,66 @@
                             ]"
                         >
                             <td class="px-3 py-2.5 font-medium text-gray-700">
-                                {{ cuota.numero }}
+                                {{ i + 1 }}
                             </td>
                             <td
                                 class="px-3 py-2.5 text-gray-600 whitespace-nowrap"
                             >
-                                {{ cuota.fecha_limite }}
+                                {{ cuota.fecha }}
                             </td>
                             <td class="px-3 py-2.5 text-gray-600">
-                                {{ formatCurrency(cuota.valor_abonado) }}
+                                {{ formatCurrency(cuota.valor) }}
                             </td>
                             <td class="px-3 py-2.5 text-gray-600">
-                                {{ formatCurrency(cuota.saldo) }}
+                                {{
+                                    formatCurrency(
+                                        cuota.valor_cuota - cuota.valor
+                                    )
+                                }}
                             </td>
                             <td class="px-3 py-2.5">
                                 <span
-                                    :class="[
-                                        'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium',
-                                        cuota.estado === 'Pagada'
-                                            ? 'bg-emerald-50 text-emerald-700'
-                                            : cuota.estado === 'En mora'
-                                              ? 'bg-red-50 text-red-600'
-                                              : 'bg-yellow-50 text-yellow-700',
-                                    ]"
+                                    v-if="cuota.pagado === 1"
+                                    class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700"
                                 >
-                                    {{ cuota.estado }}
+                                    Pagada
+                                </span>
+
+                                <span
+                                    v-else-if="
+                                        cuota.pagado === 0 && cuota.diasmora > 0
+                                    "
+                                    class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-50 text-red-600 whitespace-nowrap"
+                                >
+                                    {{ cuota.diasmora + ' días en mora' }}
+                                </span>
+
+                                <span
+                                    v-else
+                                    class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-50 text-yellow-700"
+                                >
+                                    Pendiente
                                 </span>
                             </td>
                             <td class="px-3 py-2.5 text-gray-600">
-                                {{ formatCurrency(cuota.interes_moratorio) }}
+                                {{ formatCurrency(cuota.intereses_moratorios) }}
                             </td>
                             <td class="px-3 py-2.5 text-gray-600">
                                 {{ formatCurrency(cuota.gastos_cobranza) }}
                             </td>
-                            <td class="px-3 py-2.5 text-gray-400">
+                            <td
+                                class="px-3 py-2.5 text-center text-gray-400 whitespace-nowrap"
+                            >
                                 {{ cuota.fecha_pago || '- -' }}
+
+                                <button
+                                    v-if="cuota.fecha_pago !== '- -'"
+                                    class="btn-table"
+                                    title="Imprimir recibo"
+                                    @click="$emit('imprimir-abono')"
+                                >
+                                    <i class="fa-solid fa-print"></i>
+                                </button>
                             </td>
                         </tr>
                     </tbody>
@@ -216,7 +243,7 @@
                         <InfoRow
                             label="Fecha"
                             :value="credito.fecha_creacion"
-                            class="border-l border-gray-100"
+                            class="border-l border-gray-100 whitespace-nowrap"
                         />
                     </div>
                 </div>
@@ -279,6 +306,7 @@ defineEmits([
     'ver-plan-pagos',
     'descargar-paz-salvo',
     'imprimir',
+    'imprimir-abono',
 ])
 
 const cuotasCols = [

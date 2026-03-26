@@ -28,6 +28,7 @@
                 @ver-plan-pagos="verPlanPagos"
                 @descargar-paz-salvo="descargarPazSalvo"
                 @imprimir="imprimir"
+                @imprimir-abono="imprimirAbono"
             />
         </transition>
     </div>
@@ -57,48 +58,38 @@ const loadingCredito = ref(false)
 const modalOpen = ref(false)
 const credito = ref(null)
 
-async function verEstadoCredito(row) {
+async function verEstadoCredito(id) {
     modalOpen.value = true
     loadingCredito.value = true
-    // try {
-    //     const { data } = await api.get(`/api/creditos/${row.id}/estado`)
-    //     credito.value = data
-    // } finally {
-    //     loadingCredito.value = false
-    // }
-    credito.value = {
-        cliente: {
-            nombre: 'FREDY ALEJANDRO REYES BARAJAS',
-            cedula: '1098150702',
-            correo: 'fredyrb17@gmail.com',
-            telefono: '3172969033',
-        },
-        valor_compra: 689344,
-        valor_pendiente: 732202,
-        valor_pagado: 0,
-        valor_cuotas: 122692,
-        en_mora: false,
-        num_cuotas: 6,
-        periodicidad: 'Mensual',
-        intereses_moratorios: 0,
-        gastos_cobranza: 0,
-        realizado_por: 'Maria Camila Ramirez',
-        fecha_creacion: '2026-03-25 14:27:57',
-        cuotas: [
-            {
-                numero: 1,
-                fecha_limite: '2026-04-15',
-                valor_abonado: 0,
-                saldo: 118742,
-                estado: 'Pendiente',
-                interes_moratorio: 0,
-                gastos_cobranza: 0,
-                fecha_pago: null,
+
+    try {
+        const { data } = await api.get(`/api/creditos/${id}/details`)
+        const { tabla } = data
+        const { cliente } = tabla
+
+        credito.value = {
+            cliente: {
+                nombre: cliente.nombre,
+                cedula: cliente.cedula,
+                correo: cliente.email,
+                telefono: cliente.telefono,
             },
-            // ...
-        ],
+            valor_compra: tabla.valor_compra,
+            valor_pendiente: tabla.ValorPendiente,
+            valor_pagado: tabla.ValorPagado,
+            valor_cuotas: tabla.val_cuotas,
+            en_mora: tabla.enMora,
+            num_cuotas: tabla.num_cuotas,
+            periodicidad: tabla.periocidad,
+            intereses_moratorios: tabla.total_intereses_m,
+            gastos_cobranza: tabla.total_gastos_c,
+            realizado_por: tabla.realizado_por,
+            fecha_creacion: tabla.fecha_credito,
+            cuotas: tabla.proyeccion,
+        }
+    } finally {
+        loadingCredito.value = false
     }
-    loadingCredito.value = false
 }
 
 async function fetchClientes() {
@@ -121,6 +112,7 @@ function liquidarCredito() {}
 function verPlanPagos() {}
 function descargarPazSalvo() {}
 function imprimir() {}
+function imprimirAbono() {}
 
 onMounted(async () => {
     start()

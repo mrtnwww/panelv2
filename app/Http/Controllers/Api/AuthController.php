@@ -28,7 +28,7 @@ class AuthController extends Controller
 
         // Validaciones personalizadas
         if ($user->dias_vigencia && $user->ult_acceso) {
-            $dias = now()->diffInDays($user->ult_acceso);
+            $dias = (int) now()->diffInDays($user->ult_acceso, true);
 
             if ($dias > $user->dias_vigencia) {
                 $user->bloqueado = 1;
