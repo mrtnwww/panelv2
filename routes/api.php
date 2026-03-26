@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Abonos\AbonoController;
 use App\Http\Controllers\Ciudades\CiudadController;
 use App\Http\Controllers\Clientes\ClienteController;
 use App\Http\Controllers\Creditos\CreditoController;
@@ -25,16 +26,23 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
         Route::get('/', [ClienteController::class, 'listMyClients']);
         Route::get('/listCreditsClients', [ClienteController::class, 'listCreditsClients']);
         Route::get('/listMyClientsValidated', [ClienteController::class, 'listMyClientsValidated']);
+        Route::get('/listCreditsClientsActives', [ClienteController::class, 'listCreditsClientsActives']);
         Route::get('/{cliente_id}/{empresa_id?}/{parametrosValidacion?}', [ClienteController::class, 'listMyClient']);
     });
 
     // Creditos
     Route::prefix('creditos')->group(function () {
         Route::get('/{id}/details', [CreditoController::class, 'creditDetails']);
+        Route::get('/detailCredit', [CreditoController::class, 'detailCredit']);
     });
 
     // Empresas
     Route::prefix('empresas')->group(function () {
         Route::get('/', [EmpresaController::class, 'listMyCompanys']);
+    });
+
+    // Abonos
+    Route::prefix('abonos')->group(function () {
+        // TODO
     });
 });

@@ -12,11 +12,14 @@ use App\Models\CreditoProyeccion;
 use App\Models\Empresa;
 use App\Models\EstadoFunciones;
 use App\Models\ParametrosEstadoFunciones;
+use App\Models\ParametrosInterese;
 use App\Models\Persona;
+use App\Models\TipoPago;
 use App\Models\Usuario;
 use App\Traits\CalculoCobranza;
 use App\Traits\CalculoPagoMinimo;
 use Carbon\Carbon;
+use DateTime;
 use Illuminate\Http\Request;
 
 class CreditoController extends Controller
@@ -26,8 +29,7 @@ class CreditoController extends Controller
 
     public function creditDetails(Request $request)
     {
-        $user = $request->user();
-        $empresaId = $user->empresa_id;
+        $empresaId = $request->user()?->empresa_id;
 
         $credito_id     = $request['id'];
         $creditoActual  = Credito::where('id', $credito_id)->first();
@@ -248,7 +250,8 @@ class CreditoController extends Controller
         }
     }
 
-    public function calculoValorAFavor($valorCuota, $abonos, $proyeccion, $credito) {
+    public function calculoValorAFavor($valorCuota, $abonos, $proyeccion, $credito)
+    {
         if ($abonos <= 0) {
             return 0;
         }
@@ -269,7 +272,8 @@ class CreditoController extends Controller
         return $valorAFavor;
     }
 
-    function CalcularCapital($id){
+    function CalcularCapital($id)
+    {
         $credito = Credito::find($id);
         $n = $credito->num_cuotas;
         $p = $credito->valor_compra;
@@ -521,7 +525,8 @@ class CreditoController extends Controller
         return $tabla;
     }
 
-    public function calculoLiquidacion($credito, $proyeccion, $modular, $vAbonos) {
+    public function calculoLiquidacion($credito, $proyeccion, $modular, $vAbonos)
+    {
         // se obtiene el plan de pagos del credito
         $planPagos = app(MobileController::class)->obtenerPlanDePagos($credito->id, null);
         array_shift($planPagos);// se remueve el primer elemento del array cuyos valores estan en 0
@@ -600,9 +605,540 @@ class CreditoController extends Controller
         return $vPagar;
     }
 
-    function calcularAnual($efectivoNominal) {
+    function calcularAnual($efectivoNominal)
+    {
         $base = $efectivoNominal + 1;
         $porcentaje = (pow($base, 12) - 1) * 100;
         return $porcentaje;
+    }
+
+    function detailCredit(Request $request)
+    {
+        $usuarioId = $request->user()?->id;
+        $empresaId = $request->user()?->empresa_id;
+
+        $user = Usuario::where('id', $usuarioId)->first();
+
+        $credito = Credito::find($request['credito_id']);
+
+        // Calculo gastos de cobranza e intereses moratorios
+        $vCreditoId = array();
+        $vCreditoId[] = $credito->id;
+        if (!$credito->fecha_gcobranza || Carbon::parse($credito->fecha_gcobranza)->isToday() == false) {
+            $this->calculoCobranzaIntMora($vCreditoId);
+            $credito->fecha_gcobranza = Carbon::now();
+            $credito->save();
+        }
+
+        //buscar abonos o pagos
+        $conditions1 = [
+            ['credito_id', $credito->id]
+        ];
+
+        $abonos = Abono::where($conditions1)->get();
+
+        // UTC -5 de la fecha de realizacion del abono
+        foreach ($abonos as $abono) {
+            $abono->fecha_abono = Carbon::parse($abono->created_at)->subHours(5)->format('Y-m-d H:i:s');
+        }
+
+        $condonaciones = [];
+        foreach($abonos as $abono){
+            foreach($abono->condonaciones as $condonacion){
+                $persona = Persona::find($condonacion->usuario->persona_id);
+                $condonacion->usuario_nombre = $persona->nombre;
+
+                $condonaciones[] = $condonacion;
+            }
+        }
+
+        // condonaciones por credito
+        $condonacionesTareas = Condonacion::where('credito_id', $credito->id)->get();
+        foreach($condonacionesTareas as $condonacion){
+            $persona = Persona::find($condonacion->usuario->persona_id);
+            $condonacion->usuario_nombre = $persona->nombre;
+
+            $condonaciones[] = $condonacion;
+        }
+
+        //$totalAbonos = Abono::where($conditions1)->sum('valor');
+        $cantidadPagas = CreditoProyeccion::where([[$conditions1],['pagado' , '1']])->count();
+        $totalAbonos = $credito->val_cuotas * $cantidadPagas;
+
+        $proyeccion = CreditoProyeccion::where($conditions1)->get();
+
+        $cuotasPagadas = $totalAbonos / $credito->val_cuotas;
+        $explode = explode(".", $cuotasPagadas);
+        // Acá debe ir el tema de calcular el crédito para calcular el valor a dia de hoy
+
+        $cliente = Cliente::where('id', $credito->client_id)->first();
+        $empresa = Empresa::where('id', $cliente['empresa_id'])->first();
+        $parametrosIntereses = ParametrosInterese::withTrashed()
+            ->where('empresa_id', $cliente['empresa_id'])
+            ->where('lineas_credito_id', $credito->lineas_credito_id)
+            ->first();
+
+        if ($empresa->aliado) {
+            $parametrosIntereses = ParametrosInterese::withTrashed()
+                ->where('empresa_id', $empresa->aliado)
+                ->where('lineas_credito_id', $credito->lineas_credito_id)
+                ->first();
+        }
+        if ($empresa->sede) {
+            $parametrosIntereses = ParametrosInterese::withTrashed()
+                ->where('empresa_id', $empresa->sede)
+                ->where('lineas_credito_id', $credito->lineas_credito_id)
+                ->first();
+        }
+
+        $arrayGenerico = array();
+        $valorCompra = $credito->valor_compra;
+        $porNominal = $parametrosIntereses->interes_nm / 100;
+
+        $otros = 0;
+        if ($parametrosIntereses->otrosPorcentaje != 0) {
+            $otros = ($parametrosIntereses->otrosPorcentaje / 100) * $credito->valor_compra;
+        } else if ($parametrosIntereses->otrosNominal) {
+            $otros = $parametrosIntereses->otrosNominal;
+        }
+
+        $arrayGenerico[] = array(
+            "saldo" => number_format($credito->valor_compra),
+            "capital" => 0,
+            "intereses" => 0,
+            "plataforma" => 0,
+            "otros" => 0,
+            "iva" => 0,
+            "cuota" => 0,
+            "porPlataforma" => $empresa->porcentaje
+        );
+
+        $numCuotas = $credito->num_cuotas;
+        $capital = $credito->valor_compra / $numCuotas;
+
+        $totales = array(
+            "capital" => 0,
+            "intereses" => 0,
+            "valorOtros" => 0,
+            "valorCuota" => 0,
+            "total" => 0
+        );
+
+        for ($i = 0; $i < $numCuotas; $i++) {
+            //echo nl2br(round($valorCompra) ."\n");
+            if ($i == 0 && isset($proyeccion[0]['valor_cuota'])) {
+                // Calcular los intereses de la primera cuota
+                $fechaCreacion = Carbon::parse($credito->created_at)->startOfDay();
+                $fechaPrimeraCuota = Carbon::parse($proyeccion[0]->fecha);
+                $diferenciaDias = $fechaCreacion->diffInDays($fechaPrimeraCuota);
+                $intereses = ((round($valorCompra) * $porNominal) / 30) * $diferenciaDias;
+            } else {
+                $intereses = round($valorCompra) * $porNominal;
+            }
+            $plataforma = 0;
+            $plataforma = $credito->valor_compra * ($empresa->porcentaje / 100) / $numCuotas;
+            $valorOtros = $otros / $numCuotas;
+            $valorCuotas = round($capital) + round($intereses) + round($plataforma) + round(($otros / $numCuotas));
+            //echo nl2br(round($valorCuotas) ." = ". round($capital) ." + ". round($intereses) ." + ". round($plataforma) ." + ". round(($otros / $numCuotas)) ."\n");
+            $valorCompra -= $capital;
+            if ($valorCompra < 0) {
+                $valorCompra = 0;
+            }
+
+            $totales["capital"] +=  $capital;
+            $totales["intereses"]  += $intereses;
+            $totales["valorOtros"]  += $valorOtros;
+            $totales["valorCuota"]  += $valorCuotas;
+            $totales["total"]  += $valorCuotas;
+
+            $capital = round($valorCuotas) - round($valorOtros) - round($intereses) - round($plataforma);
+        }
+
+        $valorCuotaNuevo = $totales["total"] / $numCuotas;
+
+        $formatoMoneda = number_format($valorCuotaNuevo);
+        $centimos = explode(',', $formatoMoneda);
+
+        if (count($centimos) > 1) {
+            $centimos[count($centimos) - 1] = floor((($centimos[count($centimos) - 1]) / 100));
+            $centimos[count($centimos) - 1] = $centimos[count($centimos) - 1] * 100;
+            if ($centimos[count($centimos) - 1] == 0) {
+                $centimos[count($centimos) - 1] = "000";
+            }
+        }
+
+
+        $aproximado = "";
+        foreach ($centimos as $cent) {
+            $aproximado .= $cent;
+        }
+
+        $totales = array(
+            "capital" => 0,
+            "intereses" => 0,
+            "valorOtros" => 0,
+            "plataforma" => 0,
+            "valorCuota" => 0,
+            "total" => 0
+        );
+
+        $contador = $numCuotas;
+        if ($credito->periocidad == 2) {
+            $contador = $contador * 2;
+        }
+
+        $cuota = 0;
+        $plataforma = 0;
+        $saldoB = $credito->valor_compra;
+        $otrosPintar = $otros;
+
+
+        for ($i = 0; $i < $contador; $i++) {
+            $plataforma = $credito->valor_compra * ($empresa->porcentaje / 100) / $contador;
+            if ($i == 0 && isset($proyeccion[0]['valor_cuota'])) {
+                // Calcular los intereses de la primera cuota
+                $fechaCreacion = Carbon::parse($credito->created_at)->startOfDay();
+                $fechaPrimeraCuota = Carbon::parse($proyeccion[0]->fecha);
+                $diferenciaDias = $fechaCreacion->diffInDays($fechaPrimeraCuota);
+                $intereses = (($saldoB * $porNominal) / 30) * $diferenciaDias;
+            } else {
+                $intereses = $saldoB * $porNominal;
+            }
+            $otrosPintar = $otros / $numCuotas;
+
+            $cuota = $aproximado;
+            if ($credito->periocidad == 2) {
+                $cuota = $cuota / 2;
+                $intereses = $intereses / 2;
+                $otrosPintar = $otrosPintar / 2;
+            }
+
+            $capital = $cuota - $plataforma - $intereses - $otrosPintar;
+            $saldoB -= $capital;
+            if ($saldoB < 0) {
+                $saldoB = 0;
+            }
+
+            //echo nl2br($saldoB ." ".$capital . " ". $intereses . " ".$plataforma . " ". $otrosPintar. "0 ".$cuota. "\n");
+
+            $arrayGenerico[] = array(
+                "saldo" => $saldoB,
+                "capital" => $capital,
+                "intereses" => $intereses,
+                "plataforma" => $plataforma,
+                "otros" => $otrosPintar,
+                "iva" => 0,
+                "cuota" => $cuota
+            );
+
+
+            $totales['capital'] += $capital;
+            $totales['intereses'] += $intereses;
+            $totales['plataforma'] += $plataforma;
+            $totales['valorCuota'] += $cuota;
+            $totales['valorOtros'] += $otrosPintar;
+        }
+
+        $totales['total'] = $totales['capital']
+            + $totales['intereses']
+            + $totales['plataforma']
+            + $totales['valorCuota']
+            + $totales['capital'];
+
+        // valor total del credito menos lo abonado por el cliente
+        // $valorPendiente = $credito->valor_credito - $totalAbonos;
+        // valor del credito sin intereses futuros
+        // Se valida si se ha realizado condonaciones al credito
+        $valorCondonaciones = Condonacion::whereIn('abono_id', function ($query) use($credito) {
+            $query->select('id')->from('abono')->where('credito_id', $credito->id);
+        })->where('concepto_condonacion', 'credito')->sum('valor_condonado');
+
+        $vAbonos = $abonos->sum('valor') + ($valorCondonaciones ?? 0);
+        $modular = $this->calculoValorAFavor($proyeccion[0]->valor_cuota, $vAbonos, $proyeccion, $credito) ?? 0;
+        $valorPendiente = $this->calculoLiquidacion($credito, $proyeccion, $modular, $vAbonos);
+
+        $i = -1;
+        $proyeccionPos = 0;
+        foreach ($abonos as $abono) {
+            $i++;
+            $tipoPago = TipoPago::where('id', $abono->tipo_pago)->first();
+            $hechoPorU = Usuario::where('id', $abono->user_id)->withTrashed()->first();
+            $hechoPor = Persona::where('id', $hechoPorU->persona_id)->first();
+
+            $abonos[$i]['pagado'] = $tipoPago->nombre;
+            $abonos[$i]['hecho'] = $hechoPor->nombre;
+
+            for ($j = 0; $j < $numCuotas; $j++) {
+                $cuotasPagadas = ($proyeccionPos + $j);
+            }
+
+            $proyeccionPos += $numCuotas; // Actualizar $proyeccionPos para la siguiente iteración
+        }
+
+        $posDetenida = 0;
+        $sumaInteresTemp = 0;
+        $hoy = \Carbon\Carbon::now();
+        $i = -1;
+        $proyeccionR = CreditoProyeccion::where('credito_id', $credito->id)->get();
+        foreach ($proyeccionR as $p) {
+            $i++;
+            if ($p->pagado == 0) {
+                $datetime1 = new DateTime($hoy);
+                $datetime2 = new DateTime($p->fecha);
+                $interval = $datetime1->diff($datetime2);
+                $omg = $interval->format('%a');
+                $intereses = $arrayGenerico[$i]["intereses"] / 30;
+                $sumaInteresTemp += ($arrayGenerico[$i]["intereses"] - ($intereses * $omg));
+                $posDetenida = $i;
+                break;
+            }
+        }
+
+        for ($i = ($posDetenida); $i < count($proyeccion); $i++) {
+            $sumaInteresTemp += $arrayGenerico[($i)]["intereses"];
+        }
+
+        $proyeccion = CreditoProyeccion::where('credito_id', $credito->id)
+            ->orderBy('fecha', 'desc')
+            ->first();
+        $mora = 0;
+        $moratorio = false;
+        if ($proyeccion->diasMora > 0) {
+
+            // $valorPendiente += $proyeccion->diasMora * 100;
+
+            $mora = $proyeccion->diasMora * 100;
+
+            //echo $mora." = ".$proyeccion->diasMora." * 100"."<br>";
+
+            $moratorio = true;
+        } else {
+            // $valorPendiente -= abs($sumaInteresTemp);
+        }
+
+
+        $proyecciones = CreditoProyeccion::where('credito_id', $credito->id)
+            //->where('diasMora', '>', 0)
+            //->where('pagado', 0)
+            ->get();
+        // Validar el valor de la primera cuota
+        $primeraProyeccion = $proyecciones->sortBy('fecha')->first();
+        $valorPrimerCuota = ($primeraProyeccion->pagado == 0 && isset($primeraProyeccion->valor_cuota))
+            ? $primeraProyeccion->valor_cuota
+            : null;
+
+        $isCuota = false;
+        if (!$moratorio) {
+            foreach ($proyecciones as $proyeccion) {
+                $mora += $proyeccion->valor_mora;
+                $isCuota = true;
+            }
+        }
+
+        $condicion = [
+            ['credito_id', $credito->id],
+            ['pagado', 0]
+        ];
+
+        $funcionAbonoCapital = EstadoFunciones::where('nombre_funcion','Abonar al capital')->first();
+        $AbonoCapital = ParametrosEstadoFunciones::where([['empresa_id',$empresaId],['estado_funcion_id',$funcionAbonoCapital->id]])->first();
+
+        if($AbonoCapital){
+            $AbonoCapital = 1;
+        }else{
+            $AbonoCapital = 0;
+        }
+
+        if ($credito->credito_liquidez == 1) $AbonoCapital = 0;
+
+        $funcionMoratorioAu = EstadoFunciones::where('nombre_funcion','Intereses moratorios Automáticos')->first();
+        $InteresesMoratoriosAu = ParametrosEstadoFunciones::where([['empresa_id',$empresaId],['estado_funcion_id',$funcionMoratorioAu->id]])->first();
+
+        if($InteresesMoratoriosAu){
+            $InteresesMoratoriosAu = 1;
+        }else{
+            $InteresesMoratoriosAu = 0;
+        }
+
+        $funcionGastoCAu = EstadoFunciones::where('nombre_funcion','Gastos de cobranza Automáticos')->first();
+        $GastosCobranzaAu = ParametrosEstadoFunciones::where([['empresa_id',$empresaId],['estado_funcion_id',$funcionGastoCAu->id]])->first();
+
+        if($GastosCobranzaAu){
+            $GastosCobranzaAu = 1;
+        }else{
+            $GastosCobranzaAu = 0;
+        }
+
+        $isFinish = CreditoProyeccion::where($condicion)->count();
+
+        $total_gastos_c = 0;
+        $total_intereses_m = 0;
+        // Activo para realizar abono a capital // se podra realizar abono a capital cualquier dia del mes
+        $activoAbonoCapital = 1;
+        $fechaAbonoCapital = 'Digite el valor';
+
+        foreach($proyecciones as $proyeccion){
+            if($proyeccion->pagado == 0){
+                if($proyeccion->fecha->format('Y-m-d') < $hoy->format('Y-m-d')){
+                    // si el cliente se encuentra en mora no se podra realizar abono a capital
+                    $activoAbonoCapital = 0;
+                    $fechaAbonoCapital = 'En mora';
+                }
+
+                $vIntMoratorios = round($proyeccion->intereses_moratorios);
+                $vGastosCobranza = round($proyeccion->gastos_cobranza);
+
+                $proyeccion->valor_mora_capital = $proyeccion->valor_mora
+                    - $vGastosCobranza
+                    - $vIntMoratorios;
+
+                $total_intereses_m += $vIntMoratorios;
+                $total_gastos_c += $vGastosCobranza;
+            } else {
+                $proyeccion->valor_mora_capital = 0;
+            }
+        }
+
+        $table = $this->CalcularCapital($credito->id);
+        $valorAFavor = 0;
+
+        $valorACuotasAFavor = 0 ;
+        foreach($abonos as $abono){
+            //Restar interes mora
+            $valorACuotas = $abono->valor;
+
+            if($valorACuotas > 0 ){
+                $valorACuotasAFavor = $valorACuotasAFavor + $valorACuotas;
+            }else{
+                $valorACuotasAFavor = $valorACuotasAFavor - $valorACuotas;
+            }
+        }
+
+            // Resultado de la división (cociente)
+        $cuotasSaldadas = intdiv($valorACuotasAFavor, $credito->val_cuotas);
+        $valorAFavor = $valorACuotasAFavor % $credito->val_cuotas;
+
+        $capitalEnDeuda = 0;
+
+        foreach($table as $key => $tab){
+            $capitalEnDeuda += $tab["capital"];
+
+            if($cuotasSaldadas == 0){
+                if($proyecciones[0]->pagado == 1){
+                    $valorAFavor = 0;
+                }
+            }
+
+            $capitalGC = 0;
+            if($proyecciones[$key]->pagado == 0){
+                $proyecciones[$key]->capital = round($tab["capital"],0);
+                if($valorAFavor > 0){
+
+                    if($tab["firmaElec"]>0){
+                        $capitalGC = $tab["capital"] +  $tab["intereses"] + $tab["firmaElec"] - $valorAFavor;
+                    }else{
+                        $capitalGC = $tab["capital"] +  $tab["intereses"] - $valorAFavor;
+                    }
+
+                    $resultado = $credito->val_cuotas - $valorAFavor;
+
+                    if($resultado < $proyecciones[$key]->capital){
+                        $proyecciones[$key]->capital = $resultado;
+                    }
+
+                    $valorAFavor = 0;
+                }else{
+                    if($tab["firmaElec"]>0){
+                        $capitalGC = $tab["capital"] +  $tab["intereses"] + $tab["firmaElec"];
+                    }else{
+                        $capitalGC = $tab["capital"] +  $tab["intereses"];
+                    }
+                }
+
+
+                $proyecciones[$key]->capitalGC =  round($capitalGC,0);
+
+            }
+        }
+
+        // total pendiente por pagar capital
+        $capitalEnDeuda -= $abonos->sum('abono_capital');
+        if (!$credito->aval_columnas) {
+            $capitalEnDeuda -= ($abonos->sum('abono_aval') + $abonos->sum('abono_iva_aval'));
+        }
+
+        $saldoMora = 0;
+        $saldo = 0;
+        /**
+         * @param array $proyecciones
+         * @param int $modular
+         * @param int $valorCuota
+         * @param bool $soloMora
+         * @param bool $estadoFunciones
+         * @param bool $gastosCobranzaaAu
+         * @param bool $intMoratoriosAu
+        */
+        $saldoMora = $this->pagoMinimo($credito->proyecciones, null, null, true, true, $GastosCobranzaAu, $InteresesMoratoriosAu);
+        $valor_abonado = Abono::where('credito_id', $credito->id)->sum('valor');
+
+        // Se valida si se ha realizado condonaciones al credito
+        $valorCondonaciones = Condonacion::whereIn('abono_id', function ($query) use($credito) {
+            $query->select('id')->from('abono')->where('credito_id', $credito->id);
+        })->where('concepto_condonacion', 'credito')->sum('valor_condonado');
+
+        // Se añade el valor de las condonaciones al total abonado
+        $valor_abonado += ($valorCondonaciones ?? 0);
+
+        //aqui
+        $modular = $this->calculoValorAFavor($proyecciones[0]->valor_cuota, $valor_abonado, $proyecciones, $credito) ?? 0;
+        $cuotas = $proyecciones->where('pagado', 1)->count();
+        //$saldo = $credito->valor_credito - ($abonos->sum('valor') + ($valorCondonaciones ?? 0));
+
+        $saldo = $credito->valor_credito;
+        $num = $cuotas;
+        foreach ($table as $tab) {
+            if($num > 0){
+                $saldo -= $tab["valCuota"];
+            }
+            $num--;
+        }
+        $saldo = $saldo - $modular;
+
+        // Si el valor de la mora es mayor a 0, se asigna el valor de la mora al saldo (pueden existir diferencias de 1 o 2 pesos)
+        if (max(0, $saldo) == 0 && max(0, $saldoMora) != 0) $saldo = $saldoMora;
+
+        // $saldo -= ($valorCondonaciones ?? 0);
+        // $saldoMora -= ($valorCondonaciones ?? 0);
+
+        $datos = array(
+            'user' => $user,
+            'Proyecciones' => $proyecciones,
+            'total_gastos_c' => round($total_gastos_c),
+            'total_intereses_m' => round($total_intereses_m),
+            'InteresesMoratoriosAu' => $InteresesMoratoriosAu,
+            'GastosCobranzaAu' => $GastosCobranzaAu,
+            'AbonoCapital' => $AbonoCapital,
+            'InteresAnual' => $parametrosIntereses->interes_ea,
+            'credito' => $credito,
+            'abonos' => $abonos,
+            'condonaciones' => $condonaciones,
+            'valorHoy' => round($valorPendiente),
+            'valorMora' => $mora,
+            'isCuota' => $isCuota,
+            'moratorio' => $moratorio,
+            'terminado' => ($isFinish > 0) ? false : true,
+            'valorPrimerCuota' => $valorPrimerCuota,
+            'saldo' => max(0, $saldo),
+            'saldoMora' => max(0, $saldoMora),
+            'activoAbonoCapital' => $activoAbonoCapital,
+            'fechaAbonoCapital' => $fechaAbonoCapital,
+            'capitalEnDeuda' => $capitalEnDeuda,
+            'tipoPago' => TipoPago::all(),
+            'totalAbonado' => $abonos->sum('valor')
+        );
+
+        return response()->json([
+            'datos' => $datos
+        ]);
     }
 }

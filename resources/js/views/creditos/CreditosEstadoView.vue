@@ -27,7 +27,7 @@
                 @liquidar="liquidarCredito"
                 @ver-plan-pagos="verPlanPagos"
                 @descargar-paz-salvo="descargarPazSalvo"
-                @imprimir="imprimir"
+                @imprimir="imprimirCredito"
                 @imprimir-abono="imprimirAbono"
             />
         </transition>
@@ -41,6 +41,7 @@ import { ref, onMounted } from 'vue'
 import EstadoCreditoModal from '@/components/modals/EstadoCreditoModal.vue'
 import FormInput from '@/components/form/FormInput.vue'
 
+import { useEstadoCredito } from '@/composables/useEstadoCredito'
 import { useLoader } from '@/composables/useLoader'
 const { start, stop } = useLoader()
 
@@ -52,45 +53,6 @@ const clienteId = ref('')
 // -- Opciones de clientes --------------------------------------
 const clientesOpts = ref([])
 const clientes = ref([])
-
-// -- Modal estado credito --------------------------------------
-const loadingCredito = ref(false)
-const modalOpen = ref(false)
-const credito = ref(null)
-
-async function verEstadoCredito(id) {
-    modalOpen.value = true
-    loadingCredito.value = true
-
-    try {
-        const { data } = await api.get(`/api/creditos/${id}/details`)
-        const { tabla } = data
-        const { cliente } = tabla
-
-        credito.value = {
-            cliente: {
-                nombre: cliente.nombre,
-                cedula: cliente.cedula,
-                correo: cliente.email,
-                telefono: cliente.telefono,
-            },
-            valor_compra: tabla.valor_compra,
-            valor_pendiente: tabla.ValorPendiente,
-            valor_pagado: tabla.ValorPagado,
-            valor_cuotas: tabla.val_cuotas,
-            en_mora: tabla.enMora,
-            num_cuotas: tabla.num_cuotas,
-            periodicidad: tabla.periocidad,
-            intereses_moratorios: tabla.total_intereses_m,
-            gastos_cobranza: tabla.total_gastos_c,
-            realizado_por: tabla.realizado_por,
-            fecha_creacion: tabla.fecha_credito,
-            cuotas: tabla.proyeccion,
-        }
-    } finally {
-        loadingCredito.value = false
-    }
-}
 
 async function fetchClientes() {
     try {
@@ -107,12 +69,19 @@ async function fetchClientes() {
     }
 }
 
-function verHistorico() {}
-function liquidarCredito() {}
-function verPlanPagos() {}
-function descargarPazSalvo() {}
-function imprimir() {}
-function imprimirAbono() {}
+// -- Modal estado credito --------------------------------------
+const {
+    modalOpen,
+    loadingCredito,
+    credito,
+    verEstadoCredito,
+    verHistorico,
+    liquidarCredito,
+    verPlanPagos,
+    descargarPazSalvo,
+    imprimirCredito,
+    imprimirAbono,
+} = useEstadoCredito()
 
 onMounted(async () => {
     start()

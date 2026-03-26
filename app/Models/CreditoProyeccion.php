@@ -30,7 +30,8 @@ class CreditoProyeccion extends Model
 		'credito_id' => 'int',
 		'pagado' => 'int',
 		'valor_mora' => 'int',
-		'diasMora' => 'int'
+		'diasMora' => 'int',
+		'fecha' => 'datetime',
 	];
 
 	protected $dates = [

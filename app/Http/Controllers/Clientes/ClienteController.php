@@ -18,16 +18,15 @@ use App\Models\ReferenciaCliente;
 use App\Models\UsuarioTipoUsuario;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 class ClienteController extends Controller
 {
     function listMyClients(Request $request)
     {
-        $user = $request->user();
-
-        $usuarioId    = $user->id;
-        $empresaId = $user->empresa_id;
+        $usuarioId = $request->user()?->id;
+        $empresaId = $request->user()?->empresa_id;
 
         $perPage = $request->per_page; // Número de registros por página
         $searchTerm = $request->input('search', ''); // Termino de busqueda
@@ -131,11 +130,10 @@ class ClienteController extends Controller
                         $capital += $abono->abono_capital ?? 0;
                     } else {
                         // Calcular capital cubierto por el abono
-                        // TODO: Pendiente de crear controlador CreditController
-                        // $abonosAsociados = (new CreditController)->procesarAbonos($abono, true);
+                        $abonosAsociados = (new AbonoController)->procesarAbonos($abono, true);
 
-                        // $ultimoAbono = end($abonosAsociados) ?: [];
-                        // $capital += $ultimoAbono['detalles']['capital'] ?? 0;
+                        $ultimoAbono = end($abonosAsociados) ?: [];
+                        $capital += $ultimoAbono['detalles']['capital'] ?? 0;
                     }
                 }
 
@@ -248,9 +246,7 @@ class ClienteController extends Controller
 
     function listMyClientsValidated(Request $request)
     {
-        $user = $request->user();
-
-        $empresaId = $user->empresa_id;
+        $empresaId = $request->user()?->empresa_id;
 
         // Obtener los id de las empresas aliadas/sedes
         $empresas = Empresa::where(function ($query) use ($empresaId) {
@@ -346,10 +342,8 @@ class ClienteController extends Controller
 
     public function listMyClient(Request $request)
     {
-        $user = $request->user();
-
-        $usuarioId = $user->id;
-        $empresaId = $user->empresa_id;
+        $usuarioId = $request->user()?->id;
+        $empresaId = $request->user()?->empresa_id;
 
         $clienteId = $request['cliente_id'];
 
@@ -537,9 +531,7 @@ class ClienteController extends Controller
     public function listCreditsClients()
     {
         try {
-            $user = auth()->user();
-
-            $empresaId = $user->empresa_id;
+            $empresaId = auth()->user()?->empresa_id;
 
             // Obtener los id de las empresas
             $empresas = Empresa::where('aliado', $empresaId)
@@ -573,5 +565,32 @@ class ClienteController extends Controller
         } catch (\Exception $ex) {
             return response()->json(['status' => $ex->getCode(), 'message' => $ex->getMessage()], 422);
         }
+    }
+
+    public function listCreditsClientsActives()
+    {
+        $empresaId = auth()->user()?->empresa_id;
+
+        // Agregar clientes con creditos de las empresas aliadas/sedes
+        $empresasIds = Empresa::where('aliado', $empresaId)
+            ->orWhere('sede', $empresaId)
+            ->pluck('id')
+            ->push($empresaId);
+
+        $listaCliente = Cliente::whereIn('empresa_id', $empresasIds)
+            ->whereHas('credito', function ($q) {
+                $q->whereNull('deleted_at');
+            })
+            ->with(['credito' => function ($q) {
+                $q->whereNull('deleted_at')
+                    ->select('id', 'client_id', 'valor_credito');
+            }])
+            ->select('id', 'cedula', 'nombre')
+            ->orderBy('nombre')
+            ->get();
+
+        return response()->json([
+            'listaCliente' => $listaCliente
+        ]);
     }
 }

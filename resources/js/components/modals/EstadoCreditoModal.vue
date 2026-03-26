@@ -5,7 +5,6 @@
         :no-padding="true"
         @update:model-value="$emit('update:modelValue', $event)"
     >
-        <!-- ── Header ── -->
         <template #header>
             <div class="flex items-center gap-3">
                 <button
@@ -18,7 +17,6 @@
             </div>
         </template>
 
-        <!-- ── Body ── -->
         <div v-if="loading" class="flex items-center justify-center py-16">
             <svg
                 class="animate-spin w-6 h-6 text-[#1a5c2a]"
@@ -42,7 +40,6 @@
         </div>
 
         <div v-else-if="credito" class="flex flex-col">
-            <!-- Sección 1: Datos del cliente -->
             <div class="px-5 pt-5 pb-4">
                 <div class="border border-gray-200 rounded-xl overflow-hidden">
                     <InfoRow
@@ -59,6 +56,7 @@
                         label="Correo"
                         :value="credito.cliente.correo"
                         class="border-t border-gray-100"
+                        value-class="truncate"
                     />
                     <InfoRow
                         label="Contacto"
@@ -68,10 +66,9 @@
                 </div>
             </div>
 
-            <!-- Sección 2: Valores del crédito -->
             <div class="px-5 pb-4">
                 <div class="border border-gray-200 rounded-xl overflow-hidden">
-                    <div class="grid grid-cols-2">
+                    <div class="grid grid-cols-1 sm:grid-cols-2">
                         <InfoRow
                             label="Valor de compra"
                             :value="formatCurrency(credito.valor_compra)"
@@ -84,10 +81,12 @@
                                     ? 'text-red-500 font-semibold'
                                     : 'text-emerald-600 font-semibold'
                             "
-                            class="border-l border-gray-100"
+                            class="border-t sm:border-t-0 sm:border-l border-gray-100"
                         />
                     </div>
-                    <div class="grid grid-cols-2 border-t border-gray-100">
+                    <div
+                        class="grid grid-cols-1 sm:grid-cols-2 border-t border-gray-100"
+                    >
                         <InfoRow
                             label="Valor pendiente"
                             :value="formatCurrency(credito.valor_pendiente)"
@@ -95,10 +94,12 @@
                         <InfoRow
                             label="Número de cuotas"
                             :value="String(credito.num_cuotas)"
-                            class="border-l border-gray-100"
+                            class="border-t sm:border-t-0 sm:border-l border-gray-100"
                         />
                     </div>
-                    <div class="grid grid-cols-2 border-t border-gray-100">
+                    <div
+                        class="grid grid-cols-1 sm:grid-cols-2 border-t border-gray-100"
+                    >
                         <InfoRow
                             label="Valor pagado"
                             :value="formatCurrency(credito.valor_pagado)"
@@ -106,7 +107,7 @@
                         <InfoRow
                             label="Periodicidad"
                             :value="credito.periodicidad"
-                            class="border-l border-gray-100"
+                            class="border-t sm:border-t-0 sm:border-l border-gray-100"
                         />
                     </div>
                     <div class="border-t border-gray-100">
@@ -118,10 +119,9 @@
                 </div>
             </div>
 
-            <!-- Sección 3: Intereses y gastos -->
             <div class="px-5 pb-4">
                 <div class="border border-gray-200 rounded-xl overflow-hidden">
-                    <div class="grid grid-cols-2">
+                    <div class="grid grid-cols-1 sm:grid-cols-2">
                         <InfoRow
                             label="Interéses moratorios"
                             :value="
@@ -131,16 +131,15 @@
                         <InfoRow
                             label="Gastos cobranza"
                             :value="formatCurrency(credito.gastos_cobranza)"
-                            class="border-l border-gray-100"
+                            class="border-t sm:border-t-0 sm:border-l border-gray-100"
                         />
                     </div>
                 </div>
             </div>
 
-            <!-- Sección 4: Tabla de cuotas -->
             <div class="mx-5 pb-4 overflow-x-auto">
                 <table
-                    class="w-full text-sm border border-gray-200 rounded-xl overflow-hidden"
+                    class="w-full text-sm border border-gray-200 rounded-xl overflow-hidden min-w-[600px]"
                 >
                     <thead>
                         <tr class="bg-[#1a5c2a] text-white">
@@ -186,25 +185,22 @@
                                 <span
                                     v-if="cuota.pagado === 1"
                                     class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700"
+                                    >Pagada</span
                                 >
-                                    Pagada
-                                </span>
-
                                 <span
                                     v-else-if="
                                         cuota.pagado === 0 && cuota.diasmora > 0
                                     "
                                     class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-50 text-red-600 whitespace-nowrap"
+                                    >{{
+                                        cuota.diasmora + ' días en mora'
+                                    }}</span
                                 >
-                                    {{ cuota.diasmora + ' días en mora' }}
-                                </span>
-
                                 <span
                                     v-else
                                     class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-50 text-yellow-700"
+                                    >Pendiente</span
                                 >
-                                    Pendiente
-                                </span>
                             </td>
                             <td class="px-3 py-2.5 text-gray-600">
                                 {{ formatCurrency(cuota.intereses_moratorios) }}
@@ -216,11 +212,10 @@
                                 class="px-3 py-2.5 text-center text-gray-400 whitespace-nowrap"
                             >
                                 {{ cuota.fecha_pago || '- -' }}
-
                                 <button
                                     v-if="cuota.fecha_pago !== '- -'"
-                                    class="btn-table"
-                                    title="Imprimir recibo"
+                                    class="btn-table ml-2"
+                                    title="Imprimir abono"
                                     @click="$emit('imprimir-abono')"
                                 >
                                     <i class="fa-solid fa-print"></i>
@@ -231,10 +226,9 @@
                 </table>
             </div>
 
-            <!-- Sección 5: Realizado por -->
             <div class="px-5 pb-5">
                 <div class="border border-gray-200 rounded-xl overflow-hidden">
-                    <div class="grid grid-cols-2">
+                    <div class="grid grid-cols-1 sm:grid-cols-2">
                         <InfoRow
                             label="Realizado por"
                             :value="credito.realizado_por"
@@ -243,43 +237,41 @@
                         <InfoRow
                             label="Fecha"
                             :value="credito.fecha_creacion"
-                            class="border-l border-gray-100 whitespace-nowrap"
+                            class="border-t sm:border-t-0 sm:border-l border-gray-100 whitespace-nowrap"
+                            value-class="truncate"
                         />
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- ── Footer ── -->
         <template #footer>
-            <div class="flex flex-wrap items-center gap-2 w-full">
+            <div
+                class="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2 w-full"
+            >
                 <button
                     @click="$emit('liquidar')"
-                    class="h-9 px-4 rounded-lg bg-[#1a5c2a] hover:bg-[#154d22] text-white text-xs font-medium transition-all flex items-center gap-2"
+                    class="w-full sm:w-auto justify-center h-9 px-4 rounded-lg bg-[#1a5c2a] hover:bg-[#154d22] text-white text-xs font-medium transition-all flex items-center gap-2"
                 >
-                    <i class="fa-solid fa-dollar-sign"></i>
-                    Liquidar crédito
+                    <i class="fa-solid fa-dollar-sign"></i> Liquidar crédito
                 </button>
                 <button
                     @click="$emit('ver-plan-pagos')"
-                    class="h-9 px-4 rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-600 text-xs font-medium transition-all flex items-center gap-2"
+                    class="w-full sm:w-auto justify-center h-9 px-4 rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-600 text-xs font-medium transition-all flex items-center gap-2"
                 >
-                    <i class="fa-regular fa-file-lines"></i>
-                    Ver plan de pagos
+                    <i class="fa-regular fa-file-lines"></i> Ver plan de pagos
                 </button>
                 <button
                     @click="$emit('descargar-paz-salvo')"
-                    class="h-9 px-4 rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-600 text-xs font-medium transition-all flex items-center gap-2"
+                    class="w-full sm:w-auto justify-center h-9 px-4 rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-600 text-xs font-medium transition-all flex items-center gap-2"
                 >
-                    <i class="fa-solid fa-download"></i>
-                    Descargar paz y salvo
+                    <i class="fa-solid fa-download"></i> Descargar paz y salvo
                 </button>
                 <button
                     @click="$emit('imprimir')"
-                    class="h-9 px-4 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-medium transition-all flex items-center gap-2 ml-auto"
+                    class="w-full sm:w-auto justify-center h-9 px-4 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-medium transition-all flex items-center gap-2 sm:ml-auto"
                 >
-                    <i class="fa-solid fa-print"></i>
-                    Imprimir
+                    <i class="fa-solid fa-print"></i> Imprimir
                 </button>
             </div>
         </template>

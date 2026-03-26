@@ -1,7 +1,7 @@
 <template>
     <div class="flex flex-col gap-5">
         <!-- Encabezado -->
-        <h1 class="text-lg font-semibold text-[#0A2540]">Generar abonos</h1>
+        <h1 class="text-lg font-semibold text-[#0A2540]">Abonar cuota</h1>
 
         <!-- Panel principal -->
         <div
@@ -12,6 +12,15 @@
                 class="flex flex-col gap-3 pb-5 border-b border-gray-100 sm:flex-row sm:items-center sm:justify-between"
             >
                 <div class="flex flex-wrap items-center gap-2">
+                    <!-- Cargar abonos usa FormInput type="file" -->
+                    <FormInput
+                        type="file"
+                        accept=".xlsx,.csv"
+                        button-label="Cargar abonos"
+                        size="sm"
+                        @change="onFileChange"
+                    />
+
                     <button
                         @click="descargarPlantilla"
                         :disabled="loadingPlantilla"
@@ -41,15 +50,6 @@
                         Descargar plantilla
                     </button>
 
-                    <!-- Cargar abonos usa FormInput type="file" -->
-                    <FormInput
-                        type="file"
-                        accept=".xlsx,.csv"
-                        button-label="Cargar abonos"
-                        size="sm"
-                        @change="onFileChange"
-                    />
-
                     <div class="hidden sm:block w-px h-6 bg-gray-200 mx-1" />
 
                     <button
@@ -77,10 +77,12 @@
                     label="Cliente"
                     type="select"
                     v-model="form.cliente_id"
+                    @update:model-value="onClienteChange"
                     :options="clientes"
                     placeholder="Seleccione el cliente"
-                    @update:model-value="onClienteChange"
+                    :searchable="true"
                 />
+
                 <FormInput
                     label="Buscar crédito"
                     type="select"
@@ -129,41 +131,6 @@
                         <span class="text-sm text-gray-600">{{
                             row.value
                         }}</span>
-                    </div>
-
-                    <!-- Número de meses -->
-                    <div
-                        class="grid grid-cols-2 items-center border-b border-gray-100 px-5 py-2"
-                    >
-                        <span class="text-sm text-gray-500"
-                            >Número de meses</span
-                        >
-                        <FormInput
-                            type="select"
-                            v-model="form.num_meses"
-                            :options="
-                                mesesOpciones.map(m => ({
-                                    value: m,
-                                    label: String(m),
-                                }))
-                            "
-                            size="sm"
-                        />
-                    </div>
-
-                    <!-- Periodicidad -->
-                    <div
-                        class="grid grid-cols-2 items-center border-b border-gray-100 px-5 py-2"
-                    >
-                        <span class="text-sm text-gray-500"
-                            >Periodicidad Cuotas</span
-                        >
-                        <FormInput
-                            type="select"
-                            v-model="form.periodicidad"
-                            :options="periodicidadOpts"
-                            size="sm"
-                        />
                     </div>
 
                     <!-- Filas calculadas -->
@@ -247,6 +214,7 @@
 
                     <!-- Abono a capital -->
                     <div
+                        v-if="false"
                         class="grid grid-cols-2 border-b border-gray-100 px-5 py-2.5"
                     >
                         <span class="text-sm text-gray-500"
@@ -364,7 +332,7 @@
                                 formatCurrency(creditoInfo.saldo_pendiente)
                             }}</span>
                             <button
-                                @click="verDetalle"
+                                @click="verEstadoCredito(form.credito_id)"
                                 class="h-7 px-3 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-medium transition-all"
                             >
                                 Detalle
@@ -393,67 +361,113 @@
                         </div>
 
                         <div
-                            class="grid grid-cols-[auto_1fr_1fr_1fr_auto] gap-2 px-4 py-2 bg-gray-50 border-b border-gray-100"
+                            class="hidden sm:grid grid-cols-12 gap-4 px-4 py-2 bg-gray-50 border-b border-gray-100"
                         >
-                            <span class="text-xs font-medium text-gray-500"
+                            <span
+                                class="col-span-2 text-xs font-medium text-gray-500"
                                 >Código</span
                             >
-                            <span class="text-xs font-medium text-gray-500"
+                            <span
+                                class="col-span-2 text-xs font-medium text-gray-500"
                                 >Valor</span
                             >
-                            <span class="text-xs font-medium text-gray-500"
+                            <span
+                                class="col-span-3 text-xs font-medium text-gray-500"
                                 >Fecha generación</span
                             >
-                            <span class="text-xs font-medium text-gray-500"
+                            <span
+                                class="col-span-4 text-xs font-medium text-gray-500"
                                 >Generado por</span
                             >
-                            <span class="text-xs font-medium text-gray-500"
+                            <span
+                                class="col-span-1 text-xs font-medium text-gray-500 text-center"
                                 >Acciones</span
                             >
                         </div>
 
-                        <div
-                            v-for="recibo in creditoInfo.recibos"
-                            :key="recibo.codigo"
-                            class="grid grid-cols-[auto_1fr_1fr_1fr_auto] gap-2 items-center px-4 py-2.5 border-b border-gray-50 last:border-b-0"
-                        >
-                            <span class="text-xs text-gray-600">{{
-                                recibo.codigo
-                            }}</span>
-                            <span class="text-xs text-gray-600">{{
-                                formatCurrency(recibo.valor)
-                            }}</span>
-                            <span class="text-xs text-gray-600">{{
-                                recibo.fecha
-                            }}</span>
-                            <span class="text-xs text-gray-600">{{
-                                recibo.generado_por
-                            }}</span>
-                            <button
-                                @click="descargarRecibo(recibo)"
-                                class="h-7 w-7 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white transition-all flex items-center justify-center"
-                                title="Descargar recibo"
+                        <div class="divide-y divide-gray-100">
+                            <div
+                                v-for="recibo in creditoInfo.recibos"
+                                :key="recibo.codigo"
+                                class="flex flex-col sm:grid sm:grid-cols-12 gap-2 sm:gap-4 sm:items-center px-4 py-3 sm:py-2.5 hover:bg-gray-50/50 transition-colors"
                             >
-                                <svg
-                                    width="12"
-                                    height="12"
-                                    viewBox="0 0 16 16"
-                                    fill="none"
+                                <div
+                                    class="flex justify-between items-center sm:contents"
                                 >
-                                    <path
-                                        d="M8 2v8M5 7l3 3 3-3M3 13h10"
-                                        stroke="currentColor"
-                                        stroke-width="1.5"
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                    />
-                                </svg>
-                            </button>
+                                    <span
+                                        class="text-sm font-medium sm:text-xs sm:font-normal text-gray-800 sm:text-gray-600 sm:col-span-2"
+                                    >
+                                        <span
+                                            class="sm:hidden text-gray-400 font-normal mr-1"
+                                            >Cód:</span
+                                        >{{ recibo.codigo }}
+                                    </span>
+
+                                    <button
+                                        @click="descargarRecibo(recibo)"
+                                        class="sm:hidden h-8 w-8 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white transition-all flex items-center justify-center shadow-sm"
+                                        title="Descargar recibo"
+                                    >
+                                        <i class="fa-solid fa-print"></i>
+                                    </button>
+                                </div>
+
+                                <div
+                                    class="flex flex-col gap-1 sm:contents text-xs text-gray-600"
+                                >
+                                    <div
+                                        class="flex justify-between sm:block sm:col-span-2"
+                                    >
+                                        <span class="sm:hidden text-gray-400"
+                                            >Valor:</span
+                                        >
+                                        <span
+                                            class="font-medium sm:font-normal"
+                                            >{{
+                                                formatCurrency(recibo.valor)
+                                            }}</span
+                                        >
+                                    </div>
+
+                                    <div
+                                        class="flex justify-between sm:block sm:col-span-3"
+                                    >
+                                        <span class="sm:hidden text-gray-400"
+                                            >Fecha:</span
+                                        >
+                                        <span>{{ recibo.fecha }}</span>
+                                    </div>
+
+                                    <div
+                                        class="flex justify-between items-center sm:block sm:col-span-4 min-w-0 gap-2"
+                                    >
+                                        <span
+                                            class="sm:hidden text-gray-400 shrink-0"
+                                            >Por:</span
+                                        >
+                                        <span class="truncate block">{{
+                                            recibo.generado_por
+                                        }}</span>
+                                    </div>
+                                </div>
+
+                                <div
+                                    class="hidden sm:flex sm:justify-center sm:col-span-1"
+                                >
+                                    <button
+                                        @click="descargarRecibo(recibo)"
+                                        class="h-7 w-7 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white transition-all flex items-center justify-center"
+                                        title="Descargar recibo"
+                                    >
+                                        <i class="fa-solid fa-print"></i>
+                                    </button>
+                                </div>
+                            </div>
                         </div>
 
                         <div
                             v-if="!creditoInfo.recibos?.length"
-                            class="px-4 py-4 text-xs text-gray-300 text-center"
+                            class="px-4 py-6 text-sm text-gray-400 text-center"
                         >
                             No hay recibos generados
                         </div>
@@ -461,14 +475,38 @@
                 </div>
             </div>
         </transition>
+
+        <transition name="modal">
+            <EstadoCreditoModal
+                v-model="modalOpen"
+                :loading="loadingCredito"
+                :credito="credito"
+                @ver-historico="verHistorico"
+                @liquidar="liquidarCredito"
+                @ver-plan-pagos="verPlanPagos"
+                @descargar-paz-salvo="descargarPazSalvo"
+                @imprimir="imprimirCredito"
+                @imprimir-abono="imprimirAbono"
+            />
+        </transition>
     </div>
 </template>
 
 <script setup>
-import { ref, reactive, computed } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
+
+// -- Componentes -------------------------------------------
+import EstadoCreditoModal from '@/components/modals/EstadoCreditoModal.vue'
 import FormInput from '@/components/form/FormInput.vue'
 
-// ── Estado ─────────────────────────────────────────────────────────────────
+import { useEstadoCredito } from '@/composables/useEstadoCredito'
+import { useLoader } from '@/composables/useLoader'
+const { start, stop } = useLoader()
+
+import { formatCurrency } from '@/utils/format'
+import api from '@/services/api'
+
+// -- Estado ------------------------------------------------
 const loadingPlantilla = ref(false)
 const loadingCarga = ref(false)
 const loadingRefresh = ref(false)
@@ -483,36 +521,17 @@ const form = reactive({
     periodicidad: 'Mensual',
     valor_pagar: 0,
     abono_credito: 0,
-    pago_con: 'Efectivo',
+    pago_con: '',
     condonacion: 0,
     observaciones: '',
 })
 
-// ── Opciones ───────────────────────────────────────────────────────────────
-const clientes = [
-    { value: '1', label: 'CAROLINA RINCON DELGADO (63555661)' },
-    { value: '2', label: 'CARLOS ANDRES GOMEZ (10345678)' },
-    { value: '3', label: 'MARIA FERNANDA LOPEZ (52345678)' },
-]
+// -- Opciones ----------------------------------------------------------
+const clientes = ref([])
+const creditos = ref([])
+const pagoConOpts = ref([])
 
-const creditos = ref([{ value: '1', label: '5173' }])
-
-const mesesOpciones = [1, 2, 3, 6, 12, 18, 24, 36]
-
-const periodicidadOpts = [
-    { value: 'Mensual', label: 'Mensual' },
-    { value: 'Quincenal', label: 'Quincenal' },
-    { value: 'Semanal', label: 'Semanal' },
-]
-
-const pagoConOpts = [
-    { value: 'Efectivo', label: 'Efectivo' },
-    { value: 'Transferencia', label: 'Transferencia' },
-    { value: 'Cheque', label: 'Cheque' },
-    { value: 'Datafono', label: 'Datáfono' },
-]
-
-// ── Computed ───────────────────────────────────────────────────────────────
+// -- Computed ----------------------------------------------------------
 const camposLectura = computed(() => {
     if (!creditoInfo.value) return []
     return [
@@ -536,6 +555,16 @@ const camposLectura = computed(() => {
             label: 'Valor de crédito',
             value: formatCurrency(creditoInfo.value.valor_credito),
         },
+        {
+            key: 'num_meses',
+            label: 'Número de meses',
+            value: creditoInfo.value.num_meses,
+        },
+        {
+            key: 'periodicidad',
+            label: 'Periodicidad',
+            value: creditoInfo.value.periodicidad,
+        },
     ]
 })
 
@@ -555,51 +584,82 @@ const camposCalculados = computed(() => {
     ]
 })
 
-// ── Helpers ────────────────────────────────────────────────────────────────
-function formatCurrency(value) {
-    if (value == null) return '$0'
-    return new Intl.NumberFormat('es-CO', {
-        style: 'currency',
-        currency: 'COP',
-        maximumFractionDigits: 0,
-    }).format(value)
-}
-
-// ── Handlers ───────────────────────────────────────────────────────────────
+// -- Handlers ---------------------------------------------------------------
 function onClienteChange() {
+    creditoInfo.value = null
     form.credito_id = ''
     creditos.value = []
-    creditoInfo.value = null
-    // TODO: cargar créditos del cliente desde la API
+
+    const cliente = clientes.value.find(c => c.value === form.cliente_id)
+
+    creditos.value = cliente
+        ? cliente.creditos.map(cr => ({
+              value: cr.id,
+              label: `Crédito ${cr.id} (${formatCurrency(cr.valor_credito)})`,
+          }))
+        : []
 }
 
-function onCreditoChange() {
-    if (!form.credito_id) {
+async function onCreditoChange() {
+    const id = form.credito_id
+
+    if (!id) {
         creditoInfo.value = null
+        pagoConOpts.value = []
         return
     }
-    // TODO: reemplazar con llamada real a la API
-    creditoInfo.value = {
-        num_credito: 9449,
-        fecha_credito: '2025-10-10 22:15:37',
-        valor_compra: 650030,
-        valor_credito: 700619,
-        valor_cuotas: 115382,
-        total_abonado: 123709,
-        gastos_cobranza: 21922,
-        intereses_moratorios: 10281,
-        abono_capital: 'En mora',
-        saldo_pendiente: 576910,
-        mora_pendiente: 378349,
-        recibos: [
-            {
-                codigo: 60428,
-                valor: 123709,
-                fecha: '2025-12-11 10:01:37',
-                generado_por: 'CDA ITG',
-            },
-        ],
+
+    start()
+
+    try {
+        const { data } = await api.get('/api/creditos/detailCredit', {
+            params: { credito_id: id },
+        })
+
+        setCreditoInfo(data.datos)
+        setPagoOptions(data.datos.tipoPago)
+    } catch (err) {
+        console.error(err)
+    } finally {
+        stop()
     }
+}
+
+function setCreditoInfo(datos) {
+    const c = datos.credito
+
+    creditoInfo.value = {
+        num_credito: c.id,
+        fecha_credito: c.created_at,
+        valor_compra: c.valor_compra,
+        valor_credito: c.valor_credito,
+        valor_cuotas: c.val_cuotas,
+        total_abonado: datos.totalAbonado,
+        gastos_cobranza: datos.total_gastos_c,
+        intereses_moratorios: datos.total_intereses_m,
+        abono_capital: datos.fechaAbonoCapital,
+        saldo_pendiente: datos.saldo,
+        mora_pendiente: datos.saldoMora,
+        num_meses: c.num_cuotas,
+        recibos: mapRecibos(datos.abonos),
+        periodicidad: c.periocidad == 1 ? 'Mensual' : 'Quincenal',
+    }
+}
+
+function mapRecibos(abonos = []) {
+    return abonos.map(a => ({
+        codigo: a.id,
+        valor: a.valor,
+        fecha: a.created_at,
+        generado_por: a.hecho.toUpperCase(),
+    }))
+}
+
+function setPagoOptions(tipos = []) {
+    pagoConOpts.value = tipos.map(t => ({
+        value: t.id,
+        label: t.nombre,
+    }))
 }
 
 async function onFileChange(file) {
@@ -663,10 +723,45 @@ async function liquidarHoy() {
     }
 }
 
-function verDetalle() {
-    console.log('Ver detalle:', form.credito_id)
-}
 function descargarRecibo(r) {
     console.log('Descargar recibo:', r.codigo)
 }
+
+async function fetchClientes() {
+    try {
+        const { data } = await api.get('api/clientes/listCreditsClientsActives')
+
+        clientes.value = data.listaCliente.map(c => ({
+            value: c.id,
+            creditos: c.credito,
+            label: `${c.nombre} (${c.cedula})`,
+        }))
+    } catch (error) {
+        console.error(error)
+    }
+}
+
+// -- Modal estado credito --------------------------------------
+const {
+    modalOpen,
+    loadingCredito,
+    credito,
+    verEstadoCredito,
+    verHistorico,
+    liquidarCredito,
+    verPlanPagos,
+    descargarPazSalvo,
+    imprimirCredito,
+    imprimirAbono,
+} = useEstadoCredito()
+
+onMounted(async () => {
+    start()
+
+    try {
+        await fetchClientes()
+    } finally {
+        stop()
+    }
+})
 </script>

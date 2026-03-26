@@ -10,9 +10,7 @@ class EmpresaController extends Controller
 {
     function listMyCompanys()
     {
-        $user = auth()->user();
-
-        $empresaId = $user->empresa_id;
+        $empresaId = auth()->user()?->empresa_id;
 
         // Obtener todas las empresas relevantes en una sola consulta
         $empresas = Empresa::select('id', 'razon_social')

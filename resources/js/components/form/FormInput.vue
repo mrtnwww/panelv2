@@ -64,7 +64,12 @@
                         ]"
                         @click="toggleDropdown"
                     >
-                        <span :class="selectedLabel ? '' : 'text-gray-300'">
+                        <span
+                            :class="[
+                                selectedLabel ? '' : 'text-gray-300',
+                                'truncate',
+                            ]"
+                        >
                             {{
                                 selectedLabel || placeholder || 'Seleccione...'
                             }}
