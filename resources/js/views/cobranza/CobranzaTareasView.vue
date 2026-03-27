@@ -168,7 +168,7 @@
                 <!-- Título truncado -->
                 <template #cell-titulo="{ value }">
                     <span
-                        class="text-[#0A2540] font-medium max-w-[180px] truncate block"
+                        class="text-[#0A2540] font-medium max-w-45 truncate block"
                         :title="value"
                     >
                         {{ value }}
@@ -310,41 +310,46 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
+
+// -- Componentes ---------------------------------------------------
 import DataTable from '@/components/table/DataTable.vue'
 import FormInput from '@/components/form/FormInput.vue'
 
-// ── Columnas ───────────────────────────────────────────────────────────────
+import api from '@/services/api'
+import dayjs from 'dayjs'
+
+// -- Columnas -------------------------------------------------------
 const columns = [
-    { key: 'estado', label: 'Estado', sortable: true },
-    { key: 'titulo', label: 'Título', sortable: true },
-    { key: 'cliente', label: 'Cliente', sortable: true },
-    { key: 'asignadoA', label: 'Asignado a', sortable: true },
-    { key: 'fechaCreacion', label: 'Fecha creación', sortable: true },
-    { key: 'fechaVencimiento', label: 'Fecha vencimiento', sortable: true },
-    { key: 'fechaCompletada', label: 'Fecha completada', sortable: true },
+    { key: 'estado', label: 'Estado', sortable: false },
+    { key: 'titulo', label: 'Título', sortable: false },
+    { key: 'cliente', label: 'Cliente', sortable: false },
+    { key: 'asignadoA', label: 'Asignado a', sortable: false },
+    { key: 'fechaCreacion', label: 'Fecha creación', sortable: false },
+    { key: 'fechaVencimiento', label: 'Fecha vencimiento', sortable: false },
+    { key: 'fechaCompletada', label: 'Fecha completada', sortable: false },
     { key: 'tipoTarea', label: 'Tipo tarea', sortable: false },
     { key: 'ultimaInteraccion', label: 'Última interacción', sortable: false },
 ]
 
-// ── Tabs ───────────────────────────────────────────────────────────────────
+// -- Tabs -------------------------------------------------------------
 const tabs = [
-    { key: 'todas', label: 'Todas' },
+    { key: 'totales', label: 'Todas' },
     { key: 'completadas', label: 'Completadas' },
-    { key: 'vencidas', label: 'Vencidas' },
-    { key: 'vencen_hoy', label: 'Vencen hoy' },
-    { key: 'proximas', label: 'Próximas' },
+    { key: 'vencidos', label: 'Vencidas' },
+    { key: 'vencenHoy', label: 'Vencen hoy' },
+    { key: 'proximos', label: 'Próximas' },
 ]
 
-const activeTab = ref('todas')
+const activeTab = ref('totales')
 const tabCounts = ref({
-    todas: 0,
+    totales: 0,
     completadas: 0,
-    vencidas: 0,
-    vencen_hoy: 0,
-    proximas: 0,
+    vencidos: 0,
+    vencenHy: 0,
+    proximos: 0,
 })
 
-// ── Estado ─────────────────────────────────────────────────────────────────
+// -- Estado -----------------------------------------------------------------
 const tareas = ref([])
 const loading = ref(false)
 const search = ref('')
@@ -354,7 +359,7 @@ let searchTimeout = null
 const pagination = reactive({ currentPage: 1, perPage: 10, total: 0 })
 const sort = reactive({ key: 'fechaCreacion', dir: 'desc' })
 
-// ── Filtros ────────────────────────────────────────────────────────────────
+// -- Filtros ----------------------------------------------------------------
 const filters = reactive({
     creacionDesde: '',
     creacionHasta: '',
@@ -381,9 +386,7 @@ const usuariosOpts = [
 
 const tipoTareaOpts = [
     { value: 'llamada', label: 'Llamada' },
-    { value: 'mensaje', label: 'Mensaje' },
-    { value: 'visita', label: 'Visita' },
-    { value: 'recordatorio', label: 'Recordatorio' },
+    { value: 'correo', label: 'Correo' },
     { value: 'otro', label: 'Otro' },
 ]
 
@@ -464,24 +467,30 @@ async function fetchTareas() {
             ...(filters.tipoTarea && { tipo_tarea: filters.tipoTarea }),
         })
 
-        const response = await fetch(`/api/cobranza/tareas?${params}`, {
-            headers: authHeaders(),
+        const { data } = await api.get(`/api/tareas`, {
+            params,
         })
-        if (!response.ok) throw new Error()
 
-        const data = await response.json()
-        tareas.value = data.data
-        pagination.total = data.meta.total
-        pagination.currentPage = data.meta.current_page
+        const { data: tareasData, total, current_page } = data.tareas
 
-        // Conteos por tab si el backend los devuelve
-        if (data.counts) Object.assign(tabCounts.value, data.counts)
+        // Lista de tareas
+        transformTareas(tareasData)
+
+        pagination.total = total
+        pagination.currentPage = current_page
+
+        // Conteos tabs
+        if (data.totales) Object.assign(tabCounts.value, data.totales)
     } catch (err) {
         console.error(err)
     } finally {
         loading.value = false
     }
 }
+
+async function fetchClientes() {}
+
+async function fetchUsuarios() {}
 
 // ── Handlers DataTable ─────────────────────────────────────────────────────
 function onPageChange(page) {
@@ -564,5 +573,55 @@ function iniciarTarea() {
     console.log('Iniciar tareas:', selected.value)
 }
 
-onMounted(fetchTareas)
+function transformTareas(data) {
+    const infoTareas = addPropertiesTasksList(data)
+
+    tareas.value = infoTareas.map(tarea => ({
+        id: tarea.id,
+        estado: tarea.estado,
+        titulo: tarea.titulo,
+        cliente: tarea.cliente_nombre,
+        asignadoA: tarea.nombre,
+        fechaCreacion: dayjs(tarea.created_at).format('YYYY-MM-DD'),
+        fechaVencimiento: dayjs(tarea.fecha_vencimiento).format('YYYY-MM-DD'),
+        fechaCompletada: tarea.fecha_completado
+            ? dayjs(tarea.fecha_completado).format('YYYY-MM-DD')
+            : '',
+        tipoTarea: tarea.tipo_nombre,
+    }))
+}
+
+function addPropertiesTasksList(registros) {
+    const hoy = dayjs()
+
+    return registros.map(item => {
+        const fechaVencimiento = dayjs(item.fecha_vencimiento)
+        const diffDias = fechaVencimiento.diff(hoy, 'day')
+
+        return {
+            ...item,
+
+            estado: item.completado
+                ? 'Completado'
+                : diffDias < 0
+                  ? 'Vencido'
+                  : 'Pendiente',
+
+            tipo_nombre:
+                {
+                    1: 'Otro',
+                    2: 'Llamada',
+                    3: 'Correo',
+                }[item.tipo] || '',
+        }
+    })
+}
+
+onMounted(async () => {
+    try {
+        await Promise.all([fetchTareas(), fetchClientes(), fetchUsuarios()])
+    } catch (err) {
+        console.error(err)
+    }
+})
 </script>

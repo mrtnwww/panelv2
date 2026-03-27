@@ -7,6 +7,7 @@ use App\Http\Controllers\Creditos\CreditoController;
 use App\Http\Controllers\Empresas\EmpresaController;
 use App\Http\Controllers\Productos\ProductoController;
 use App\Http\Controllers\ReporteCentralesTipo\ReporteCentralesTipoController;
+use App\Http\Controllers\Tareas\TareaController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -58,5 +59,10 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
         Route::put('/', [ProductoController::class, 'update']);
         Route::post('/', [ProductoController::class, 'store']);
         Route::delete('/', [ProductoController::class, 'destroy']);
+    });
+
+    // Tareas
+    Route::prefix('tareas')->group(function () {
+        Route::get('/', [TareaController::class, 'listTasks']);
     });
 });
