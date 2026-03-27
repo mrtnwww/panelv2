@@ -50,5 +50,8 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     // Productos
     Route::prefix('productos')->group(function () {
         Route::get('/', [ProductoController::class, 'listProducts']);
+        Route::put('/', [ProductoController::class, 'update']);
+        Route::post('/', [ProductoController::class, 'store']);
+        Route::delete('/', [ProductoController::class, 'destroy']);
     });
 });

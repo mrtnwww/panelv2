@@ -271,26 +271,22 @@ async function guardarProducto() {
     modal.error = ''
     try {
         const isEditar = modal.mode === 'editar'
-        const response = await fetch(
-            isEditar ? `/api/productos/${modal.form.id}` : '/api/productos',
-            {
-                method: isEditar ? 'PUT' : 'POST',
-                headers: {
-                    ...authHeaders(),
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    referencia: modal.form.referencia,
-                    nombre: modal.form.nombre,
-                    precio: Number(modal.form.precio),
-                }),
-            }
-        )
-        if (!response.ok) throw new Error()
+
+        const url = '/api/productos'
+        const method = isEditar ? 'put' : 'post'
+
+        await api({
+            method,
+            url,
+            data: {
+                productos: modal.form,
+            },
+        })
+
         cerrarModal()
         fetchProductos()
-    } catch {
-        modal.error = 'No se pudo guardar el producto. Intenta nuevamente.'
+    } catch (err) {
+        console.error(err)
     } finally {
         modal.loading = false
     }
@@ -306,11 +302,21 @@ function eliminarProducto(row) {
         cancelButtonColor: '#d33',
         confirmButtonText: 'Aceptar',
         cancelButtonText: 'Cancelar',
-    }).then(result => {
-        if (result.isConfirmed) {
-            //
-        }
     })
+        .then(async result => {
+            if (result.isConfirmed) {
+                await api.delete('/api/productos', {
+                    data: {
+                        id: row.id,
+                    }
+                })
+
+                await fetchProductos()
+            }
+        })
+        .catch(err => {
+            console.error(err)
+        })
 }
 
 // -- Plantilla ---------------------------------------------------------
@@ -361,6 +367,7 @@ function transformProductos(data) {
         referencia: producto.referencia,
         nombre: producto.nombre,
         precio: producto.precio,
+        id: producto.id,
     }))
 }
 
