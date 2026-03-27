@@ -49,6 +49,7 @@
                     v-model="filters.cliente"
                     :options="clientesOpts"
                     placeholder="Seleccione un cliente"
+                    :searchable="true"
                 />
                 <FormInput
                     label="Usuario asignado"
@@ -315,6 +316,9 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import DataTable from '@/components/table/DataTable.vue'
 import FormInput from '@/components/form/FormInput.vue'
 
+import { useLoader } from '@/composables/useLoader'
+const { start, stop } = useLoader()
+
 import api from '@/services/api'
 import dayjs from 'dayjs'
 
@@ -372,12 +376,8 @@ const filters = reactive({
     tipoTarea: '',
 })
 
-// ── Opciones ───────────────────────────────────────────────────────────────
-const clientesOpts = [
-    { value: '1', label: 'Jenifer Paola Alarcon Agudelo' },
-    { value: '2', label: 'Roman Felipe Puerta Rodriguez' },
-    { value: '3', label: 'Sonia Patricia Benavides Parra' },
-]
+// -- Opciones ---------------------------------------------------------------
+const clientesOpts = ref([])
 
 const usuariosOpts = [
     { value: '1', label: 'Cartera Creditransito' },
@@ -488,7 +488,19 @@ async function fetchTareas() {
     }
 }
 
-async function fetchClientes() {}
+async function fetchClientes() {
+    try {
+        const { data } = await api.get('/api/clientes/listMyClientsValidated')
+
+        // Opciones formateadas para FormInput type="select"
+        clientesOpts.value = data.clientes.map(c => ({
+            value: c.id,
+            label: `${c.nombre} (${c.cedula})`,
+        }))
+    } catch (err) {
+        console.error(err)
+    }
+}
 
 async function fetchUsuarios() {}
 
@@ -618,10 +630,12 @@ function addPropertiesTasksList(registros) {
 }
 
 onMounted(async () => {
+    start()
+
     try {
         await Promise.all([fetchTareas(), fetchClientes(), fetchUsuarios()])
-    } catch (err) {
-        console.error(err)
+    } finally {
+        stop()
     }
 })
 </script>
