@@ -3,6 +3,7 @@
 use App\Http\Controllers\Abonos\AbonoController;
 use App\Http\Controllers\Ciudades\CiudadController;
 use App\Http\Controllers\Clientes\ClienteController;
+use App\Http\Controllers\Contabilidad\ContabilidadController;
 use App\Http\Controllers\Creditos\CreditoController;
 use App\Http\Controllers\Empresas\EmpresaController;
 use App\Http\Controllers\Productos\ProductoController;
@@ -65,6 +66,11 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     // Tareas
     Route::prefix('tareas')->group(function () {
         Route::get('/', [TareaController::class, 'listTasks']);
+    });
+
+    // Contabilidad
+    Route::prefix('contabilidad')->group(function () {
+        Route::get('/listRecibosCXC', [ContabilidadController::class, 'listRecibosCXC']);
     });
 
     // Usuarios

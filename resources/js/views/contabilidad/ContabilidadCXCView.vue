@@ -105,42 +105,7 @@
                         class="w-8 h-8 rounded-lg bg-emerald-500 hover:bg-emerald-600 flex items-center justify-center text-white transition-all"
                         title="Imprimir recibo"
                     >
-                        <svg
-                            width="14"
-                            height="14"
-                            viewBox="0 0 14 14"
-                            fill="none"
-                        >
-                            <path
-                                d="M3.5 4.5V2h7v2.5"
-                                stroke="currentColor"
-                                stroke-width="1.2"
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                            />
-                            <path
-                                d="M3.5 9.5H2A1 1 0 0 1 1 8.5v-3A1 1 0 0 1 2 4.5h10a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1.5"
-                                stroke="currentColor"
-                                stroke-width="1.2"
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                            />
-                            <rect
-                                x="3.5"
-                                y="8"
-                                width="7"
-                                height="4"
-                                rx="0.5"
-                                stroke="currentColor"
-                                stroke-width="1.2"
-                            />
-                            <path
-                                d="M3.5 6.5h.5"
-                                stroke="currentColor"
-                                stroke-width="1.2"
-                                stroke-linecap="round"
-                            />
-                        </svg>
+                        <i class="fa fa-print"></i>
                     </button>
                 </div>
             </template>
@@ -155,7 +120,10 @@ import { ref, reactive, onMounted } from 'vue'
 import DataTable from '@/components/table/DataTable.vue'
 import FormInput from '@/components/form/FormInput.vue'
 
-// ── Columnas ───────────────────────────────────────────────────────────────
+import { formatCurrency, formatDateYmdHms } from '@/utils/format'
+import api from '@/services/api'
+
+// -- Columnas ----------------------------------------------
 const columns = [
     { key: 'fecha', label: 'Fecha', sortable: false, align: 'center' },
     { key: 'establecimiento', label: 'Establecimiento', sortable: false },
@@ -192,15 +160,6 @@ const labelClass = 'text-xs font-medium text-gray-400 uppercase tracking-wide'
 const inputClass =
     'h-9 px-3 rounded-lg border border-gray-200 bg-gray-50 text-sm text-gray-600 outline-none focus:border-[#1a5c2a] focus:ring-2 focus:ring-[#1a5c2a]/10 transition-all'
 
-function formatCurrency(value) {
-    if (value == null) return '—'
-    return new Intl.NumberFormat('es-CO', {
-        style: 'currency',
-        currency: 'COP',
-        maximumFractionDigits: 0,
-    }).format(value)
-}
-
 function authHeaders() {
     return {
         Accept: 'application/json',
@@ -227,18 +186,16 @@ async function fetchRecibos() {
             }),
         })
 
-        const response = await fetch(
-            `/api/contabilidad/recibo-caja-cxc?${params}`,
-            {
-                headers: authHeaders(),
-            }
-        )
-        if (!response.ok) throw new Error()
+        const { data } = await api.get('/api/contabilidad/listRecibosCXC', {
+            params,
+        })
 
-        const data = await response.json()
-        recibos.value = data.data
-        pagination.total = data.meta.total
-        pagination.currentPage = data.meta.current_page
+        const { data: recibosData, total, current_page } = data.recibosCaja
+
+        transformarRecibos(recibosData)
+
+        pagination.total = total
+        pagination.currentPage = current_page
     } catch (err) {
         console.error(err)
     } finally {
@@ -289,5 +246,19 @@ function onSearch(val) {
     }, 400)
 }
 
-onMounted(fetchRecibos)
+function transformarRecibos(data) {
+    recibos.value = data.map(recibo => ({
+        fecha: recibo.fecha,
+        establecimiento: recibo.empresa.razon_social,
+        valorCXC: recibo.valor_cxc,
+        comisiones: 30000, // default
+    }))
+}
+
+onMounted(async () => {
+    try {
+        await fetchRecibos()
+    } finally {
+    }
+})
 </script>
