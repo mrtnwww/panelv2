@@ -238,6 +238,11 @@
                     </button>
                 </div>
             </template>
+
+            <!-- Fecha de creacion cliente -->
+            <template #cell-fechaRegistro="{ value }">
+                <span>{{ formatDateYmdHms(value) }}</span>
+            </template>
         </DataTable>
     </div>
 </template>
@@ -254,7 +259,7 @@ import FormInput from '@/components/form/FormInput.vue'
 import { useLoader } from '@/composables/useLoader'
 const { start, stop } = useLoader()
 
-import { formatCurrency } from '@/utils/format'
+import { formatCurrency, formatDateYmdHms } from '@/utils/format'
 import api from '@/services/api'
 
 const router = useRouter()

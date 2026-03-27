@@ -23,5 +23,9 @@ export function formatDateToISO(date) {
 }
 
 export function formatDateYmd(date) {
-    return dayjs(date).format('DD/MM/YYYY')
+    return dayjs(date).format('YYYY-MM-DD')
+}
+
+export function formatDateYmdHms(date) {
+    return dayjs(date).format('YYYY-MM-DD HH:mm:ss')
 }

@@ -381,6 +381,31 @@
                     formatCurrency(value)
                 }}</span>
             </template>
+            <template #cell-totalAbonado="{ value }">
+                <span class="tabular-nums text-gray-600">{{
+                    formatCurrency(value)
+                }}</span>
+            </template>
+            <template #cell-saldoMora="{ value }">
+                <span class="tabular-nums text-gray-600">{{
+                    formatCurrency(value)
+                }}</span>
+            </template>
+            <template #cell-intMoratorio="{ value }">
+                <span class="tabular-nums text-gray-600">{{
+                    formatCurrency(value)
+                }}</span>
+            </template>
+            <template #cell-gasCobranza="{ value }">
+                <span class="tabular-nums text-gray-600">{{
+                    formatCurrency(value)
+                }}</span>
+            </template>
+            <template #cell-valorPago="{ value }">
+                <span class="tabular-nums text-gray-600">{{
+                    formatCurrency(value)
+                }}</span>
+            </template>
 
             <!-- Acciones -->
             <template #cell-acciones="{ row }">
@@ -553,7 +578,7 @@ let searchTimeout = null
 // Definir las fechas de corte (inicial y final) para el estado de créditos
 let fechaCorte = {
     desde: false,
-    hasta: formatDateYmd(new Date()),
+    hasta: dayjs().format('DD/MM/YYYY HH:mm:ss'),
 }
 
 let NumCuotasValidarEn = 'cuotas_canceladas'
@@ -686,7 +711,11 @@ function buildParams() {
 async function fetchCreditos() {
     loading.value = true
     try {
-        const { data } = await api.get('/api/creditos/creditsCobranza')
+        const params = buildParams()
+
+        const { data } = await api.get('/api/creditos/creditsCobranza', {
+            params,
+        })
 
         const { data: creditosData, total, current_page } = data.creditos
 
@@ -1061,14 +1090,14 @@ function creditosAFechaCorte(creditosSTR) {
                         formatDateYmd(item.fecha) <=
                         dayjs(fechaCorte.hasta)
                             .add(1, 'months')
-                            .format('DD/MM/YYYY')
+                            .format('YYYY-MM-DD')
                 ),
                 dosMesesDespues: credito.proyecciones.filter(
                     item =>
                         formatDateYmd(item.fecha) <=
                         dayjs(fechaCorte.hasta)
                             .add(2, 'months')
-                            .format('DD/MM/YYYY')
+                            .format('YYYY-MM-DD')
                 ),
             }
 

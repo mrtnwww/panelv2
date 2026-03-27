@@ -245,14 +245,14 @@ class CreditoController extends Controller
         $empresasAliados[] = $currentEmpresaId;
 
         // Término de búsqueda
-        $searchTerm = $request->input('searchTerm', '');
+        $searchTerm = $request->input('search', '');
         // condiciones de busqueda
         $conditions = $request->input('conditions', []);
         // condiciones de busqueda especificas para el modulo de cobranza
         $conditionsCobranza = $request->input('conditionsCobranza', []);
 
         // creditos por pagina
-        $perPage = $request->input('creditosPorPagina', 10);
+        $perPage = $request->input('per_page', 10);
 
         $query = Credito::whereIn('empresa_id', $empresasAliados)
             ->where('created_at', '<', Carbon::yesterday()->endOfDay())
