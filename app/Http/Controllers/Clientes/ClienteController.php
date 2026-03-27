@@ -244,7 +244,7 @@ class ClienteController extends Controller
         return response()->json($datos);
     }
 
-    function listMyClientsValidated(Request $request)
+    function listMyClientsValidated()
     {
         $usuario = auth()->user();
 
@@ -270,71 +270,19 @@ class ClienteController extends Controller
         }
 
         // Obtener los clientes asociados a las empresas
-        $clientes = Cliente::with([
-                'credito' => function ($q) {
-                    $q->whereNull('fecha_cierre')
-                    ->select('id', 'client_id', 'valor_compra')
-                    ->with(['proyecciones' => function ($q2) {
-                        $q2->where('pagado', 0)->orderBy('fecha');
-                    }]);
-                },
-                'credito.abonos',
-                'lineaCredito:id,tipo_credito'
-            ])
-            ->select('id', 'nombre', 'cedula', 'empresa_id', 'cupo', 'lineas_credito_id')
+        $clientes = Cliente::select('id', 'nombre', 'cedula', 'empresa_id')
             ->whereIn('empresa_id', $empresas)
             ->where('iscontinue', '!=', 1)
             ->orderBy('nombre')
             ->get();
 
-        $abonoController = app(AbonoController::class);
-
-        $clientes->transform(function ($cliente) use ($aliadoImpulsa, $abonoController) {
-            $creditos = $cliente->credito;
-            $cupo = $cliente->cupo ?? 0;
-            $enMora = false;
-
-            foreach ($creditos as $credito) {
-
-                $cupo -= $credito->valor_compra;
-
-                $capital = 0;
-
-                foreach ($credito->abonos as $abono) {
-                    if (!empty($abono->abono_capital)) {
-                        $capital += $abono->abono_capital;
-                    } else {
-                        $abonosAsociados = $abonoController->procesarAbonos($abono, true);
-                        $ultimo = end($abonosAsociados) ?: [];
-                        $capital += $ultimo['detalles']['capital'] ?? 0;
-                    }
-                }
-
-                $cupo += $capital;
-
-                $proyeccion = $credito->proyecciones->first();
-                if ($proyeccion) {
-                    $enMora = now()->gt($proyeccion->fecha);
-                }
-            }
-
-            if ($creditos->isEmpty()) {
-                $cupo = $cliente->cupo;
-            }
-
-            // aliado impulsa
+        $clientes->transform(function ($cliente) use ($aliadoImpulsa) {
             if ($aliadoImpulsa && $cliente->empresa_id == 46) {
                 $cliente->aliadoImpulsa = true;
                 $cliente->nombre = '**********';
             } else {
                 $cliente->aliadoImpulsa = false;
             }
-
-            // nuevos campos
-            $cliente->enMora = $enMora;
-            $cliente->numCreditos = $creditos->count();
-            $cliente->cupoDisponible = $cupo < 0 ? 0 : $cupo;
-            $cliente->tipoCredito = $cliente->lineaCredito->tipo_credito ?? '';
 
             return $cliente;
         });
