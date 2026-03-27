@@ -40,4 +40,16 @@ class Producto extends Model
 		'referencia',
 		'user_id'
 	];
+
+	public function scopeApplySearch($query, $searchTerm)
+    {
+        if (!empty($searchTerm)) {
+            $query->where(function($subQuery) use ($searchTerm) {
+                $fields = ['nombre', 'referencia'];
+                foreach ($fields as $field) {
+                    $subQuery->orWhere($field, 'LIKE', '%' . $searchTerm . '%');
+                }
+            });
+        }
+    }
 }

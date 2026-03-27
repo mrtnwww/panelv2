@@ -12,7 +12,6 @@
                 class="flex flex-col gap-3 pb-5 border-b border-gray-100 sm:flex-row sm:items-center sm:justify-between"
             >
                 <div class="flex flex-wrap items-center gap-2">
-                    <!-- Cargar abonos usa FormInput type="file" -->
                     <FormInput
                         type="file"
                         accept=".xlsx,.csv"

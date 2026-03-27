@@ -29,7 +29,7 @@ class ClienteController extends Controller
         $empresaId = $request->user()?->empresa_id;
 
         $perPage = $request->per_page; // Número de registros por página
-        $searchTerm = $request->input('search', ''); // Termino de busqueda
+        $search = $request->input('search', ''); // Termino de busqueda
 
         $tipoCliente = $request->input('filtroTipoCliente', 'cliente');
         $aliado = $request->input('aliado', null);
@@ -67,9 +67,9 @@ class ClienteController extends Controller
 
         $clientQuery = Cliente::with(['referenciaCliente', 'ultCredito'])
             ->where('empresa_id', $empresaId)
-            ->applySearch($searchTerm)
+            ->applySearch($search)
             ->applyAliado($aliado)
-            ->applyOrWhereConditions($searchTerm, $empresasAliadas, $aliado, $empresaId, $tipoCliente)
+            ->applyOrWhereConditions($search, $empresasAliadas, $aliado, $empresaId, $tipoCliente)
             ->applyEstado($estado)
             ->applyOrigen($origen)
             ->applyResultado($resultado)

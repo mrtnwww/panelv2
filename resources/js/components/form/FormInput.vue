@@ -170,26 +170,7 @@
                             'px-3',
                         ]"
                     >
-                        <svg
-                            width="13"
-                            height="13"
-                            viewBox="0 0 13 13"
-                            fill="none"
-                        >
-                            <path
-                                d="M6.5 8.5V1M4 3.5L6.5 1L9 3.5"
-                                stroke="currentColor"
-                                stroke-width="1.3"
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                            />
-                            <path
-                                d="M1 9.5v1A1.5 1.5 0 0 0 2.5 12h8A1.5 1.5 0 0 0 12 10.5v-1"
-                                stroke="currentColor"
-                                stroke-width="1.3"
-                                stroke-linecap="round"
-                            />
-                        </svg>
+                        <i class="fa-solid fa-upload"></i>
                         <span class="text-xs font-medium whitespace-nowrap">{{
                             buttonLabel
                         }}</span>

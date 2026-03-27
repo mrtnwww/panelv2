@@ -31,6 +31,7 @@ class ProductoController extends Controller
                 ->from('usuario')
                 ->where('empresa_id', $empresaId);
             })
+            ->applySearch($search)
             ->paginate($perPage);
 
         $productos->getCollection()->transform(function ($item) use ($isAdmin) {
