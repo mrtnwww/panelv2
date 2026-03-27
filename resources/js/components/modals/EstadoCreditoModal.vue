@@ -139,7 +139,7 @@
 
             <div class="mx-5 pb-4 overflow-x-auto">
                 <table
-                    class="w-full text-sm border border-gray-200 rounded-xl overflow-hidden min-w-[600px]"
+                    class="w-full text-sm border border-gray-200 rounded-xl overflow-hidden min-w-150"
                 >
                     <thead>
                         <tr class="bg-[#1a5c2a] text-white">

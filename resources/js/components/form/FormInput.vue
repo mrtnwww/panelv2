@@ -100,7 +100,7 @@
                         <div
                             v-if="dropdownOpen"
                             :style="dropdownStyle"
-                            class="fixed z-[9999] bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden"
+                            class="fixed z-9999 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden"
                         >
                             <!-- Input de búsqueda -->
                             <div class="p-2 border-b border-gray-100">
