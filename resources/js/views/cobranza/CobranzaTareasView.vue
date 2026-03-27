@@ -378,11 +378,7 @@ const filters = reactive({
 
 // -- Opciones ---------------------------------------------------------------
 const clientesOpts = ref([])
-
-const usuariosOpts = [
-    { value: '1', label: 'Cartera Creditransito' },
-    { value: '2', label: 'Martin Desarrollo' },
-]
+const usuariosOpts = ref([])
 
 const tipoTareaOpts = [
     { value: 'llamada', label: 'Llamada' },
@@ -502,7 +498,19 @@ async function fetchClientes() {
     }
 }
 
-async function fetchUsuarios() {}
+async function fetchUsuarios() {
+    try {
+        const { data } = await api.get('/api/usuarios/listMyUsers')
+
+        // Opciones formateadas para FormInput type="select"
+        usuariosOpts.value = data.clientes.map(c => ({
+            value: c.idUsuario,
+            label: c.nombre,
+        }))
+    } catch (err) {
+        console.error(err)
+    }
+}
 
 // ── Handlers DataTable ─────────────────────────────────────────────────────
 function onPageChange(page) {

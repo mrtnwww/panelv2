@@ -246,7 +246,9 @@ class ClienteController extends Controller
 
     function listMyClientsValidated(Request $request)
     {
-        $empresaId = $request->user()?->empresa_id;
+        $usuario = auth()->user();
+
+        $empresaId = $usuario->empresa_id;
 
         // Obtener los id de las empresas aliadas/sedes
         $empresas = Empresa::where(function ($query) use ($empresaId) {
@@ -285,7 +287,9 @@ class ClienteController extends Controller
             ->orderBy('nombre')
             ->get();
 
-        $clientes->transform(function ($cliente) use ($aliadoImpulsa) {
+        $abonoController = app(AbonoController::class);
+
+        $clientes->transform(function ($cliente) use ($aliadoImpulsa, $abonoController) {
             $creditos = $cliente->credito;
             $cupo = $cliente->cupo ?? 0;
             $enMora = false;
@@ -300,7 +304,7 @@ class ClienteController extends Controller
                     if (!empty($abono->abono_capital)) {
                         $capital += $abono->abono_capital;
                     } else {
-                        $abonosAsociados = app(AbonoController::class)->procesarAbonos($abono, true);
+                        $abonosAsociados = $abonoController->procesarAbonos($abono, true);
                         $ultimo = end($abonosAsociados) ?: [];
                         $capital += $ultimo['detalles']['capital'] ?? 0;
                     }

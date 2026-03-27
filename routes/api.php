@@ -8,6 +8,7 @@ use App\Http\Controllers\Empresas\EmpresaController;
 use App\Http\Controllers\Productos\ProductoController;
 use App\Http\Controllers\ReporteCentralesTipo\ReporteCentralesTipoController;
 use App\Http\Controllers\Tareas\TareaController;
+use App\Http\Controllers\Usuarios\UsuarioController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -64,5 +65,10 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     // Tareas
     Route::prefix('tareas')->group(function () {
         Route::get('/', [TareaController::class, 'listTasks']);
+    });
+
+    // Usuarios
+    Route::prefix('usuarios')->group(function () {
+        Route::get('/listMyUsers', [UsuarioController::class, 'listMyUsers']);
     });
 });
