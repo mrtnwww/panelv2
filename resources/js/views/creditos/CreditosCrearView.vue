@@ -358,7 +358,6 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import ChevronIcon from '@/components/form/ChevronIcon.vue'
 import FormInput from '@/components/form/FormInput.vue'
 
-// -- Loader -------------------------------------------------
 import { useLoader } from '@/composables/useLoader'
 const { start, stop } = useLoader()
 

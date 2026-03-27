@@ -6,6 +6,7 @@ use App\Http\Controllers\Clientes\ClienteController;
 use App\Http\Controllers\Creditos\CreditoController;
 use App\Http\Controllers\Empresas\EmpresaController;
 use App\Http\Controllers\Productos\ProductoController;
+use App\Http\Controllers\ReporteCentralesTipo\ReporteCentralesTipoController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -13,6 +14,9 @@ use Illuminate\Support\Facades\Route;
 
 // Lista de ciudades CO
 Route::get('/ciudades', [CiudadController::class, 'index']);
+
+// Reporte Centrales Tipos
+Route::get('/reportes', [ReporteCentralesTipoController::class, 'index']);
 
 // -- Rutas protegidas --------------------------------------------------------
 Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
@@ -35,6 +39,7 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     Route::prefix('creditos')->group(function () {
         Route::get('/{id}/details', [CreditoController::class, 'creditDetails']);
         Route::get('/detailCredit', [CreditoController::class, 'detailCredit']);
+        Route::get('/creditsCobranza', [CreditoController::class, 'creditsCobranza']);
     });
 
     // Empresas

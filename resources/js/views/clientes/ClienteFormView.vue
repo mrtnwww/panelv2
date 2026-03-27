@@ -520,7 +520,6 @@ import ReferenciaCard from '@/components/form/ReferenciaCard.vue'
 import FileUpload from '@/components/form/FileUpload.vue'
 import FormInput from '@/components/form/FormInput.vue'
 
-// -- Loader -------------------------------------------------
 import { useLoader } from '@/composables/useLoader'
 const { start, stop } = useLoader()
 
@@ -812,9 +811,13 @@ async function fetchCiudades() {
         return
     }
 
-    const { data } = await axios.get('/api/ciudades')
+    try {
+        const { data } = await axios.get('/api/ciudades')
 
-    localStorage.setItem('ciudades', JSON.stringify(data.ciudades))
+        localStorage.setItem('ciudades', JSON.stringify(data.ciudades))
+    } catch (err) {
+        console.error(err)
+    }
 }
 
 onMounted(async () => {

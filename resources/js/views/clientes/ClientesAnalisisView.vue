@@ -50,7 +50,6 @@ import { useRouter } from 'vue-router'
 // -- Componentes ---------------------------------------------
 import DataTable from '@/components/table/DataTable.vue'
 
-// -- Loader -------------------------------------------------
 import { useLoader } from '@/composables/useLoader'
 const { start, stop } = useLoader()
 

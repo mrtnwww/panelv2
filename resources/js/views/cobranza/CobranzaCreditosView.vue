@@ -77,6 +77,7 @@
                     v-model="filters.aliado"
                     :options="aliadoOpts"
                     placeholder="Seleccione un aliado"
+                    :searchable="true"
                 />
 
                 <!-- Mes de corte -->
@@ -254,7 +255,7 @@
                     <button
                         @click="descargarInforme"
                         :disabled="loadingInforme === 'informe'"
-                        class="h-9 px-4 rounded-lg bg-[#0A2540] hover:bg-[#0d2f50] disabled:bg-gray-300 text-white text-sm font-medium transition-all flex items-center gap-2"
+                        class="h-9 px-4 rounded-lg bg-[#1a5c2a] hover:bg-[#154d22] disabled:bg-gray-300 text-white text-sm font-medium transition-all flex items-center gap-2"
                     >
                         <svg
                             v-if="loadingInforme === 'informe'"
@@ -385,7 +386,7 @@
             <template #cell-acciones="{ row }">
                 <div class="flex items-center gap-1.5">
                     <button
-                        @click.stop="verDetalle(row)"
+                        @click.stop="verEstadoCredito(row.id)"
                         class="h-7 px-3 rounded-lg bg-[#1a5c2a] hover:bg-[#154d22] text-white text-xs font-medium transition-all"
                     >
                         Detalle
@@ -399,6 +400,20 @@
                 </div>
             </template>
         </DataTable>
+
+        <transition name="modal">
+            <EstadoCreditoModal
+                v-model="modalOpen"
+                :loading="loadingCredito"
+                :credito="credito"
+                @ver-historico="verHistorico"
+                @liquidar="liquidarCredito"
+                @ver-plan-pagos="verPlanPagos"
+                @descargar-paz-salvo="descargarPazSalvo"
+                @imprimir="imprimirCredito"
+                @imprimir-abono="imprimirAbono"
+            />
+        </transition>
     </div>
 </template>
 
@@ -406,10 +421,20 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 
+// -- Componentes -----------------------------------------------------
+import EstadoCreditoModal from '@/components/modals/EstadoCreditoModal.vue'
 import FormRadioGroup from '@/components/form/FormRadioGroup.vue'
 import FormCheckbox from '@/components/form/FormCheckbox.vue'
 import DataTable from '@/components/table/DataTable.vue'
 import FormInput from '@/components/form/FormInput.vue'
+
+import { useEstadoCredito } from '@/composables/useEstadoCredito'
+import { useLoader } from '@/composables/useLoader'
+const { start, stop } = useLoader()
+
+import { formatCurrency, formatDateYmd } from '@/utils/format'
+import api from '@/services/api'
+import dayjs from 'dayjs'
 
 const router = useRouter()
 
@@ -418,7 +443,7 @@ const columns = [
     {
         key: 'numCredito',
         label: 'Núm. Crédito',
-        sortable: true,
+        sortable: false,
         align: 'center',
     },
     { key: 'cliente', label: 'Cliente', sortable: false },
@@ -525,6 +550,14 @@ const selected = ref([])
 const busquedaAvanzada = ref(true)
 let searchTimeout = null
 
+// Definir las fechas de corte (inicial y final) para el estado de créditos
+let fechaCorte = {
+    desde: false,
+    hasta: formatDateYmd(new Date()),
+}
+
+let NumCuotasValidarEn = 'cuotas_canceladas'
+
 const pagination = reactive({ currentPage: 1, perPage: 10, total: 0 })
 const sort = reactive({ key: 'numCredito', dir: 'desc' })
 
@@ -551,31 +584,18 @@ const filters = reactive({
     tipoInforme: 'cobranza',
 })
 
-// ── Opciones ───────────────────────────────────────────────────────────────
+// -- Opciones ------------------------------------------------
 const estadoCreditoOpts = [
-    { value: 'vigente', label: 'Vigente' },
+    { value: 'vigente', label: 'Al día' },
     { value: 'mora', label: 'En mora' },
     { value: 'finalizado', label: 'Finalizado' },
-    { value: 'anulado', label: 'Anulado' },
 ]
-
 const notificacionOpts = [
-    { value: 'enviado', label: 'Enviado' },
-    { value: 'pendiente', label: 'Pendiente' },
-    { value: 'sin_envio', label: 'Sin envío' },
+    { value: 'si', label: 'Si' },
+    { value: 'no', label: 'No' },
 ]
-
-const reporteOpts = [
-    { value: 'cobranza', label: 'Cobranza' },
-    { value: 'datacredito', label: 'Datacrédito' },
-    { value: 'cifin', label: 'CIFIN' },
-]
-
-const aliadoOpts = [
-    { value: 'impulsa', label: 'IMPULSA CORP SAS / CREDITRANSITO' },
-    { value: 'cda_moto', label: 'CDA MOTOCENTER RUTA 45A SAS' },
-    { value: 'cda_prad', label: 'CDA LA PRADERA' },
-]
+const reporteOpts = ref([])
+const aliadoOpts = ref([])
 
 const estadoClienteOpts = [
     { value: 'al_dia', label: 'Al día' },
@@ -585,7 +605,7 @@ const estadoClienteOpts = [
 
 const tiposInforme = [
     { value: 'cobranza', label: 'Informe Cobranza' },
-    { value: 'datacredito', label: 'Informe DatosCrédito' },
+    { value: 'datacredito', label: 'Informe DataCrédito' },
     { value: 'cifin', label: 'Informe CIFIN' },
 ]
 
@@ -607,15 +627,6 @@ function onToggleRow(id) {
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 const labelClass = 'text-xs font-medium text-gray-400 uppercase tracking-wide'
-
-function formatCurrency(value) {
-    if (value == null) return '—'
-    return new Intl.NumberFormat('es-CO', {
-        style: 'currency',
-        currency: 'COP',
-        maximumFractionDigits: 0,
-    }).format(value)
-}
 
 function estadoClienteBadge(estado) {
     const s = String(estado).toLowerCase()
@@ -671,24 +682,59 @@ function buildParams() {
     })
 }
 
-// ── Backend ────────────────────────────────────────────────────────────────
+// -- Backend --------------------------------------------------------------
 async function fetchCreditos() {
     loading.value = true
     try {
-        const response = await fetch(
-            `/api/cobranza/vencimientos?${buildParams()}`,
-            { headers: authHeaders() }
-        )
-        if (!response.ok) throw new Error()
-        const data = await response.json()
-        creditos.value = data.data
-        pagination.total = data.meta.total
-        pagination.currentPage = data.meta.current_page
+        const { data } = await api.get('/api/creditos/creditsCobranza')
+
+        const { data: creditosData, total, current_page } = data.creditos
+
+        // Lista de créditos
+        transformCreditos(creditosData)
+
+        // Datos de paginación
+        pagination.currentPage = current_page
+        pagination.total = total
     } catch (err) {
         console.error(err)
     } finally {
         loading.value = false
     }
+}
+
+async function fetchReportesTipos() {
+    const reportesCentralesTipos = localStorage.getItem(
+        'reportesCentralesTipos'
+    )
+
+    if (reportesCentralesTipos) {
+        reporteOpts.value = JSON.parse(reportesCentralesTipos).map(r => ({
+            value: r.id,
+            label: r.tipo_reporte,
+        }))
+        return
+    }
+
+    try {
+        const { data } = await axios.get('/api/reportes')
+
+        localStorage.setItem(
+            'reportesCentralesTipos',
+            JSON.stringify(data.reportes)
+        )
+    } catch (err) {
+        console.error(err)
+    }
+}
+
+async function fetchEmpresas() {
+    const { data } = await api.get('/api/empresas')
+
+    aliadoOpts.value = data.empresas.map(item => ({
+        value: item.id,
+        label: item.razon_social,
+    }))
 }
 
 async function descargarArchivo(url, nombre) {
@@ -756,14 +802,465 @@ function onSearch(val) {
 }
 
 // ── Acciones de fila ───────────────────────────────────────────────────────
-function verDetalle(row) {
-    router.push(`/dashboard/creditos/${row.id}`)
-}
 function habitoPago(row) {
     console.log('Hábito de pago:', row.id)
 }
 
-onMounted(fetchCreditos)
+function transformCreditos(data) {
+    const infoCreditos = creditosAFechaCorte(data)
+
+    creditos.value = infoCreditos.map(cr => ({
+        id: cr.id,
+        numCredito: cr.id,
+        cliente: cr.cliente,
+        ultReporte: cr.ult_reporte.concatted,
+        fechaNotificado: cr.fecha_notificado
+            ? formatDateYmd(cr.fecha_notificado)
+            : '',
+        estadoCliente: cr.estado_cliente,
+        fechaAcuerdoPago: cr.fecha_acuerdo,
+        fechaCredito: formatDateYmd(cr.fecha_credito),
+        vencimiento: cr.vencimiento,
+        plazo: cr.plazo,
+        valorCompra: cr.valor_compra,
+        valorCredito: cr.valor_credito,
+        totalAbonado: cr.abono,
+        saldoMora: cr.valor_saldo_mora,
+        intMoratorio: cr.valor_int_mora,
+        gasCobranza: cr.valor_gastos_cobranza,
+        valorPago: cr.valor_min_pago,
+        numCuotaPago: cr.cuota_pago == 0 ? '- -' : cr.cuota_pago,
+        fechaFinalizado: cr.estaFinalizadoHoy
+            ? cr.fecha_cierre
+                ? formatDateYmd(cr.fecha_cierre)
+                : ''
+            : '',
+        estadoCredito: cr.estaFinalizadoHoy
+            ? 'Finalizado'
+            : cr.en_mora
+              ? 'En mora'
+              : 'Normal',
+        numCuotasPagadas: cr[NumCuotasValidarEn],
+        numDiasMora: cr.dias_mora,
+        aliado: cr.razon_social,
+    }))
+}
+
+function creditosAFechaCorte(creditosSTR) {
+    let creditosStruct = []
+    creditosSTR.map(credito => {
+        const createdAtCredito = formatDateYmd(credito.created_at)
+        const validationFCorteDesde = fechaCorte.desde
+            ? createdAtCredito > formatDateYmd(fechaCorte.desde)
+            : true
+
+        /**
+         * Se realizarán los cálculos necesarios siempre y cuando la fecha de
+         * creación del crédito sea menor o igual a la fecha de corte
+         */
+        if (validationFCorteDesde && createdAtCredito < fechaCorte.hasta) {
+            /**
+             * Almacenar las proyecciones a la fecha de corte, las cuales corresponden
+             * a aquellas cuya fecha es menor o igual a la fecha de corte.
+             */
+            const proyeccionesFechaCorte = credito.proyecciones.filter(
+                proy => formatDateYmd(proy.fecha) < fechaCorte.hasta
+            )
+
+            // numero de cuota a pagar
+            credito.cuotaPagar =
+                credito.proyecciones.findIndex(cuota => cuota.pagado == 0) + 1
+
+            /**
+             * Almacenar los abonos a la fecha de corte, los cuales corresponden
+             * a aquellos cuya fecha de creación es menor o igual a la fecha de corte.
+             */
+            const abonosFechaCorte = credito.abonos.filter(
+                abono => formatDateYmd(abono.created_at) < fechaCorte.hasta
+            )
+
+            /**
+             * Definir el abono esperado, que corresponde al abono que el cliente debió haber
+             * realizado a la fecha de corte.
+             */
+
+            let abonoEsperado = 0
+            if (
+                proyeccionesFechaCorte.length > 0 &&
+                proyeccionesFechaCorte[0].valor_cuota != null
+            ) {
+                abonoEsperado = proyeccionesFechaCorte.reduce(
+                    (acumulador, proyeccion) =>
+                        acumulador + proyeccion.valor_cuota,
+                    0
+                )
+            } else {
+                abonoEsperado =
+                    proyeccionesFechaCorte.length * credito.val_cuotas
+            }
+
+            /**
+             * Definir el abono realizado, que corresponde al abono real realizado por el
+             * cliente => sumatoria de todos los abonos realizados hasta la fecha de corte.
+             */
+            const abonoRealizado =
+                (credito.valorCondonadoCredito ?? 0) +
+                abonosFechaCorte.reduce(
+                    (acumulador, abono) => acumulador + abono.valor,
+                    0
+                )
+
+            /**
+             * Definir el último abono realizado por el cliente, el cual corresponde al último ítem
+             * del listado de abonos a la fecha de corte.
+             */
+            const ultAbono = abonosFechaCorte.length
+                ? formatDateYmd(
+                      abonosFechaCorte[abonosFechaCorte.length - 1].created_at
+                  )
+                : ''
+
+            /**
+             * Definir la fecha de vencimiento del crédito, la cual corresponde a la fecha
+             * de la última cuota a pagar.
+             */
+            const vencimiento = formatDateYmd(
+                credito.proyecciones[credito.proyecciones.length - 1].fecha
+            )
+
+            /**
+             * El saldo de la deuda corresponde al valor del crédito menos el abono realizado
+             * a la fecha de corte.
+             */
+            let valorSaldoDeuda = credito.valor_credito - abonoRealizado
+
+            /**
+             * Determinar si el crédito fue pagado antes de la fecha de corte.
+             */
+            credito.pagadoFechaCorte =
+                credito.fecha_cierre != '' &&
+                credito.fecha_cierre != null &&
+                formatDateYmd(credito.fecha_cierre) <= fechaCorte.hasta
+                    ? true
+                    : false
+
+            /**
+             * Recorrer las proyecciones a la fecha de corte para definir
+             * los ítems morosos (dias en mora, cuotas en mora, etc.).
+             */
+            let resultMora = {
+                enMora: false,
+                cuotasMora: 0,
+                diasMora: 0,
+                valorSaldoMora: 0,
+            }
+            let cuotasCanceladas = 0
+            let iteradorNoPagado = 0
+            let restaAbonado = abonoRealizado
+
+            proyeccionesFechaCorte.map(proyFCorte => {
+                proyFCorte.pagado = 1
+
+                /**
+                 * El recorrido consiste en restar el valor de las cuotas por cada cuota
+                 * de la proyección al valor abonado por el cliente. En el momento en que
+                 * el RESTANTE DEL ABONADO sea menor al VALOR DE LAS CUOTAS la cuota estará
+                 * como "No pagada" y por ende sumará cuotas en mora y días en mora.
+                 */
+
+                if (
+                    restaAbonado <
+                    (proyFCorte.valor_cuota ?? credito.val_cuotas)
+                ) {
+                    resultMora.cuotasMora++
+                    resultMora.enMora = true
+                    proyFCorte.pagado = 0
+
+                    /**
+                     * Si es la primera cuota no pagada, se calculará los días en mora a la
+                     * fecha de corte.
+                     */
+                    if (iteradorNoPagado == 0) {
+                        resultMora.diasMora = proyFCorte.diasMora
+                    }
+
+                    iteradorNoPagado++
+                }
+                restaAbonado -= proyFCorte.valor_cuota ?? credito.val_cuotas
+            })
+
+            cuotasCanceladas = proyeccionesFechaCorte.filter(
+                subItem => subItem.pagado == 1
+            ).length
+
+            resultMora.cuotasMoraMensual =
+                credito.periocidad == 1
+                    ? resultMora.cuotasMora
+                    : Math.trunc(resultMora.cuotasMora / 2)
+
+            /**
+             * Calcular el saldo moroso, el cual corresponde al abono esperado menos
+             * el abono realizado por el cliente.
+             */
+            let sumatoriaIntMora = 0
+            let sumatoriaGasCobranza = 0
+
+            // Calculo de gastos de cobranza e intereses moratorios
+            if (proyeccionesFechaCorte.length > 0) {
+                sumatoriaIntMora = proyeccionesFechaCorte.reduce(
+                    (acumulador, proyeccion) => {
+                        return proyeccion.pagado == 0
+                            ? acumulador +
+                                  Math.round(proyeccion.intereses_moratorios)
+                            : acumulador
+                    },
+                    0
+                )
+                sumatoriaGasCobranza = proyeccionesFechaCorte.reduce(
+                    (acumulador, proyeccion) => {
+                        return proyeccion.pagado == 0
+                            ? acumulador +
+                                  Math.round(proyeccion.gastos_cobranza)
+                            : acumulador
+                    },
+                    0
+                )
+            }
+
+            let sumatoriaMora = credito.valorMinPago ?? 0
+            let sumatoriaMinPago = credito.valorMinPago ?? 0
+
+            /**
+             * Si el número de días en mora es menor a cero no estará en mora.
+             */
+            if (resultMora.diasMora < 1) {
+                sumatoriaMora = 0
+                resultMora.enMora = false
+            }
+
+            /**
+             * Calcular la fecha límite de pago, la cual será la fecha más próxima
+             * dentro de las proyecciones a la fecha corte, o tomará el
+             *
+             * Toma la última cuota de las proyecciones a la fecha de corte.
+             *
+             * SINO
+             *
+             * Toma la última cuota de las proyecciones entre la fecha de corte y
+             * el mes inmediatamente despues de la fecha de corte.
+             *
+             * SINO
+             *
+             * Toma la última cuota de las proyecciones entre la fecha de corte y
+             * dos meses inmediatamente despues de la fecha de corte
+             */
+            const proyEvalLimPago = {
+                fechaCorte: proyeccionesFechaCorte,
+                unMesDespues: credito.proyecciones.filter(
+                    item =>
+                        formatDateYmd(item.fecha) <=
+                        dayjs(fechaCorte.hasta)
+                            .add(1, 'months')
+                            .format('DD/MM/YYYY')
+                ),
+                dosMesesDespues: credito.proyecciones.filter(
+                    item =>
+                        formatDateYmd(item.fecha) <=
+                        dayjs(fechaCorte.hasta)
+                            .add(2, 'months')
+                            .format('DD/MM/YYYY')
+                ),
+            }
+
+            const fechaLimitePago = proyEvalLimPago.fechaCorte.length
+                ? formatDateYmd(
+                      proyEvalLimPago.fechaCorte[
+                          proyEvalLimPago.fechaCorte.length - 1
+                      ].fecha
+                  )
+                : proyEvalLimPago.unMesDespues.length
+                  ? formatDateYmd(
+                        proyEvalLimPago.unMesDespues[
+                            proyEvalLimPago.unMesDespues.length - 1
+                        ].fecha
+                    )
+                  : proyEvalLimPago.dosMesesDespues.length
+                    ? formatDateYmd(
+                          proyEvalLimPago.dosMesesDespues[
+                              proyEvalLimPago.dosMesesDespues.length - 1
+                          ].fecha
+                      )
+                    : ''
+
+            /**
+             * Definir la novedad de centrales de riesgo que debe ser definida respecto
+             * a las cuotas en mora a la fecha de corte (calculado anteriormente).
+             */
+            let centralRiesgo = {
+                idNovedad: '',
+                novedad: '',
+            }
+
+            //mirar acá vieja logica
+
+            if (resultMora.cuotasMoraMensual == 0) {
+                centralRiesgo.idNovedad = '01'
+                centralRiesgo.novedad = 'AL DÍA'
+            } else if (resultMora.diasMora >= 30 && resultMora.diasMora < 60) {
+                centralRiesgo.idNovedad = '06'
+                centralRiesgo.novedad = 'MORA 30'
+            } else if (resultMora.diasMora >= 60 && resultMora.diasMora < 90) {
+                centralRiesgo.idNovedad = '07'
+                centralRiesgo.novedad = 'MORA 60'
+            } else if (resultMora.diasMora >= 90 && resultMora.diasMora < 120) {
+                centralRiesgo.idNovedad = '08'
+                centralRiesgo.novedad = 'MORA 90'
+            } else if (resultMora.diasMora >= 120) {
+                centralRiesgo.idNovedad = '09'
+                centralRiesgo.novedad = 'MORA 120 O MÁS'
+            }
+
+            /**
+             * Si el saldo de la deuda es 0 o menos que cero (el crédito fue pagado)
+             * se asigna el tipo de reporte de centrales correspondiente.
+             */
+            if (
+                valorSaldoDeuda <= 0 ||
+                credito.pagadoFechaCorte ||
+                credito.estaFinalizadoHoy
+            ) {
+                resultMora.cuotasMora = 0
+                resultMora.cuotasMoraMensual = 0
+                resultMora.enMora = false
+                resultMora.diasMora = 0
+                valorSaldoDeuda = 0
+                sumatoriaMora = 0
+                sumatoriaIntMora = 0
+                sumatoriaGasCobranza = 0
+                centralRiesgo.idNovedad = '05'
+                centralRiesgo.novedad = 'PAGO VOLUNTARIO O TOTAL'
+                cuotasCanceladas =
+                    credito.periocidad == 1
+                        ? credito.num_cuotas
+                        : credito.num_cuotas * 2
+            }
+
+            let fechaVencimiento = credito.proyecciones.find(
+                item => item.pagado === 0
+            )
+            fechaVencimiento = fechaVencimiento
+                ? formatDateYmd(fechaVencimiento.fecha)
+                : ''
+
+            const mapEstadoCliente = {
+                al_dia: 'Cliente al día',
+                acuerdo_pago: 'Acuerdo de pago',
+                intension_pago: 'Intensión de pago',
+                acuerdo_incumplido: 'Acuerdo incumplido',
+                dificultad_pago: 'Dificultad de pago',
+                renuente: 'Renuente',
+                no_contesta: 'No contesta/Mensaje con refererencias',
+                ilocalizado: 'Ilocalizado',
+                paz_y_salvo: 'A paz y salvo',
+            }
+
+            const creditoAdd = {
+                id: credito.id,
+                consecutivo: credito.consecutivo,
+                valor_compra: credito.valor_compra,
+                valor_credito: credito.valor_credito,
+                plazo: credito.periocidad == 1 ? 'Mensual' : 'Quincenal',
+                periocidad: credito.periocidad,
+                en_mora: resultMora.enMora,
+                cliente: credito.cliente.nombre,
+                abono: abonoRealizado ? `${abonoRealizado}` : 0,
+                vencimiento: vencimiento,
+                cuotas_mora: resultMora.cuotasMora,
+                dias_mora: resultMora.diasMora,
+                fecha_credito: formatDateYmd(credito.created_at),
+                num_cuotas: credito.num_cuotas,
+                notificado: credito.notificacion.notificado,
+                fecha_notificado: credito.notificacion.fecha,
+                num_identificacion: credito.cliente.cedula,
+                ciudad_correspondencia: credito.cliente.ciudad_nombre,
+                direccion_correspondencia: credito.cliente.direccion,
+                correo: credito.cliente.email,
+                celular: credito.cliente.telefono,
+                val_cuota_mensual:
+                    credito.periocidad == 1
+                        ? credito.val_cuotas
+                        : credito.val_cuotas * 2,
+                valor_saldo_mora: sumatoriaMora,
+                valor_min_pago: sumatoriaMinPago,
+                valor_int_mora: sumatoriaIntMora,
+                valor_gastos_cobranza: sumatoriaGasCobranza,
+                novedad_central_riesgo: centralRiesgo.novedad,
+                id_novedad_central_riesgo: centralRiesgo.idNovedad,
+                cuotas_canceladas: cuotasCanceladas,
+                fecha_pago: ultAbono,
+                fecha_limite_pago: fechaLimitePago,
+                valor_saldo_deuda: valorSaldoDeuda,
+                cuotas_mora_mensual: resultMora.cuotasMoraMensual,
+                empresa_id: credito.empresa_id,
+                razon_social: credito.razon_social,
+                ult_reporte: {
+                    fecha: credito.infoUltReporte.fecha,
+                    tipo: credito.infoUltReporte.tipo,
+                    tipo_id: credito.infoUltReporte.tipo_id,
+                    concatted:
+                        credito.infoUltReporte.fecha != '' &&
+                        credito.infoUltReporte.tipo != ''
+                            ? `${formatDateYmd(credito.infoUltReporte.fecha)} (${credito.infoUltReporte.tipo})`
+                            : '',
+                },
+                fecha_cierre: credito.fecha_cierre,
+                fecha_vencimiento: fechaVencimiento,
+                cuota_pago: credito.cuotaPagar,
+                estaFinalizadoHoy: credito.estaFinalizadoHoy,
+                estado_cliente: credito?.cliente?.estado_cliente_tarea
+                    ? mapEstadoCliente[credito.cliente.estado_cliente_tarea]
+                    : '',
+                fecha_acuerdo: credito?.cliente?.fecha_fin_acuerdo_pago
+                    ? formatDateYmd(credito.cliente.fecha_fin_acuerdo_pago)
+                    : '',
+                proyecciones: credito.proyecciones,
+                abonos: credito.abonos,
+            }
+
+            creditosStruct.push(creditoAdd)
+        }
+    })
+
+    return creditosStruct
+}
+
+// -- Modal estado credito --------------------------------------
+const {
+    modalOpen,
+    loadingCredito,
+    credito,
+    verEstadoCredito,
+    verHistorico,
+    liquidarCredito,
+    verPlanPagos,
+    descargarPazSalvo,
+    imprimirCredito,
+    imprimirAbono,
+} = useEstadoCredito()
+
+onMounted(async () => {
+    start()
+
+    try {
+        await Promise.all([
+            fetchEmpresas(),
+            fetchCreditos(),
+            fetchReportesTipos(),
+        ])
+    } finally {
+        stop()
+    }
+})
 </script>
 
 <style scoped>

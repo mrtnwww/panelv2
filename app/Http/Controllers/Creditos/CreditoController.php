@@ -14,6 +14,7 @@ use App\Models\EstadoFunciones;
 use App\Models\ParametrosEstadoFunciones;
 use App\Models\ParametrosInterese;
 use App\Models\Persona;
+use App\Models\ReporteCentralesHistorial;
 use App\Models\TipoPago;
 use App\Models\Usuario;
 use App\Traits\CalculoCobranza;
@@ -21,6 +22,7 @@ use App\Traits\CalculoPagoMinimo;
 use Carbon\Carbon;
 use DateTime;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class CreditoController extends Controller
 {
@@ -226,6 +228,134 @@ class CreditoController extends Controller
         return response()->json([
             'tabla' => $tabla
         ]);
+    }
+
+    public function creditsCobranza(Request $request)
+    {
+        $empresaId = $request->user()?->empresa_id;
+
+        $currentEmpresaId = $empresaId;
+
+        // Empresas (aliados y sedes) asociadas en una sola consulta
+        $empresasAliados = Empresa::where('aliado', $currentEmpresaId)
+            ->orWhere('sede', $currentEmpresaId)
+            ->pluck('id')
+            ->toArray();
+
+        $empresasAliados[] = $currentEmpresaId;
+
+        // Término de búsqueda
+        $searchTerm = $request->input('searchTerm', '');
+        // condiciones de busqueda
+        $conditions = $request->input('conditions', []);
+        // condiciones de busqueda especificas para el modulo de cobranza
+        $conditionsCobranza = $request->input('conditionsCobranza', []);
+
+        // creditos por pagina
+        $perPage = $request->input('creditosPorPagina', 10);
+
+        $query = Credito::whereIn('empresa_id', $empresasAliados)
+            ->where('created_at', '<', Carbon::yesterday()->endOfDay())
+            ->applyConditionsCobranza($conditionsCobranza)
+            ->applyConditions($conditions)
+            ->applySearch($searchTerm, null)
+            ->with([
+                'cliente:id,nombre,cedula,ciudad,direccion,email,telefono,estado_cliente_tarea,fecha_fin_acuerdo_pago',
+                'cliente.ciudadInfo:id,nombre',
+                'proyecciones',
+                'abonos',
+                'notificaciones',
+                'empresa:id,razon_social'
+            ])
+            ->orderBy('id', 'desc');
+
+        $allCreditosIds = $query->pluck('id')->toArray();
+
+        // creditos paginados
+        $creditos = $query->paginate($perPage);
+        $creditoIds = $creditos->pluck('id')->toArray();
+
+        $data = $this->procesarCreditosCobranza($creditos, $creditoIds);
+
+        return response()->json([
+            'creditos' => $data,
+            'allCreditosIds' => $allCreditosIds
+        ]);
+    }
+
+    private function procesarCreditosCobranza($creditos, $ids) {
+        $hoy = Carbon::now();
+
+        // Ultimos reportes de los créditos
+        $ultReportes = ReporteCentralesHistorial::select(
+                'reporte_centrales_historial.created_at',
+                'reporte_centrales_historial.tipo_reporte_id',
+                'reporte_centrales_tipo.tipo_reporte AS tipo_reporte_nombre',
+                'reporte_centrales_historial.credito_id'
+            )
+            ->whereIn('credito_id', $ids)
+            ->orderBy('reporte_centrales_historial.created_at', 'desc')
+            ->join('reporte_centrales_tipo', 'reporte_centrales_tipo.id', '=', 'reporte_centrales_historial.tipo_reporte_id')
+            ->get()
+            ->groupBy('credito_id');
+
+        // Condonaciones agrupadas por credito
+        $condonaciones = Condonacion::join('abono', 'abono.id', '=', 'condonaciones.abono_id')
+            ->whereIn('abono.credito_id', $ids)
+            ->where('condonaciones.concepto_condonacion', 'credito')
+            ->select(DB::raw('SUM(condonaciones.valor_condonado) as total, abono.credito_id'))
+            ->groupBy('abono.credito_id')
+            ->pluck('total', 'credito_id');
+
+        foreach ($creditos as $credito) {
+            $cliente = $credito->cliente;
+            $cliente->ciudad_nombre = $cliente->ciudadInfo ? $cliente->ciudadInfo->nombre : '';
+
+            // Determinar si el crédito está finalizado hoy
+            $estaFinalizadoHoy = !$credito->proyecciones->where('pagado', 0)->isNotEmpty();
+
+            // Obtener la última notificación
+            $ultVezNotificado = $credito->notificaciones
+                ->whereNotNull('correo_id')
+                ->sortByDesc('created_at')
+                ->first();
+
+            $fechaNotificado = $ultVezNotificado ? Carbon::parse($ultVezNotificado->created_at) : '';
+            $notificado = $ultVezNotificado && $fechaNotificado->between($hoy->startOfDay(), $hoy->endOfDay());
+
+            $ultReporte = $ultReportes->get($credito->id);
+            $ultReporte = $ultReporte ? $ultReporte->first() : null;
+
+            $infoUltReporte = [
+                "fecha"   => $ultReporte ? $ultReporte->created_at : '',
+                "tipo_id" => $ultReporte ? $ultReporte->tipo_reporte_id : '',
+                "tipo"    => $ultReporte ? $ultReporte->tipo_reporte_nombre : '',
+            ];
+
+            $credito->cliente = $cliente;
+            $credito->notificacion = [
+                'notificado' => $notificado,
+                'fecha' => $fechaNotificado,
+            ];
+            $credito->notificado = $notificado;
+            $credito->infoUltReporte = $infoUltReporte;
+            $credito->estaFinalizadoHoy = $estaFinalizadoHoy;
+            $credito->razon_social = $credito->empresa->razon_social ?? '';
+
+            $proyecciones = $credito->proyecciones;
+            $abonos = $credito->abonos->sum('valor');
+
+            // Calculo a favor del cliente
+            $modular = $this->calculoValorAFavor($proyecciones[0]->valor_cuota, $abonos, $proyecciones, $credito) ?? 0;
+
+            // Calcular el valor en mora del credito
+            $credito->valorMinPago = $this->pagoMinimo($credito->proyecciones, $modular, $credito->val_cuotas) ?? 0;
+
+            // Validar si se han realizado condonaciones al credito
+            $credito->valorCondonadoCredito = (int) ($condonaciones[$credito->id] ?? 0);
+        }
+
+        return $creditos;
     }
 
     private function actualizarValorCuota($creditoActual)

@@ -160,7 +160,7 @@
                     label="Aliado"
                     type="select"
                     v-model="filters.aliado"
-                    :options="aliados"
+                    :options="aliadoOpts"
                     placeholder="Seleccione un aliado"
                     wrapper-class="w-full xl:max-w-[40%]"
                     :searchable="true"
@@ -251,7 +251,6 @@ import FormCheckbox from '@/components/form/FormCheckbox.vue'
 import DataTable from '@/components/table/DataTable.vue'
 import FormInput from '@/components/form/FormInput.vue'
 
-// -- Loader -------------------------------------------------
 import { useLoader } from '@/composables/useLoader'
 const { start, stop } = useLoader()
 
@@ -371,7 +370,7 @@ function resetFilters() {
 }
 
 // -- Lista de aliados -----------------------------------------------------
-const aliados = ref([])
+const aliadoOpts = ref([])
 
 // -- Selección -------------------------------------------------------
 const selected = ref([])
@@ -432,7 +431,7 @@ async function fetchClientes() {
 async function fetchEmpresas() {
     const { data } = await api.get('/api/empresas')
 
-    aliados.value = data.empresas.map(item => ({
+    aliadoOpts.value = data.empresas.map(item => ({
         value: item.id,
         label: item.razon_social,
     }))

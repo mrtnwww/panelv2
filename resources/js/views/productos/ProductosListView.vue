@@ -145,7 +145,6 @@ import DataTable from '@/components/table/DataTable.vue'
 import FormInput from '@/components/form/FormInput.vue'
 import AppModal from '@/components/AppModal.vue'
 
-// -- Loader -------------------------------------------------
 import { useLoader } from '@/composables/useLoader'
 const { start, stop } = useLoader()
 
@@ -308,7 +307,7 @@ function eliminarProducto(row) {
                 await api.delete('/api/productos', {
                     data: {
                         id: row.id,
-                    }
+                    },
                 })
 
                 await fetchProductos()
