@@ -162,7 +162,7 @@ import EyeIcon from '@/components/form/EyeIcon.vue'
 import { ref, reactive, computed } from 'vue'
 
 // -- Estilos compartidos ---------------------------
-const labelClass = 'text-sm font-medium text-gray-500'
+const labelClass = 'text-xs font-medium text-gray-500 uppercase tracking-wide'
 const inputClass =
     'w-full h-10 px-3 rounded-lg border border-gray-200 bg-gray-50 text-[#0A2540] text-sm outline-none transition-all placeholder:text-gray-300 focus:bg-white focus:border-[#1a5c2a] focus:ring-2 focus:ring-[#1a5c2a]/10'
 

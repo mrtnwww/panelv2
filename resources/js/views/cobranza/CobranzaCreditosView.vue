@@ -651,7 +651,7 @@ function onToggleRow(id) {
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────
-const labelClass = 'text-xs font-medium text-gray-400 uppercase tracking-wide'
+const labelClass = 'text-xs font-medium text-gray-500 uppercase tracking-wide'
 
 function estadoClienteBadge(estado) {
     const s = String(estado).toLowerCase()

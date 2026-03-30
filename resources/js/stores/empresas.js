@@ -9,7 +9,7 @@ export const useEmpresasStore = defineStore('empresas', {
     getters: {
         empresasSelect: state => {
             return state.empresas.map(e => ({
-                label: e.nombre,
+                label: e.razon_social,
                 value: e.id,
             }))
         },

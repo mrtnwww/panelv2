@@ -40,9 +40,7 @@
                 <!-- Vencimiento de cuota + checkbox Por rango -->
                 <div class="flex flex-col gap-1.5">
                     <div class="flex items-center justify-between">
-                        <label
-                            class="text-xs font-medium text-gray-400 uppercase tracking-wide"
-                        >
+                        <label :class="labelClass">
                             Vencimiento de cuota
                         </label>
                         <FormCheckbox
@@ -71,21 +69,18 @@
                 <!-- Aliado + checkbox Solo aliados -->
                 <div class="flex flex-col gap-1.5">
                     <div class="flex items-center justify-between">
-                        <label
-                            class="text-xs font-medium text-gray-400 uppercase tracking-wide"
-                        >
-                            Aliado
-                        </label>
+                        <label :class="labelClass"> Aliado </label>
                         <FormCheckbox
                             v-model="filters.soloAliados"
                             label="Solo aliados"
                         />
                     </div>
                     <FormInput
-                        v-model="filters.aliado"
                         type="select"
+                        v-model="filters.aliado"
                         :options="aliados"
                         placeholder="Seleccione un aliado"
+                        :searchable="true"
                     />
                 </div>
             </div>
@@ -213,7 +208,7 @@
             <template #cell-acciones="{ row }">
                 <div class="flex items-center gap-1.5">
                     <button
-                        @click.stop="verDetalle(row)"
+                        @click.stop="verEstadoCredito(row.id)"
                         class="h-7 px-3 rounded-lg bg-[#1a5c2a] hover:bg-[#154d22] text-white text-xs font-medium transition-all"
                     >
                         Detalle
@@ -245,49 +240,82 @@
                     >
                         Total:
                     </td>
-                    <td class="px-3 py-3 text-gray-700">
-                        {{ formatCurrency(totales.valorBase) }}
+                    <td class="px-3 py-3 text-gray-700 text-right">
+                        {{ formatCurrency(valoresTotales.valorBase) }}
                     </td>
-                    <td class="px-3 py-3 text-gray-700">
-                        {{ formatCurrency(totales.valorAval) }}
+                    <td class="px-3 py-3 text-gray-700 text-right">
+                        {{ formatCurrency(valoresTotales.valorAval) }}
                     </td>
-                    <td class="px-3 py-3 text-gray-700">
-                        {{ formatCurrency(totales.ivaAval) }}
+                    <td class="px-3 py-3 text-gray-700 text-right">
+                        {{ formatCurrency(valoresTotales.ivaAval) }}
                     </td>
-                    <td class="px-3 py-3 text-gray-700">
-                        {{ formatCurrency(totales.intereses) }}
+                    <td class="px-3 py-3 text-gray-700 text-right">
+                        {{ formatCurrency(valoresTotales.intereses) }}
                     </td>
-                    <td class="px-3 py-3 text-gray-700">
-                        {{ formatCurrency(totales.valorCredito) }}
+                    <td class="px-3 py-3 text-gray-700 text-right">
+                        {{ formatCurrency(valoresTotales.valorCredito) }}
                     </td>
-                    <td class="px-3 py-3 text-gray-700">
-                        {{ formatCurrency(totales.totalAbonado) }}
+                    <td class="px-3 py-3 text-gray-700 text-right">
+                        {{ formatCurrency(valoresTotales.totalAbonado) }}
                     </td>
-                    <td class="px-3 py-3 text-gray-700">
-                        {{ formatCurrency(totales.totalPendiente) }}
+                    <td class="px-3 py-3 text-gray-700 text-right">
+                        {{ formatCurrency(valoresTotales.totalPendiente) }}
                     </td>
-                    <td class="px-3 py-3 text-gray-700">
-                        {{ formatCurrency(totales.intMoratorio) }}
+                    <td class="px-3 py-3 text-gray-700 text-right">
+                        {{ formatCurrency(valoresTotales.intMoratorio) }}
                     </td>
-                    <td class="px-3 py-3 text-gray-700">
-                        {{ formatCurrency(totales.gastosCobranza) }}
+                    <td class="px-3 py-3 text-gray-700 text-right">
+                        {{ formatCurrency(valoresTotales.gastosCobranza) }}
                     </td>
-                    <td class="px-3 py-3 text-gray-700">
-                        {{ formatCurrency(totales.pendienteMora) }}
+                    <td class="px-3 py-3 text-gray-700 text-right">
+                        {{ formatCurrency(valoresTotales.pendienteMora) }}
                     </td>
-                    <td class="px-3 py-3" colspan="2"></td>
+                    <td class="px-3 py-3" colspan="5"></td>
+                    <td class="px-3 py-3 text-gray-700 text-right">
+                        {{ formatCurrency(valoresTotales.cxcImpulsa) }}
+                    </td>
+                    <td class="px-3 py-3 text-gray-700 text-right">
+                        {{ formatCurrency(valoresTotales.cxpAliados) }}
+                    </td>
+                    <td colspan="2"></td>
                 </tr>
             </template>
         </DataTable>
+
+        <transition name="modal">
+            <EstadoCreditoModal
+                v-model="modalOpen"
+                :loading="loadingCredito"
+                :credito="credito"
+                @ver-historico="verHistorico"
+                @liquidar="liquidarCredito"
+                @ver-plan-pagos="verPlanPagos"
+                @descargar-paz-salvo="descargarPazSalvo"
+                @imprimir="imprimirCredito"
+                @imprimir-abono="imprimirAbono"
+            />
+        </transition>
     </div>
 </template>
 
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+
+// -- Componentes ----------------------------------------------------------
+import EstadoCreditoModal from '@/components/modals/EstadoCreditoModal.vue'
+import FormCheckbox from '@/components/form/FormCheckbox.vue'
 import DataTable from '@/components/table/DataTable.vue'
 import FormInput from '@/components/form/FormInput.vue'
-import FormCheckbox from '@/components/form/FormCheckbox.vue'
+
+import { useEstadoCredito } from '@/composables/useEstadoCredito'
+import { useLoader } from '@/composables/useLoader'
+const { start, stop } = useLoader()
+
+import { formatCurrency } from '@/utils/format'
+import api from '@/services/api'
+
+import { useEmpresasStore } from '@/stores/empresas'
 
 const router = useRouter()
 
@@ -351,8 +379,18 @@ const columns = [
     { key: 'fechaCredito', label: 'Fecha crédito', sortable: false },
     { key: 'vencimiento', label: 'Vencimiento', sortable: false },
     { key: 'plazo', label: 'Plazo', sortable: false },
-    { key: 'cxcImpulsa', label: 'CXC Impulsa', sortable: false },
-    { key: 'cxpAliados', label: 'CXP Aliados', sortable: false },
+    {
+        key: 'cxcImpulsa',
+        label: 'CXC Impulsa',
+        sortable: false,
+        align: 'right',
+    },
+    {
+        key: 'cxpAliados',
+        label: 'CXP Aliados',
+        sortable: false,
+        align: 'right',
+    },
     { key: 'destino', label: 'Destino', sortable: false },
     { key: 'estadoCredito', label: 'Estado crédito', sortable: false },
     { key: 'acciones', label: '', sortable: false },
@@ -370,14 +408,21 @@ const currencyCols = [
     'intMoratorio',
     'gastosCobranza',
     'pendienteMora',
+    'cxcImpulsa',
+    'cxpAliados',
 ]
 
-// ── Estado ─────────────────────────────────────────────────────────────────
+const empresaStore = useEmpresasStore()
+
+// -- Estado ------------------------------------------------------------------
 const creditos = ref([])
 const loading = ref(false)
 const loadingInforme = ref(null)
 const search = ref('')
 let searchTimeout = null
+
+// -- Totales ----------------------------------------------------------------
+const valoresTotales = ref({})
 
 const pagination = reactive({ currentPage: 1, perPage: 10, total: 0 })
 const sort = reactive({ key: 'numCredito', dir: 'desc' })
@@ -396,23 +441,15 @@ const filters = reactive({
     soloAliados: false,
 })
 
-// ── Opciones de selects ────────────────────────────────────────────────────
-const clientes = [
-    { value: '1', label: 'Juan David Alvarado' },
-    { value: '2', label: 'Sara Michel Trujillo' },
-]
+// -- Opciones de selects ---------------------------------------------------
+const clientes = ref([])
+const destinos = ref([])
+const aliados = ref([])
 
 const estadosCredito = [
-    { value: 'vigente', label: 'Vigente' },
+    { value: 'vigente', label: 'Al día' },
     { value: 'finalizado', label: 'Finalizado' },
-    { value: 'anulado', label: 'Anulado' },
     { value: 'mora', label: 'En mora' },
-]
-
-const destinos = [
-    { value: 'vehiculo', label: 'Vehículo' },
-    { value: 'libre', label: 'Libre inversión' },
-    { value: 'vivienda', label: 'Vivienda' },
 ]
 
 const periodicidades = [
@@ -421,44 +458,8 @@ const periodicidades = [
     { value: 'mensual', label: 'Mensual' },
 ]
 
-const aliados = [
-    { value: 'impulsa', label: 'IMPULSA CORP SAS / CREDITRANSITO' },
-    { value: 'cda', label: 'CDA LEBRIJA' },
-]
-
-// ── Totales calculados ─────────────────────────────────────────────────────
-const totales = computed(() => {
-    const sum = key => creditos.value.reduce((acc, c) => acc + (c[key] ?? 0), 0)
-    return {
-        valorBase: sum('valorBase'),
-        valorAval: sum('valorAval'),
-        ivaAval: sum('ivaAval'),
-        intereses: sum('intereses'),
-        valorCredito: sum('valorCredito'),
-        totalAbonado: sum('totalAbonado'),
-        totalPendiente: sum('totalPendiente'),
-        intMoratorio: sum('intMoratorio'),
-        gastosCobranza: sum('gastosCobranza'),
-        pendienteMora: sum('pendienteMora'),
-    }
-})
-
-// ── Helpers ────────────────────────────────────────────────────────────────
-function formatCurrency(value) {
-    if (value == null) return '$0'
-    return new Intl.NumberFormat('es-CO', {
-        style: 'currency',
-        currency: 'COP',
-        maximumFractionDigits: 0,
-    }).format(value)
-}
-
-function authHeaders() {
-    return {
-        Accept: 'application/json',
-        Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
-    }
-}
+// -- Helpers ----------------------------------------------------------------
+const labelClass = 'text-xs font-medium text-gray-400 uppercase tracking-wide'
 
 // ── Backend ────────────────────────────────────────────────────────────────
 async function fetchCreditos() {
@@ -486,15 +487,15 @@ async function fetchCreditos() {
             ...(filters.soloAliados && { solo_aliados: 1 }),
         })
 
-        const response = await fetch(`/api/creditos?${params}`, {
-            headers: authHeaders(),
-        })
-        if (!response.ok) throw new Error('Error al cargar créditos')
+        const { data } = await api.get('/api/creditos/listCredits', { params })
 
-        const data = await response.json()
-        creditos.value = data.data
-        pagination.total = data.meta.total
-        pagination.currentPage = data.meta.current_page
+        const { data: creditosData, total, current_page } = data.creditos
+
+        // Lista de créditos
+        transformCreditos(creditosData, data.totales)
+
+        pagination.total = total
+        pagination.currentPage = current_page
     } catch (err) {
         console.error(err)
     } finally {
@@ -513,17 +514,17 @@ async function generarInforme(tipo) {
             ...(filters.fechaFinal && { fecha_final: filters.fechaFinal }),
         })
 
-        const response = await fetch(`/api/creditos/informe?${params}`, {
-            headers: authHeaders(),
-        })
-        if (!response.ok) throw new Error('Error al generar informe')
+        // const response = await fetch(`/api/creditos/informe?${params}`, {
+        //     headers: authHeaders(),
+        // })
+        // if (!response.ok) throw new Error('Error al generar informe')
 
-        const blob = await response.blob()
-        const a = document.createElement('a')
-        a.href = URL.createObjectURL(blob)
-        a.download = `informe_creditos_${tipo}.xlsx`
-        a.click()
-        URL.revokeObjectURL(a.href)
+        // const blob = await response.blob()
+        // const a = document.createElement('a')
+        // a.href = URL.createObjectURL(blob)
+        // a.download = `informe_creditos_${tipo}.xlsx`
+        // a.click()
+        // URL.revokeObjectURL(a.href)
     } catch (err) {
         console.error(err)
     } finally {
@@ -557,9 +558,6 @@ function onSort({ key, dir }) {
 }
 
 // ── Acciones de fila ───────────────────────────────────────────────────────
-function verDetalle(row) {
-    router.push(`/dashboard/creditos/${row.id}`)
-}
 function generarExtracto(row) {
     console.log('Generar extracto:', row.id)
 }
@@ -567,5 +565,92 @@ function anularCredito(row) {
     console.log('Anular crédito:', row.id)
 }
 
-onMounted(fetchCreditos)
+function transformCreditos(data, sumaTotales) {
+    const toNumber = v => Number(v) || 0
+
+    const estadoCredito = cr => {
+        if (cr.anulado) return 'Anulado'
+        if (cr.enmora) return 'En mora'
+        if (cr.finalizado == 1) return 'Finalizado'
+        return 'Normal'
+    }
+
+    const mapCredito = cr => ({
+        id: cr.id,
+        cliente: cr.nombre,
+        numCuotas: cr.num_cuotas,
+        valorCuota: cr.val_cuotas,
+        valorBase: cr.valor_contado,
+        valorAval: cr.valor_aval,
+        ivaAval: cr.valor_iva_aval,
+        intereses: cr.intereses,
+        valorCredito: cr.valor_credito,
+        totalAbonado: cr.total_abonado,
+        totalPendiente: cr.saldo,
+        intMoratorio: cr.abono_int_mora,
+        gastosCobranza: cr.abono_gas_cobranza,
+        pendienteMora: cr.valor_mora,
+        numCredito: cr.consecutivo,
+        aliado: cr.empresa,
+        fechaCredito: cr.fecha_credito,
+        vencimiento: cr.vencimiento,
+        plazo: cr.plazo,
+        cxcImpulsa: cr.valor_cxc,
+        cxpAliados: cr.valor_cxc_aliado,
+        destino: cr.destino,
+        estadoCredito: estadoCredito(cr),
+    })
+
+    creditos.value = data.map(mapCredito)
+
+    const totalesMap = {
+        valorBase: 'valor_contado',
+        valorAval: 'total_aval',
+        ivaAval: 'total_iva_aval',
+        intereses: 'total_credito_intereses',
+        valorCredito: 'valor_credito',
+        totalAbonado: 'total_abonado',
+        totalPendiente: 'saldo',
+        intMoratorio: 'total_abono_int_mora',
+        gastosCobranza: 'total_abono_gas_cobranza',
+        pendienteMora: 'total_credito_mora',
+        cxcImpulsa: 'valor_cxc',
+        cxpAliados: 'total_cxc_aliado',
+    }
+
+    valoresTotales.value = Object.fromEntries(
+        Object.entries(totalesMap).map(([key, source]) => [
+            key,
+            toNumber(sumaTotales[source]),
+        ])
+    )
+}
+
+// -- Modal estado credito --------------------------------------
+const {
+    modalOpen,
+    loadingCredito,
+    credito,
+    verEstadoCredito,
+    verHistorico,
+    liquidarCredito,
+    verPlanPagos,
+    descargarPazSalvo,
+    imprimirCredito,
+    imprimirAbono,
+} = useEstadoCredito()
+
+onMounted(async () => {
+    start()
+
+    try {
+        await fetchCreditos()
+
+        // Obtener listado de empresas aliadas
+        await empresaStore.obtenerEmpresas()
+        aliados.value = empresaStore.empresasSelect
+    } finally {
+        stop()
+    }
+})
 </script>
