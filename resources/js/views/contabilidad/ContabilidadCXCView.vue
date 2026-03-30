@@ -6,23 +6,17 @@
         <!-- Panel de filtros -->
         <div class="bg-white rounded-xl border border-gray-200 px-6 py-4">
             <div class="flex flex-wrap items-end gap-4">
-                <div class="flex flex-col gap-1.5">
-                    <label :class="labelClass">Fecha inicial</label>
-                    <input
-                        v-model="filters.fechaInicial"
-                        type="date"
-                        :class="inputClass"
-                    />
-                </div>
+                <FormInput
+                    label="Fecha inicial"
+                    type="date"
+                    v-model="filters.fechaInicial"
+                />
 
-                <div class="flex flex-col gap-1.5">
-                    <label :class="labelClass">Fecha final</label>
-                    <input
-                        v-model="filters.fechaFinal"
-                        type="date"
-                        :class="inputClass"
-                    />
-                </div>
+                <FormInput
+                    label="Fecha final"
+                    type="date"
+                    v-model="filters.fechaFinal"
+                />
 
                 <div class="flex flex-col gap-1.5">
                     <FormInput
@@ -31,7 +25,7 @@
                         v-model="filters.establecimiento"
                         :options="establecimientosOpts"
                         placeholder="Seleccione un aliado"
-                        class="w-52"
+                        :searchable="true"
                     />
                 </div>
 
@@ -120,7 +114,12 @@ import { ref, reactive, onMounted } from 'vue'
 import DataTable from '@/components/table/DataTable.vue'
 import FormInput from '@/components/form/FormInput.vue'
 
-import { formatCurrency, formatDateYmdHms } from '@/utils/format'
+import { useEmpresasStore } from '@/stores/empresas'
+
+import { useLoader } from '@/composables/useLoader'
+const { start, stop } = useLoader()
+
+import { formatCurrency } from '@/utils/format'
 import api from '@/services/api'
 
 // -- Columnas ----------------------------------------------
@@ -132,7 +131,9 @@ const columns = [
     { key: 'acciones', label: 'Acciones', sortable: false, align: 'center' },
 ]
 
-// ── Estado ─────────────────────────────────────────────────────────────────
+const empresaStore = useEmpresasStore()
+
+// -- Estado ------------------------------------------------
 const recibos = ref([])
 const loading = ref(false)
 const search = ref('')
@@ -141,24 +142,14 @@ let searchTimeout = null
 const pagination = reactive({ currentPage: 1, perPage: 10, total: 0 })
 const sort = reactive({ key: 'fecha', dir: 'desc' })
 
-// ── Filtros ────────────────────────────────────────────────────────────────
+// -- Filtros ---------------------------------------------------------
 const filters = reactive({
     fechaInicial: '',
     fechaFinal: '',
     establecimiento: '',
 })
 
-const establecimientosOpts = [
-    { value: 'cda_boston', label: 'CDA EL BOSTON' },
-    { value: 'cda_fenix', label: 'CDA FENIX SAS' },
-    { value: 'impulsa', label: 'IMPULSA CORP SAS / CREDITRANSITO' },
-    { value: 'cda_moto', label: 'CDA MOTOCENTER RUTA 45A SAS' },
-]
-
-// ── Helpers ────────────────────────────────────────────────────────────────
-const labelClass = 'text-xs font-medium text-gray-400 uppercase tracking-wide'
-const inputClass =
-    'h-9 px-3 rounded-lg border border-gray-200 bg-gray-50 text-sm text-gray-600 outline-none focus:border-[#1a5c2a] focus:ring-2 focus:ring-[#1a5c2a]/10 transition-all'
+const establecimientosOpts = ref([])
 
 function authHeaders() {
     return {
@@ -167,7 +158,7 @@ function authHeaders() {
     }
 }
 
-// ── Backend ────────────────────────────────────────────────────────────────
+// -- Backend ---------------------------------------------------------------
 async function fetchRecibos() {
     loading.value = true
     try {
@@ -221,7 +212,7 @@ async function imprimirRecibo(row) {
     }
 }
 
-// ── Handlers DataTable ─────────────────────────────────────────────────────
+// -- Handlers DataTable ------------------------------------------------
 function onPageChange(page) {
     pagination.currentPage = page
     fetchRecibos()
@@ -248,17 +239,24 @@ function onSearch(val) {
 
 function transformarRecibos(data) {
     recibos.value = data.map(recibo => ({
-        fecha: recibo.fecha,
         establecimiento: recibo.empresa.razon_social,
         valorCXC: recibo.valor_cxc,
-        comisiones: 30000, // default
+        fecha: recibo.fecha,
+        comisiones: 30000, // Valor de comisiones por defecto
     }))
 }
 
 onMounted(async () => {
+    start()
+
     try {
         await fetchRecibos()
+
+        // Obtener listado de empresas aliadas
+        await empresaStore.obtenerEmpresas()
+        establecimientosOpts.value = empresaStore.empresasSelect
     } finally {
+        stop()
     }
 })
 </script>

@@ -15,9 +15,8 @@ class ContabilidadController extends Controller
         $empresaId = $usuario->empresa_id;
 
         $conditions = $request->input('conditions', []);
-
-        $search = $request->searchTerm ?? '';
-        $per_page = $request->perPage ?? 10;
+        $per_page = $request->input('per_page', 10);
+        $search = $request->input('search');
 
         $recibosQuery = ReciboCajaCXC::where('empresa_principal_id', $empresaId)
             ->with(['empresa', 'producto'])
