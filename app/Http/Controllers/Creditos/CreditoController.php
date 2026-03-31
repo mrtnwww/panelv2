@@ -157,7 +157,7 @@ class CreditoController extends Controller
                 if ($isActive) $subtotal_credito_intereses += $calculoIntereses;
 
                 // iva del aval
-                if (!empty($credito->aval_value)) $totalIvaAval += ($credito->aval_value * ($credito->aval_iva ?? 0)) / 100;
+                if (!empty($credito->aval_value)) $totalIvaAval += round(($credito->aval_value * ($credito->aval_iva ?? 0)) / 100);
 
                 // cuotas pendientes
                 $proyeccionesNoPagadas = $proyecciones->where('pagado', 0)

@@ -231,11 +231,11 @@
             <!-- Fila de totales -->
             <template #footer>
                 <tr
-                    v-if="creditos.length > 0"
+                    v-if="creditos.length > 0 && !loading"
                     class="bg-gray-50 border-t-2 border-gray-200 font-semibold text-sm"
                 >
                     <td
-                        class="px-3 py-3 text-right text-gray-500 pr-6"
+                        class="px-3 py-3 text-center text-gray-500 pr-6"
                         :colspan="3"
                     >
                         Total:
