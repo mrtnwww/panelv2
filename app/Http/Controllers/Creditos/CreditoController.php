@@ -2,15 +2,20 @@
 
 namespace App\Http\Controllers\Creditos;
 
+use App\Http\Controllers\Clientes\ClienteController;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Mobile\MobileController;
 use App\Models\Abono;
 use App\Models\Cliente;
 use App\Models\Condonacion;
+use App\Models\ConvenioLibranza;
 use App\Models\Credito;
 use App\Models\CreditoProyeccion;
 use App\Models\Empresa;
 use App\Models\EstadoFunciones;
+use App\Models\LineasCredito;
+use App\Models\Notification;
+use App\Models\NuevaAutorizacionConsulta;
 use App\Models\ParametrosEstadoFunciones;
 use App\Models\ParametrosInterese;
 use App\Models\Persona;
@@ -420,7 +425,7 @@ class CreditoController extends Controller
 
     public function creditDetails(Request $request)
     {
-        $empresaId = $request->user()?->empresa_id;
+        $empresaId = $request->user()->empresa_id;
 
         $credito_id     = $request['id'];
         $creditoActual  = Credito::where('id', $credito_id)->first();
@@ -670,6 +675,123 @@ class CreditoController extends Controller
             'creditos' => $data,
             'allCreditosIds' => $allCreditosIds
         ]);
+    }
+
+    public function clienteCreditData(Request $request) {
+        $empresaId = auth()->user()->empresa_id;
+
+        $condiction = [
+            ['empresa_id', $empresaId],
+            ['id', $request['id']]
+        ];
+
+        // Busqueda del cliente a partir del id de la empresa del usuario logueado y el id del usuario
+        $cliente = Cliente::where($condiction)->first();
+
+        // Si el cliente no existe
+        if (!$cliente) {
+            // Se consultan los aliados y sedes de la empresa
+            $listaSedesAliados = Empresa::where('aliado', $empresaId)->orWhere('sede', $empresaId)->get();
+
+            // Se iteran los aliados y sedes para buscar el cliente
+            foreach ($listaSedesAliados as $sa) {
+                $condiction1 = [
+                    ['empresa_id', $sa->id],
+                    ['id', $request['id']]
+                ];
+                $cliente = Cliente::where($condiction1)->first();
+                if ($cliente) {
+                    break;
+                }
+            }
+        }
+
+        // Se consultan los créditos del cliente
+        $creditos =  Credito::where('client_id', $cliente->id)
+            ->select('id', 'valor_compra')
+            ->whereNull('fecha_cierre')
+            ->with(['proyecciones' => function ($query) {
+                $query->where('pagado', 0)->orderBy('fecha');
+            }])->get();
+
+        // 1. validar si el cliente puede tener mas de un credito vigente de forma simultanea
+        if ($creditos->count() > 0) {
+            $creditosSimultaneos = $this->validarCreditosSimultaneos($request['id']);
+            if (!$creditosSimultaneos['continuar']) return $creditosSimultaneos['response'];
+        }
+
+        // 2. se valida si aplica reconsulta nuevamente en centrales de riesgo
+        $resultadoValidacion = $this->validarConsultaCentrales($request['id']);
+        if (!$resultadoValidacion['continuar']) return $resultadoValidacion['response'];
+
+        /**
+         * 3. validaciones adicionales aplican para todos los clientes
+         * * referencias
+         * * autorizacion consulta
+         * * consulta en centrales
+        */
+        $validacionesCliente = $this->validacionesCliente($cliente);
+        if (!$validacionesCliente['continuar']) return $validacionesCliente['response'];
+
+        //si hay más de un crédito , debemos verificar si tiene cupo.
+        $tieneCreditos = false;
+
+        $cupo = $cliente->cupo ?? 0;
+        $enMora = false;
+
+        // Se iteran los creditos del cliente
+        foreach ($creditos as $credito) {
+            // Se calcula el cupo del cliente descontando el valor de los creditos iterados
+            $cupo -= $credito->valor_compra;
+
+            $abonosCliente = Abono::select('id', 'credito_id', 'abono_capital')
+                ->where('credito_id', $credito->id)
+                ->get();
+            $capital = 0;
+
+            foreach ($abonosCliente as $abono) {
+                if (!empty($abono->abono_capital)) {
+                    $capital += $abono->abono_capital ?? 0;
+                } else {
+                    // Calcular capital cubierto por el abono
+                    $abonosAsociados = app(new MobileController)->procesarAbonos($abono, true);
+
+                    $ultimoAbono = end($abonosAsociados) ?: [];
+                    $capital += $ultimoAbono['detalles']['capital'] ?? 0;
+                }
+            }
+
+            // Se le suma al cupo el valor abonado por el cliente al capital del credito
+            $cupo += $capital;
+
+            // validar si el o los creditos que tenga el cliente vigentes esta en mora
+            $proyeccion = $credito->proyecciones->first();
+            if ($proyeccion) $enMora = Carbon::today()->gt(Carbon::parse($proyeccion->fecha));
+
+            $tieneCreditos = true;
+        }
+
+        if (!$tieneCreditos) {
+            $cupo = $cliente->cupo;
+        }
+
+        // consulta que aplica unicamente para clientes creados desde el formulario de libranza
+        $empresaConvenio = null;
+        if ($cliente->cliente_libranza == 1 && $cliente->clienteLibranza) {
+            $empresaConvenio = ConvenioLibranza::find($cliente->clienteLibranza->convenio_empresa_id);
+        }
+
+        $datos = array(
+            'cupo' => $cupo < 0 ? 0 : $cupo,
+            'numCreditos' => ($tieneCreditos) ? $creditos->count() . ' crédito(s) vigentes' : ' No tiene créditos vigentes',
+            'nota' => $cliente->nota,
+            'empresaConvenio' => $empresaConvenio,
+            'lineaCredito' => LineasCredito::find($cliente->lineas_credito_id),
+            'conCreditos' => ($tieneCreditos) ? ' cupo disponible ' : ' cupo aprobado',
+            'enMora' => $enMora
+        );
+
+        return response()->json(compact('datos'));
     }
 
     private function procesarCreditosCobranza($creditos, $ids) {
@@ -1757,5 +1879,256 @@ class CreditoController extends Controller
             ['empresa_id', $empresaId],
             ['estado_funcion_id', $funcion->id ?? null]
         ])->exists() ? 1 : 0;
+    }
+
+    private function validarCreditosSimultaneos($clienteId)
+    {
+        $cliente = Cliente::find($clienteId);
+
+        // empresa asociada al cliente
+        $empresaCliente = Empresa::find($cliente->empresa_id);
+
+        // consultar empresa principal
+        if ($empresaCliente->aliado || $empresaCliente->sede) {
+            $empresaCliente = Empresa::find($empresaCliente->aliado ?? $empresaCliente->sede);
+        }
+
+        // verificar si esta habilitada la funcion que permite que un cliente pueda tener mas de un credito a la vez
+        $creditosSimultaneos = ParametrosEstadoFunciones::where('empresa_id', $empresaCliente->id)
+            ->whereHas('estado_funcion', function($query) {
+                $query->where('nombre_funcion', 'Restringir créditos simultáneos');
+            })
+            ->exists();
+
+        if ($creditosSimultaneos) {
+            return [
+                'continuar' => false,
+                'response' => response()->json([
+                    'status' => 412,
+                    'cliente' => $cliente,
+                    'empresa' => $empresaCliente->id,
+                    'message' => 'El cliente debe finalizar el pago de sus créditos vigentes antes de solicitar un nuevo crédito.',
+                    'redirect' => false
+                ])
+            ];
+        }
+
+        return ['continuar' => true];
+    }
+
+    private function validarConsultaCentrales($clienteId)
+    {
+        $cliente = Cliente::where('id', $clienteId)->first();
+
+        // empresa asociada al cliente
+        $empresaCliente = Empresa::find($cliente->empresa_id);
+
+        // consultar empresa principal
+        if ($empresaCliente->aliado || $empresaCliente->sede) {
+            $empresaCliente = Empresa::where('id', $empresaCliente->aliado ?? $empresaCliente->sede)->first();
+        }
+
+        // verificar si esta habilitada la funcion que permite validar la vigencia de la consulta en centrales
+        $vigenciaAval = ParametrosEstadoFunciones::where('empresa_id', $empresaCliente->id)
+            ->whereHas('estado_funcion', function($query) {
+                $query->where('nombre_funcion', 'Actualización consulta en centrales');
+            })
+            ->exists();
+
+        if (!$vigenciaAval) return ['continuar' => true];
+
+        // meses de vigencia de la consulta
+        $vigencia = $empresaCliente->vigencia_aval;
+
+        // notificacion aprobacion consulta en centrales
+        $notification = Notification::withTrashed()
+            ->where('client_id', $clienteId) // busqueda por cliente
+            ->where('type', 'CLIENT_ANALIZED')
+            ->orderBy('id', 'desc')
+            ->first();
+
+        // consultar historico de autorizaciones
+        $historicoAutorizaciones = NuevaAutorizacionConsulta::where('cliente_id', $clienteId)
+            ->orderBy('id', 'desc')
+            ->first();
+
+        $fechaReferencia = $cliente->firmado ? $cliente->firmado : $cliente->created_at;
+        // si el cliente tiene un historico de autorizaciones firmadas, se toma como referencia la fecha de la ultima
+        if ($historicoAutorizaciones) $fechaReferencia = $historicoAutorizaciones->created_at;
+
+        if (Carbon::parse($fechaReferencia)->diffInMonths(now()) >= $vigencia) {
+            // si aun no se ha generado el archivo de autorizacion porque este no ha sido visualizado por el cliente
+            if (!$cliente->url_archivo_autorizacion) {
+                $urlAutorizacion = (new ClienteController)->generarArchivoAutorizacion($cliente, true);
+                $cliente->update(['url_archivo_autorizacion' => $urlAutorizacion]);
+            }
+
+            if ($cliente->nueva_consulta_centrales == 0) {
+                $cliente->update([
+                    'nueva_autorizacion_consulta' => 1, // bandera para identificar al cliente con nueva autorizacion pendiente
+                    'nueva_consulta_centrales' => 1, // bandera para identificar al cliente con nueva consulta
+                    'aprobar_autorizacion' => 0,
+                    'autorizacion' => 0
+                ]);
+            }
+
+            $cliente->update([
+                'adjuntar_aval' => null,
+                'estado_aval' => null,
+                'no_aval' => null,
+                'nota' => null
+            ]);
+
+            if ($notification) $notification->delete();
+
+            return [
+                'continuar' => false,
+                'response' => response()->json([
+                    'status' => 403,
+                    'nuevoCupo' => false,
+                    'email' => $cliente->email,
+                    'clienteId' => $cliente->id,
+                    'cedula' => $cliente->cedula,
+                    'message' => 'La consulta en centrales aprobada el <strong>' . Carbon::parse($fechaReferencia)->format('d/m/Y') . '</strong> ha expirado. Es necesario actualizarla para procesar un nuevo crédito. <br><br> ¿Desea reenviar la autorización al correo del cliente?'
+                ])
+            ];
+        }
+
+        return ['continuar' => true];
+    }
+
+    public function validacionesCliente($cliente)
+    {
+        $usuario = auth()->user();
+
+        $usuarioId = $usuario->id;
+        $empresaId = $usuario->empresa_id;
+
+        $empresaCliente = Empresa::find($empresaId);
+
+        // helper interno retornos
+        $respuesta = function ($status, $message, $title, $icon, $extra = []) {
+            return [
+                'continuar' => false,
+                'response' => response()->json(array_merge([
+                    'status' => $status,
+                    'message' => $message,
+                    'title' => $title,
+                    'icon' => $icon
+                ], $extra))
+            ];
+        };
+
+        // rechazado por centrales
+        if ($cliente->estado_aval === 0) {
+            return $respuesta(412,
+                'La consulta realizada en centrales ha sido rechazada, por lo cual no es posible continuar con el proceso de colocación del crédito.',
+                'Crédito no autorizado',
+                'error',
+                ['cliente' => $cliente, 'empresa' => $empresaId, 'redirect' => false]
+            );
+        }
+
+        // pendiente autorizacion consulta en centrales
+        if (empty($cliente->aprobar_autorizacion)) {
+            return $respuesta(403,
+                'El cliente aún no ha autorizado la consulta en centrales de riesgo.<br><br>¿Desea enviar la solicitud de autorización al correo electrónico: ' . ($cliente->email ?? '') . '?',
+                'Autorización pendiente',
+                'warning',
+                [
+                    'email' => $cliente->email,
+                    'clienteId' => $cliente->id,
+                    'cedula' => $cliente->cedula
+                ]
+            );
+        }
+
+        // cliente no validado
+        if ($cliente->cliente_validado == 0 && !$empresaCliente->inactivar_validacion) {
+            // $vEmpresaCliente = Empresa::find($cliente->empresa_id);
+            $validacionParametros = ParametrosEstadoFunciones::where('empresa_id', $empresaId)
+                ->whereHas('estado_funcion', function($query) {
+                    $query->where('nombre_funcion', 'Validación cliente');
+                })
+                ->exists();
+
+            // parametros pendientes por validar (por rol)
+            $pendientes = [];
+            $mapValidacion = [
+                'validacion_telefono' => 'Teléfono',
+                'validacion_referencias' => 'Referencias',
+                'validacion_cedula' => 'Foto de la cédula (imágen frontal y posterior)',
+                'validacion_tarjeta_propiedad' => 'Foto de la tarjeta de propiedad (imágen frontal y posterior)'
+            ];
+
+            if ($validacionParametros) {
+                $permisos =  UsuarioTipoUsuario::where('id_usuario', $usuarioId)
+                    ->join('subtipousuario', 'subtipousuario.id', '=', 'usuario_tipo_usuario.id_tipo_usuario')
+                    ->select('subtipousuario.id', 'subtipousuario.nombre')
+                    ->pluck('id')->toArray();
+
+
+                foreach ($mapValidacion as $campo => $nombre) {
+                    if ($empresaCliente->$campo == 1) {
+                        $rol = $empresaCliente->{'rol_' . $campo};
+                        if (!$rol || in_array($rol, $permisos)) $pendientes[] = $nombre;
+                    }
+                }
+
+                // si la funcion esta activa pero no se ha checkeado ningun parametro por defecto se obligara a validar las referencias
+                if (empty($pendientes)) $pendientes[] = 'Referencias';
+            } else {
+                // por defecto si esta inactiva la funcion de validacion cliente, se obliga a validar las referencias (funcionalidad legacy)
+                $pendientes[] = 'Referencias';
+            }
+
+            if (!empty($pendientes)) {
+                $mensaje = 'Para generar el crédito, es necesario validar los documentos del cliente:';
+                // $mensaje .= '<br><br>La siguiente información debe ser validada antes de generar el crédito:<br><br><ul style="list-style-type: none; margin: 0; padding: 0;">';
+                $mensaje .= '<br><br><ul style="list-style-type: none; margin: 0; padding: 0;">';
+                foreach ($pendientes as $item) {
+                    $mensaje .= '<li style="font-weight: 600;">- ' . $item . '</li>';
+                }
+
+                $mensaje .= '</ul>';
+                // $mensaje .= '<br>¿Desea realizar el proceso de validación?';
+                $mensaje .= '<br>Haga clic en aceptar para iniciar la validación.';
+
+                return $respuesta(412,
+                    $mensaje,
+                    'Validación pendiente',
+                    'warning',
+                    ['cliente' => $cliente, 'empresa' => $empresaId, 'redirect' => true, 'parametro_ruta' => 'validacion_datos']
+                );
+            }
+        }
+
+        // consulta en centrales pendiente de aprobación
+        if (empty($cliente->estado_aval)) {
+            return $respuesta(412,
+                'La consulta realizada en centrales de riesgo está pendiente de aprobación por parte del usuario responsable de esta gestión.',
+                'Consulta pendiente de aprobación',
+                'warning',
+                ['cliente' => $cliente, 'empresa' => $empresaId, 'redirect' => false]
+            );
+        }
+
+        // foto del cliente no adjuntada
+        if (empty($cliente->comprobar_cliente)) {
+            return $respuesta(412,
+                'La foto del cliente está pendiente.<br><br>Para continuar, por favor sube una foto.',
+                'Foto pendiente',
+                'warning',
+                [
+                    'cliente' => $cliente,
+                    'empresa' => $empresaId,
+                    'redirect' => true,
+                    'textAccept' => 'Subir foto',
+                    'parametro_ruta' => 'foto_cliente'
+                ]
+            );
+        }
+
+        return [ 'continuar' => true ];
     }
 }

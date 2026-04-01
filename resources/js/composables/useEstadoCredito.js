@@ -1,12 +1,27 @@
 import { ref } from 'vue'
 import api from '@/services/api'
 
+// -- Store ----------------------------------------------------
+import { useOpcionesStore } from '@/stores/opciones'
+
 export function useEstadoCredito() {
     const loadingCredito = ref(false)
     const modalOpen = ref(false)
     const credito = ref(null)
 
-    async function verEstadoCredito(id) {
+    const opcionesStore = useOpcionesStore()
+
+    function verEstadoCredito(id) {
+        const cliente = opcionesStore.clientesCreditos.find(
+            c => c.id == id
+        )
+
+        const creditos = cliente.credito
+
+        if (creditos.length) fetchCreditoDetail(creditos[0].id)
+    }
+
+    async function fetchCreditoDetail(id) {
         loadingCredito.value = true
         modalOpen.value = true
 

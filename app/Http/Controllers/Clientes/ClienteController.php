@@ -18,7 +18,6 @@ use App\Models\ReferenciaCliente;
 use App\Models\UsuarioTipoUsuario;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 class ClienteController extends Controller
@@ -244,11 +243,12 @@ class ClienteController extends Controller
         return response()->json($datos);
     }
 
-    function listMyClientsValidated()
+    function listMyClientsValidated(Request $request)
     {
-        $usuario = auth()->user();
+        $empresaId = auth()->user()->empresa_id;
 
-        $empresaId = $usuario->empresa_id;
+        $search = $request->input('search');
+        $perPage = $request->input('perPage', 10);
 
         // Obtener los id de las empresas aliadas/sedes
         $empresas = Empresa::where(function ($query) use ($empresaId) {
@@ -273,10 +273,14 @@ class ClienteController extends Controller
         $clientes = Cliente::select('id', 'nombre', 'cedula', 'empresa_id')
             ->whereIn('empresa_id', $empresas)
             ->where('iscontinue', '!=', 1)
+            ->when($search, function ($query, $search) {
+                $query->where('nombre', 'like', "%{$search}%")
+                    ->orWhere('cedula', 'like', "%{$search}%");
+            })
             ->orderBy('nombre')
-            ->get();
+            ->paginate($perPage);
 
-        $clientes->transform(function ($cliente) use ($aliadoImpulsa) {
+        $clientes->getCollection()->transform(function ($cliente) use ($aliadoImpulsa) {
             if ($aliadoImpulsa && $cliente->empresa_id == 46) {
                 $cliente->aliadoImpulsa = true;
                 $cliente->nombre = '**********';
@@ -480,9 +484,12 @@ class ClienteController extends Controller
         ]);
     }
 
-    public function listCreditsClients()
+    public function listClientsCredits(Request $request)
     {
-        $empresaId = auth()->user()?->empresa_id;
+        $empresaId = auth()->user()->empresa_id;
+
+        $search = $request->input('search');
+        $perPage = $request->input('perPage', 10);
 
         $empresas = Empresa::where('aliado', $empresaId)
             ->orWhere('sede', $empresaId)
@@ -490,48 +497,71 @@ class ClienteController extends Controller
 
         $empresas->push($empresaId);
 
-        $clientes = Credito::query()
-            ->select([
-                'credito.id as credito_id',
-                'credito.consecutivo',
-                'cliente.nombre',
-                'cliente.cedula',
-                'cliente.cedula as cliente_id'
+        $clientes = Cliente::query()
+            ->select(['cliente.id', 'cliente.nombre', 'cliente.cedula', 'cliente.empresa_id'])
+            ->whereHas('credito', function ($q) use ($empresas) {
+                $q->whereIn('empresa_id', $empresas);
+            })
+            ->with([
+                'empresa:id,razon_social',
+                'credito' => function ($q) use ($empresas) {
+                    $q->select([
+                        'credito.id',
+                        'credito.client_id',
+                        'credito.valor_credito',
+                        'credito.consecutivo',
+                    ])
+                    ->whereIn('empresa_id', $empresas);
+                }
             ])
-            ->join('cliente', 'cliente.id', '=', 'credito.client_id')
-            ->whereIn('credito.empresa_id', $empresas)
-            ->orderByDesc('credito.id')
-            ->get();
+            ->when($search, function ($q) use ($search) {
+                $q->where(function ($q) use ($search) {
+                    $q->where('cliente.nombre', 'like', "%{$search}%")
+                    ->orWhere('cliente.cedula', 'like', "%{$search}%");
+                });
+            })
+            ->orderBy('cliente.nombre')
+            ->paginate($perPage);
 
-        return response()->json([
-            'clientes' => $clientes
-        ]);
+        return response()->json(compact('clientes'));
     }
 
-    public function listCreditsClientsActives()
-    {
-        $empresaId = auth()->user()?->empresa_id;
+    public function generarArchivoAutorizacion($clienteData, $regenerarAutorizacion = false, $texto = '') {
+        $empresa = Empresa::find($clienteData->empresa_id);
+        $cliente = Cliente::find($clienteData->id);
 
-        // Agregar clientes con creditos de las empresas aliadas/sedes
-        $empresasIds = Empresa::where('aliado', $empresaId)
-            ->orWhere('sede', $empresaId)
-            ->pluck('id')
-            ->push($empresaId);
+        // fecha y hora actuales en las que se acepta la consulta
+        $fechaFirma = !$regenerarAutorizacion ? now() : null;
 
-        $listaCliente = Cliente::whereIn('empresa_id', $empresasIds)
-            ->whereHas('credito', function ($q) {
-                $q->whereNull('deleted_at');
-            })
-            ->with(['credito' => function ($q) {
-                $q->whereNull('deleted_at')
-                    ->select('id', 'client_id', 'valor_credito');
-            }])
-            ->select('id', 'cedula', 'nombre')
-            ->orderBy('nombre')
-            ->get();
+        if (!empty($texto)) {
+            $texto = preg_replace('/\x{FEFF}+/u', '', $texto);
+            $texto = preg_replace('/[\x00-\x1F\x7F\xA0]/u', '', $texto);
+            $pdf = \PDF::loadView('pdf.autorizacionPlantilla', compact('cliente', 'texto', 'fechaFirma'));
+        } else {
+            $pdf = \PDF::loadView('pdf.autorizacion', compact('cliente', 'empresa', 'fechaFirma'));
+        }
+        $fileContent = $pdf->output();
 
-        return response()->json([
-            'listaCliente' => $listaCliente
-        ]);
+        $nombreArchivo = uniqid() . 'autorizacion.pdf';
+        $path = 'public/' . $nombreArchivo;
+
+        $guardado = Storage::disk('s3')->put($path, $fileContent);
+
+        if ($guardado) {
+            if ($cliente->nueva_autorizacion_consulta == 1) {
+                // guardar autorizacion en tabla intermedia (unicamente para clientes antiguos a los cuales se les realiza reconsulta en centrales)
+                NuevaAutorizacionConsulta::create([
+                    'cliente_id' => $cliente->id,
+                    'url_archivo_autorizacion' => $path
+                ]);
+
+                // confirmar que la nueva autorizacion ya se ha generado y guardado en la tabla intermedia
+                $cliente->update(['nueva_autorizacion_consulta' => 0]);
+            } else {
+                // si nunca se ha generado el archivo de autorizacion, se genera por primera vez
+                $cliente->url_archivo_autorizacion = $path;
+                $cliente->update();
+            }
+        }
     }
 }

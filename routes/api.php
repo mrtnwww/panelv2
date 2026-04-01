@@ -33,9 +33,8 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     // Clientes
     Route::prefix('clientes')->group(function () {
         Route::get('/', [ClienteController::class, 'listMyClients']);
-        Route::get('/listCreditsClients', [ClienteController::class, 'listCreditsClients']);
+        Route::get('/listClientsCredits', [ClienteController::class, 'listClientsCredits']);
         Route::get('/listMyClientsValidated', [ClienteController::class, 'listMyClientsValidated']);
-        Route::get('/listCreditsClientsActives', [ClienteController::class, 'listCreditsClientsActives']);
         Route::get('/{cliente_id}/{empresa_id?}/{parametrosValidacion?}', [ClienteController::class, 'listMyClient']);
     });
 
@@ -45,6 +44,7 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
         Route::get('/{id}/details', [CreditoController::class, 'creditDetails']);
         Route::get('/detailCredit', [CreditoController::class, 'detailCredit']);
         Route::get('/creditsCobranza', [CreditoController::class, 'creditsCobranza']);
+        Route::get('/clienteCreditData', [CreditoController::class, 'clienteCreditData']);
     });
 
     // Empresas

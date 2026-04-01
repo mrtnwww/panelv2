@@ -9,14 +9,13 @@
             <div
                 class="p-3 border-b border-gray-100 sm:border-b-0 sm:border-r sm:flex-none"
             >
-                <FormInput
+                <FormSelectAsync
                     label="Cliente"
-                    type="select"
                     v-model="form.cliente_id"
                     @update:modelValue="onClienteChange"
-                    :options="clientesOpts"
+                    :fetch-options="opcionesStore.fetchClientesValidated"
                     placeholder="Seleccione un cliente"
-                    :searchable="true"
+                    class="xl:w-[40%]"
                 />
             </div>
 
@@ -33,18 +32,13 @@
                     <!-- cupo -->
                     <span v-if="cell.key === 'cupoDisponible'">
                         {{
-                            formatCurrency(clienteInfo[cell.key]) +
-                            ' cupo aprobado'
+                            `Cupo disponible ${formatCurrency(clienteInfo[cell.key])}`
                         }}
                     </span>
 
                     <!-- número de créditos -->
                     <span v-else-if="cell.key === 'numCreditos'">
-                        {{
-                            clienteInfo[cell.key] > 0
-                                ? clienteInfo[cell.key] + ' crédito(s) vigentes'
-                                : 'No tiene créditos vigentes'
-                        }}
+                        {{ clienteInfo[cell.key] }}
                     </span>
 
                     <span v-else-if="cell.key === 'tipoCredito'">
@@ -201,14 +195,9 @@
                             Observaciones del cliente
                         </p>
                         <span
-                            class="inline-block self-start text-xs font-semibold px-3 py-1 rounded-full"
-                            :class="
-                                clienteInfo.obs === 'APROBADO'
-                                    ? 'bg-emerald-100 text-emerald-800'
-                                    : 'bg-yellow-100 text-yellow-800'
-                            "
+                            class="bg-emerald-100 text-emerald-800 inline-block self-start text-xs font-semibold px-3 py-1 rounded-full"
                         >
-                            {{ clienteInfo.obs }}
+                            {{ clienteInfo.nota }}
                         </span>
                     </div>
 
@@ -352,21 +341,25 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed } from 'vue'
 
 // -- Componentes --------------------------------------------
+import FormSelectAsync from '@/components/form/FormSelectAsync.vue'
 import ChevronIcon from '@/components/form/ChevronIcon.vue'
 import FormInput from '@/components/form/FormInput.vue'
 
+// -- Loader -------------------------------------------------
 import { useLoader } from '@/composables/useLoader'
 const { start, stop } = useLoader()
+
+// -- Store -------------------------------------------------
+import { useOpcionesStore } from '@/stores/opciones'
 
 import { formatCurrency } from '@/utils/format'
 import api from '@/services/api'
 
 // -- Opciones de selects -------------------------------------
-const clientesOpts = ref([])
-const clientes = ref([])
+const opcionesStore = useOpcionesStore()
 
 const productos = [
     { value: 'soat', label: 'SOAT' },
@@ -479,9 +472,30 @@ function calcCuota(monto, tasa, meses) {
 
 // -- Handlers ----------------------------------------------------------
 async function onClienteChange() {
-    clienteInfo.value =
-        clientes.value.find(c => c.id === Number(form.cliente_id)) || null
-    calcPlan()
+    if (!form.cliente_id) return
+
+    start()
+
+    try {
+        const { data: { datos = {} } = {} } = await api.get(
+            '/api/creditos/clienteCreditData',
+            {
+                params: { id: form.cliente_id },
+            }
+        )
+
+        const { cupo, lineaCredito } = datos
+
+        clienteInfo.value = {
+            ...datos,
+            cupoDisponible: Number(cupo) || 0,
+            tipoCredito: lineaCredito?.tipo_credito ?? null,
+        }
+    } catch (error) {
+        console.error('Error al obtener datos del cliente:', error)
+    } finally {
+        stop()
+    }
 }
 
 function onValorCompra() {
@@ -541,29 +555,4 @@ async function handleSubmit() {
         loading.value = false
     }
 }
-
-async function fetchClientes() {
-    try {
-        const { data } = await api.get('/api/clientes/listMyClientsValidated')
-        clientes.value = data.clientes
-
-        // Opciones formateadas para FormInput type="select"
-        clientesOpts.value = clientes.value.map(c => ({
-            value: c.id,
-            label: `${c.nombre} (${c.cedula})`,
-        }))
-    } catch (err) {
-        console.error(err)
-    }
-}
-
-onMounted(async () => {
-    start()
-
-    try {
-        await Promise.all([fetchClientes()])
-    } finally {
-        stop()
-    }
-})
 </script>

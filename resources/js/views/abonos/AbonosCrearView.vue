@@ -72,14 +72,12 @@
 
             <!-- Selección de cliente y crédito -->
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <FormInput
-                    label="Cliente"
-                    type="select"
+                <FormSelectAsync
+                    label="Buscar cliente"
                     v-model="form.cliente_id"
-                    @update:model-value="onClienteChange"
-                    :options="clientes"
-                    placeholder="Seleccione el cliente"
-                    :searchable="true"
+                    @update:modelValue="onClienteChange"
+                    :fetch-options="opcionesStore.fetchClientesCredits"
+                    placeholder="Seleccione un cliente"
                 />
 
                 <FormInput
@@ -331,7 +329,7 @@
                                 formatCurrency(creditoInfo.saldo_pendiente)
                             }}</span>
                             <button
-                                @click="verEstadoCredito(form.credito_id)"
+                                @click="verEstadoCredito(form.cliente_id)"
                                 class="h-7 px-3 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-medium transition-all"
                             >
                                 Detalle
@@ -496,11 +494,18 @@ import { ref, reactive, computed, onMounted } from 'vue'
 
 // -- Componentes -------------------------------------------
 import EstadoCreditoModal from '@/components/modals/EstadoCreditoModal.vue'
+import FormSelectAsync from '@/components/form/FormSelectAsync.vue'
 import FormInput from '@/components/form/FormInput.vue'
 
+// -- Composables -------------------------------------------
 import { useEstadoCredito } from '@/composables/useEstadoCredito'
+
+// -- Loader -------------------------------------------------
 import { useLoader } from '@/composables/useLoader'
 const { start, stop } = useLoader()
+
+// -- Store ----------------------------------------------------
+import { useOpcionesStore } from '@/stores/opciones'
 
 import { formatCurrency } from '@/utils/format'
 import api from '@/services/api'
@@ -525,8 +530,10 @@ const form = reactive({
     observaciones: '',
 })
 
+// -- Opciones de selects -------------------------------------
+const opcionesStore = useOpcionesStore()
+
 // -- Opciones ----------------------------------------------------------
-const clientes = ref([])
 const creditos = ref([])
 const pagoConOpts = ref([])
 
@@ -589,10 +596,12 @@ function onClienteChange() {
     form.credito_id = ''
     creditos.value = []
 
-    const cliente = clientes.value.find(c => c.value === form.cliente_id)
+    const cliente = opcionesStore.clientesCreditos.find(
+        c => c.id == form.cliente_id
+    )
 
     creditos.value = cliente
-        ? cliente.creditos.map(cr => ({
+        ? cliente.credito.map(cr => ({
               value: cr.id,
               label: `Crédito ${cr.id} (${formatCurrency(cr.valor_credito)})`,
           }))
@@ -726,20 +735,6 @@ function descargarRecibo(r) {
     console.log('Descargar recibo:', r.codigo)
 }
 
-async function fetchClientes() {
-    try {
-        const { data } = await api.get('api/clientes/listCreditsClientsActives')
-
-        clientes.value = data.listaCliente.map(c => ({
-            value: c.id,
-            creditos: c.credito,
-            label: `${c.nombre} (${c.cedula})`,
-        }))
-    } catch (error) {
-        console.error(error)
-    }
-}
-
 // -- Modal estado credito --------------------------------------
 const {
     modalOpen,
@@ -753,14 +748,4 @@ const {
     imprimirCredito,
     imprimirAbono,
 } = useEstadoCredito()
-
-onMounted(async () => {
-    start()
-
-    try {
-        await fetchClientes()
-    } finally {
-        stop()
-    }
-})
 </script>

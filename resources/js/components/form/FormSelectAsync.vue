@@ -169,6 +169,7 @@ const selectedLabel = ref('')
 const searchInputRef = ref(null)
 const dropdownStyle = ref({})
 let fetchTimeout = null
+let skipNextFetch = false
 
 // -- Estilos del field -------------------------------------------------
 const fieldClass = computed(() => {
@@ -220,6 +221,11 @@ async function runFetch(query = '') {
 
 // -- Watchers ----------------------------------------------------------------
 watch(searchQuery, val => {
+    if (skipNextFetch) {
+        skipNextFetch = false
+        return
+    }
+
     clearTimeout(fetchTimeout)
     fetchTimeout = setTimeout(() => runFetch(val), props.debounce)
 })
@@ -240,6 +246,7 @@ watch(dropdownOpen, async open => {
 
         window.addEventListener('click', onClickOutside)
     } else {
+        skipNextFetch = true
         searchQuery.value = ''
         window.removeEventListener('click', onClickOutside)
     }
@@ -258,6 +265,7 @@ function toggleDropdown() {
 }
 
 function selectOption(value, label) {
+    skipNextFetch = true // Evita el fetch al limpiar searchQuery
     emit('update:modelValue', value)
     emit('change', value)
     selectedLabel.value = label

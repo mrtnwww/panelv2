@@ -3,28 +3,13 @@ import api from '@/services/api'
 
 export const useOpcionesStore = defineStore('opciones', {
     state: () => ({
-        empresas: [],
-        clientes: [],
+        clientesCreditos: [],
         cajeras: [],
     }),
 
     getters: {
-        empresasSelect: state => {
-            return state.empresas.map(e => ({
-                label: e.razon_social,
-                value: e.id,
-            }))
-        },
-
         cajerasSelect: state => {
             return state.cajeras.map(e => ({
-                label: e.nombre,
-                value: e.id,
-            }))
-        },
-
-        clientesSelect: state => {
-            return state.clientes.map(e => ({
                 label: e.nombre,
                 value: e.id,
             }))
@@ -32,15 +17,42 @@ export const useOpcionesStore = defineStore('opciones', {
     },
 
     actions: {
-        async fetchEmpresas() {
-            if (this.empresas.length) return
+        async fetchEmpresas(query) {
+            const { data } = await api.get('/api/empresas', {
+                params: { search: query, perPage: 10 },
+            })
 
-            try {
-                const { data } = await api.get('/api/empresas')
-                this.empresas = data.empresas
-            } catch (err) {
-                throw new err()
-            }
+            return data.empresas.data.map(empresa => ({
+                value: empresa.id,
+                label: empresa.razon_social,
+            }))
+        },
+
+        async fetchClientesCredits(query) {
+            const { data } = await api.get('/api/clientes/listClientsCredits', {
+                params: { search: query, perPage: 30 },
+            })
+
+            this.clientesCreditos = data.clientes.data
+
+            return this.clientesCreditos.map(c => ({
+                value: c.id,
+                label: `${c.nombre} (${c.cedula}) - ${c.empresa.razon_social}`,
+            }))
+        },
+
+        async fetchClientesValidated(query) {
+            const { data } = await api.get(
+                '/api/clientes/listMyClientsValidated',
+                {
+                    params: { search: query, perPage: 30 },
+                }
+            )
+
+            return data.clientes.data.map(c => ({
+                value: c.id,
+                label: `${c.nombre} (${c.cedula})`,
+            }))
         },
 
         async fetchCajeras() {
@@ -53,16 +65,5 @@ export const useOpcionesStore = defineStore('opciones', {
                 throw new err()
             }
         },
-
-        async fetchClientes() {
-            if (this.clientes.length) return
-
-            try {
-                const { data } = await api.get('/api/clientes/listCreditsClients')
-                this.clientes = data.clientes
-            } catch (err) {
-                throw new err()
-            }
-        }
     },
 })
