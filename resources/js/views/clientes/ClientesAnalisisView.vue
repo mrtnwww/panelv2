@@ -34,7 +34,7 @@
                         class="btn-table"
                         @click.stop="validateCliente(row)"
                     >
-                        Analisis
+                        Análisis
                         <i class="fa-solid fa-check"></i>
                     </button>
                 </div>
@@ -44,20 +44,24 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 
-// -- Componentes ---------------------------------------------
+// -- Componentes --------------------------------------------
 import DataTable from '@/components/table/DataTable.vue'
 
+// -- Loader -------------------------------------------------
 import { useLoader } from '@/composables/useLoader'
 const { start, stop } = useLoader()
+
+// -- DataTable ---------------------------------------------
+import { useDataTable } from '@/composables/useDataTable'
 
 import api from '@/services/api'
 
 const router = useRouter()
 
-// -- Columnas ----------------------------------------------------------
+// -- Columnas -----------------------------------------------
 const columns = [
     { key: 'nombre', label: 'Nombre', sortable: false },
     { key: 'identificacion', label: 'Identificación', sortable: false },
@@ -87,24 +91,11 @@ const columns = [
     { key: 'acciones', label: 'Acciones', sortable: false, align: 'center' },
 ]
 
-// -- Datos y estado --------------------------------------------------------
+// -- Datos y estado --------------------------------------------
 const clientes = ref([])
 const loading = ref(false)
-const search = ref('')
-let searchTimeout = null
 
-const pagination = reactive({
-    currentPage: 1,
-    perPage: 10,
-    total: 0,
-})
-
-const sort = reactive({
-    key: 'cliente.id',
-    dir: 'desc',
-})
-
-// -- Llamada al backend -------------------------------------------------------
+// -- BackEnd ---------------------------------------------------
 async function fetchClientes() {
     loading.value = true
 
@@ -136,36 +127,7 @@ async function fetchClientes() {
     }
 }
 
-// -- Handlers de eventos del DataTable -----------------------------------------
-function onPageChange(page) {
-    pagination.currentPage = page
-    fetchClientes()
-}
-
-function onPerPageChange(val) {
-    pagination.perPage = val
-    pagination.currentPage = 1
-    fetchClientes()
-}
-
-function onSearch(val) {
-    search.value = val
-    // Debounce: espera 400ms antes de llamar al backend
-    clearTimeout(searchTimeout)
-    searchTimeout = setTimeout(() => {
-        pagination.currentPage = 1
-        fetchClientes()
-    }, 400)
-}
-
-function onSort({ key, dir }) {
-    sort.key = key
-    sort.dir = dir
-    pagination.currentPage = 1
-    fetchClientes()
-}
-
-// -- Transformar clientes ----------------------------------------------------
+// -- Transformar clientes -------------------------------------
 function transformClientes(data) {
     clientes.value = data.map(({ cliente }) => ({
         id: cliente.id,
@@ -183,7 +145,18 @@ function validateCliente(row) {
     router.push(`/clientes/${row.id}/editar`)
 }
 
-// -- Carga inicial -----------------------------------------------------------
+const {
+    search,
+    pagination,
+    sort,
+    onPageChange,
+    onPerPageChange,
+    onSearch,
+    onSort,
+} = useDataTable(fetchClientes, {
+    initialSortKey: 'cliente.id',
+})
+
 onMounted(async () => {
     start()
 

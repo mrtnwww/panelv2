@@ -8,21 +8,25 @@ use Illuminate\Http\Request;
 
 class EmpresaController extends Controller
 {
-    function listMyCompanys()
-    {
-        $empresaId = auth()->user()?->empresa_id;
+    public function listMyCompanys(Request $request)
+        {
+            $empresaId = auth()->user()->empresa_id;
 
-        // Obtener todas las empresas relevantes en una sola consulta
-        $empresas = Empresa::select('id', 'razon_social')
-            ->where(function($query) use ($empresaId) {
-                $query->where('id', $empresaId)
-                    ->orWhere('aliado', $empresaId)
-                    ->orWhere('sede', $empresaId);
-            })->get();
+            $search = $request->input('search');
+            $perPage = $request->input('perPage', 10);
 
-        // Retornar la respuesta exitosa con las empresas
-        return response()->json([
-            'empresas' => $empresas
-        ]);
-    }
+            $empresas = Empresa::query()
+                ->select(['id', 'razon_social'])
+                ->where(function ($query) use ($empresaId) {
+                    $query->where('id', $empresaId)
+                        ->orWhere('aliado', $empresaId)
+                        ->orWhere('sede', $empresaId);
+                })
+                ->when($search, function ($query, $search) {
+                    $query->where('razon_social', 'like', "%{$search}%");
+                })
+                ->paginate($perPage);
+
+            return response()->json(compact('empresas'));
+        }
 }

@@ -34,20 +34,23 @@
                     v-model="filters.cliente"
                     :options="clientesOpts"
                     placeholder="Seleccione un cliente"
+                    :searchable="true"
                 />
                 <FormInput
                     label="Cajera"
                     type="select"
                     v-model="filters.cajero"
-                    :options="cajerosOpts"
-                    placeholder="Seleccione una cajera(o)"
+                    :options="cajerasOpts"
+                    placeholder="Seleccione una cajera"
+                    :searchable="true"
                 />
                 <FormInput
                     label="Aliado"
                     type="select"
                     v-model="filters.aliado"
-                    :options="aliadosOpts"
+                    :options="aliadoOpts"
                     placeholder="Seleccione un aliado"
+                    :searchable="true"
                 />
             </div>
 
@@ -216,7 +219,12 @@ import DataTable from '@/components/table/DataTable.vue'
 import FormInput from '@/components/form/FormInput.vue'
 import FormCheckbox from '@/components/form/FormCheckbox.vue'
 
-// ── Columnas ───────────────────────────────────────────────────────────────
+import { useLoader } from '@/composables/useLoader'
+const { start, stop } = useLoader()
+
+import { useOpcionesStore } from '@/stores/opciones'
+
+// -- Columnas ----------------------------------------------------------------------
 const columns = [
     { key: 'fecha', label: 'Fecha', sortable: false },
     { key: 'cedula', label: 'Cédula', sortable: false },
@@ -254,7 +262,9 @@ const columns = [
     { key: 'empresa', label: 'Empresa', sortable: false, truncate: true },
 ]
 
-// ── Estado ─────────────────────────────────────────────────────────────────
+const opcionesStore = useOpcionesStore()
+
+// -- Estado --------------------------------------------------------------------
 const abonos = ref([])
 const loading = ref(false)
 const loadingInforme = ref(null)
@@ -284,26 +294,10 @@ const recibidoEnOpts = [
     { value: 'datafono', label: 'Datáfono' },
 ]
 
-const clientesOpts = [
-    { value: '1', label: 'Smith Rocio Silva Diaz' },
-    { value: '2', label: 'Yuleidy Victoria Romero' },
-    { value: '3', label: 'Lothar Andres Plata Perdomo' },
-]
 
-const cajerosOpts = [
-    { value: '1', label: 'Maria Camila Ramirez' },
-    { value: '2', label: 'CDA Puerta del Sol' },
-]
-
-const aliadosOpts = [
-    { value: 'impulsa', label: 'IMPULSA CORP SAS / CREDITRANSITO' },
-    { value: 'cda_moto', label: 'CDA MOTOCENTER RUTA 45A SAS' },
-    { value: 'cda_prad', label: 'CDA LA PRADERA' },
-    {
-        value: 'solomotos',
-        label: 'CENTRO DE DIAGNOSTICO AUTOMOTOR SOLOMOTOS ARMENIA',
-    },
-]
+const clientesOpts = ref([])
+const cajerasOpts = ref([])
+const aliadoOpts = ref([])
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 function formatCurrency(value) {
@@ -353,15 +347,15 @@ async function fetchAbonos() {
             ...(filters.abonoAval && { abono_aval: 1 }),
         })
 
-        const response = await fetch(`/api/abonos?${params}`, {
-            headers: authHeaders(),
-        })
-        if (!response.ok) throw new Error('Error al cargar abonos')
+        // const response = await fetch(`/api/abonos?${params}`, {
+        //     headers: authHeaders(),
+        // })
+        // if (!response.ok) throw new Error('Error al cargar abonos')
 
-        const data = await response.json()
-        abonos.value = data.data
-        pagination.total = data.meta.total
-        pagination.currentPage = data.meta.current_page
+        // const data = await response.json()
+        // abonos.value = data.data
+        // pagination.total = data.meta.total
+        // pagination.currentPage = data.meta.current_page
     } catch (err) {
         console.error(err)
     } finally {
@@ -437,5 +431,22 @@ function onSort({ key, dir }) {
     fetchAbonos()
 }
 
-onMounted(fetchAbonos)
+onMounted(async () => {
+    start()
+
+    try {
+        await Promise.all([
+            fetchAbonos(),
+            opcionesStore.fetchEmpresas(),
+            opcionesStore.fetchClientes(),
+            opcionesStore.fetchCajeras()
+        ])
+
+        aliadoOpts.value = opcionesStore.empresasSelect
+        cajerasOpts.value = opcionesStore.cajerasSelect
+        clientesOpts.value = opcionesStore.clientesSelect
+    } finally {
+        stop()
+    }
+})
 </script>

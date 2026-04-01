@@ -23,7 +23,7 @@
                     label="Cliente"
                     type="select"
                     v-model="filters.cliente"
-                    :options="clientes"
+                    :options="clienteOpts"
                     placeholder="Seleccione un cliente"
                 />
                 <FormInput
@@ -55,7 +55,7 @@
                     label="Destino"
                     type="select"
                     v-model="filters.destino"
-                    :options="destinos"
+                    :options="destinoOpts"
                     placeholder="Seleccione un destino"
                 />
                 <FormInput
@@ -78,7 +78,7 @@
                     <FormInput
                         type="select"
                         v-model="filters.aliado"
-                        :options="aliados"
+                        :options="aliadoOpts"
                         placeholder="Seleccione un aliado"
                         :searchable="true"
                     />
@@ -299,8 +299,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, reactive, onMounted } from 'vue'
 
 // -- Componentes ----------------------------------------------------------
 import EstadoCreditoModal from '@/components/modals/EstadoCreditoModal.vue'
@@ -315,11 +314,9 @@ const { start, stop } = useLoader()
 import { formatCurrency } from '@/utils/format'
 import api from '@/services/api'
 
-import { useEmpresasStore } from '@/stores/empresas'
+import { useOpcionesStore } from '@/stores/opciones'
 
-const router = useRouter()
-
-// ── Columnas ───────────────────────────────────────────────────────────────
+// -- Columnas ----------------------------------------------------------------
 const columns = [
     { key: 'cliente', label: 'Cliente', sortable: false },
     {
@@ -412,7 +409,7 @@ const currencyCols = [
     'cxpAliados',
 ]
 
-const empresaStore = useEmpresasStore()
+const opcionesStore = useOpcionesStore()
 
 // -- Estado ------------------------------------------------------------------
 const creditos = ref([])
@@ -442,9 +439,9 @@ const filters = reactive({
 })
 
 // -- Opciones de selects ---------------------------------------------------
-const clientes = ref([])
-const destinos = ref([])
-const aliados = ref([])
+const clienteOpts = ref([])
+const destinoOpts = ref([])
+const aliadoOpts = ref([])
 
 const estadosCredito = [
     { value: 'vigente', label: 'Al día' },
@@ -461,7 +458,7 @@ const periodicidades = [
 // -- Helpers ----------------------------------------------------------------
 const labelClass = 'text-xs font-medium text-gray-400 uppercase tracking-wide'
 
-// ── Backend ────────────────────────────────────────────────────────────────
+// -- Backend ----------------------------------------------------------------
 async function fetchCreditos() {
     loading.value = true
     try {
@@ -647,8 +644,8 @@ onMounted(async () => {
         await fetchCreditos()
 
         // Obtener listado de empresas aliadas
-        await empresaStore.obtenerEmpresas()
-        aliados.value = empresaStore.empresasSelect
+        await opcionesStore.fetchEmpresas()
+        aliadoOpts.value = opcionesStore.empresasSelect
     } finally {
         stop()
     }

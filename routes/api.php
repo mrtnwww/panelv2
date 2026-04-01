@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Abonos\AbonoController;
+use App\Http\Controllers\Cajeras\CajeraController;
 use App\Http\Controllers\Ciudades\CiudadController;
 use App\Http\Controllers\Clientes\ClienteController;
 use App\Http\Controllers\Contabilidad\ContabilidadController;
@@ -77,5 +78,10 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     // Usuarios
     Route::prefix('usuarios')->group(function () {
         Route::get('/listMyUsers', [UsuarioController::class, 'listMyUsers']);
+    });
+
+    // Cajeras
+    Route::prefix('cajeras')->group(function () {
+        Route::get('/', [CajeraController::class, 'listCajerasAbono']);
     });
 });

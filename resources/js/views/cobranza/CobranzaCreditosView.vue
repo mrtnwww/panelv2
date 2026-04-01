@@ -444,7 +444,6 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
 
 // -- Componentes -----------------------------------------------------
 import EstadoCreditoModal from '@/components/modals/EstadoCreditoModal.vue'
@@ -461,9 +460,9 @@ import { formatCurrency, formatDateYmd } from '@/utils/format'
 import api from '@/services/api'
 import dayjs from 'dayjs'
 
-const router = useRouter()
+import { useOpcionesStore } from '@/stores/opciones'
 
-// ── Columnas ───────────────────────────────────────────────────────────────
+// -- Columnas -----------------------------------------------------------------
 const columns = [
     {
         key: 'numCredito',
@@ -566,7 +565,9 @@ const columns = [
     { key: 'acciones', label: '', sortable: false },
 ]
 
-// ── Estado ─────────────────────────────────────────────────────────────────
+const opcionesStore = useOpcionesStore()
+
+// -- Estado ----------------------------------------------------------------
 const creditos = ref([])
 const loading = ref(false)
 const loadingInforme = ref(null)
@@ -755,15 +756,6 @@ async function fetchReportesTipos() {
     } catch (err) {
         console.error(err)
     }
-}
-
-async function fetchEmpresas() {
-    const { data } = await api.get('/api/empresas')
-
-    aliadoOpts.value = data.empresas.map(item => ({
-        value: item.id,
-        label: item.razon_social,
-    }))
 }
 
 async function descargarArchivo(url, nombre) {
@@ -1281,31 +1273,13 @@ onMounted(async () => {
     start()
 
     try {
-        await Promise.all([
-            fetchEmpresas(),
-            fetchCreditos(),
-            fetchReportesTipos(),
-        ])
+        await Promise.all([fetchCreditos(), fetchReportesTipos()])
+
+        // Obtener listado de empresas aliadas
+        await opcionesStore.fetchEmpresas()
+        aliadoOpts.value = opcionesStore.empresasSelect
     } finally {
         stop()
     }
 })
 </script>
-
-<style scoped>
-.slide-enter-active,
-.slide-leave-active {
-    transition:
-        opacity 0.2s ease,
-        transform 0.2s ease,
-        max-height 0.3s ease;
-    overflow: hidden;
-    max-height: 300px;
-}
-.slide-enter-from,
-.slide-leave-to {
-    opacity: 0;
-    transform: translateY(-6px);
-    max-height: 0;
-}
-</style>

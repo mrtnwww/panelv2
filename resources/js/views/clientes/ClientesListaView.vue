@@ -152,18 +152,16 @@
                 </div>
             </div>
 
-            <!-- Fila inferior -->
+            <!-- Fila inferior, aliado y fechas -->
             <div
                 class="flex flex-wrap items-end gap-4 pt-3 border-t border-gray-100"
             >
-                <FormInput
+                <FormSelectAsync
                     label="Aliado"
-                    type="select"
                     v-model="filters.aliado"
-                    :options="aliadoOpts"
+                    :fetch-options="opcionesStore.fetchEmpresas"
                     placeholder="Seleccione un aliado"
                     wrapper-class="w-full xl:max-w-[40%]"
-                    :searchable="true"
                 />
 
                 <FormInput
@@ -207,15 +205,11 @@
             :sort-dir="sort.dir"
             :search="search"
             :selectable="false"
-            :selected-rows="selected"
-            :all-selected="allSelected"
             empty-message="No se encontraron clientes con los filtros aplicados."
             @update:current-page="onPageChange"
             @update:per-page="onPerPageChange"
             @update:search="onSearch"
             @sort="onSort"
-            @toggle-all="onToggleAll"
-            @toggle-row="onToggleRow"
         >
             <!-- Celda acciones -->
             <template #cell-acciones="{ row }">
@@ -248,26 +242,30 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 
 // -- Componentes -------------------------------------------
+import FormSelectAsync from '@/components/form/FormSelectAsync.vue'
 import FormCheckbox from '@/components/form/FormCheckbox.vue'
 import DataTable from '@/components/table/DataTable.vue'
 import FormInput from '@/components/form/FormInput.vue'
 
+// -- Loader ------------------------------------------------
 import { useLoader } from '@/composables/useLoader'
 const { start, stop } = useLoader()
 
+// -- DataTable ---------------------------------------------
+import { useDataTable } from '@/composables/useDataTable'
+
+// -- Store -------------------------------------------------
+import { useOpcionesStore } from '@/stores/opciones'
+
+// -- Utils y Services --------------------------------------
 import { formatCurrency, formatDateYmdHms } from '@/utils/format'
 import api from '@/services/api'
 
-const router = useRouter()
-
-// -- Vista ------------------------------------------------------------------
-const viewMode = ref('list')
-
-// -- Columnas ------------------------------------------------------------------
+// -- Columnas ----------------------------------------------
 const columns = [
     { key: 'nombre', label: 'Nombre', sortable: false },
     { key: 'identificacion', label: 'Identificación', sortable: false },
@@ -312,16 +310,19 @@ const columns = [
     { key: 'acciones', label: 'Acciones', sortable: false, align: 'center' },
 ]
 
-// -- Estado ------------------------------------------------------------------
-const clientes = ref([])
+// -- Vista --------------------------------------------------
+const viewMode = ref('list')
+
+// -- Opciones Select ----------------------------------------
+const opcionesStore = useOpcionesStore()
+
+const router = useRouter()
+
+// -- Datos y estado -------------------------------------------------
 const loading = ref(false)
-const search = ref('')
-let searchTimeout = null
+const clientes = ref([])
 
-const pagination = reactive({ currentPage: 1, perPage: 10, total: 0 })
-const sort = reactive({ key: 'cliente.id', dir: 'desc' })
-
-// --  Filtros ------------------------------------------------------------------
+// --  Filtros -----------------------------------------------
 const filters = reactive({
     estado: [],
     origen: [],
@@ -374,28 +375,7 @@ function resetFilters() {
     fetchClientes()
 }
 
-// -- Lista de aliados -----------------------------------------------------
-const aliadoOpts = ref([])
-
-// -- Selección -------------------------------------------------------
-const selected = ref([])
-
-const allSelected = computed(
-    () =>
-        clientes.value.length > 0 &&
-        clientes.value.every(c => selected.value.includes(c.id))
-)
-
-function onToggleAll(checked) {
-    selected.value = checked ? clientes.value.map(c => c.id) : []
-}
-
-function onToggleRow(id) {
-    const idx = selected.value.indexOf(id)
-    idx === -1 ? selected.value.push(id) : selected.value.splice(idx, 1)
-}
-
-// -- Backend ----------------------------------------------------------------
+// -- Backend ---------------------------------------------------
 async function fetchClientes() {
     loading.value = true
     try {
@@ -433,71 +413,53 @@ async function fetchClientes() {
     }
 }
 
-async function fetchEmpresas() {
-    const { data } = await api.get('/api/empresas')
-
-    aliadoOpts.value = data.empresas.map(item => ({
-        value: item.id,
-        label: item.razon_social,
-    }))
-}
-
-// -- Handlers DataTable ------------------------------------------------
-function onPageChange(page) {
-    pagination.currentPage = page
-    fetchClientes()
-}
-function onPerPageChange(val) {
-    pagination.perPage = val
-    pagination.currentPage = 1
-    fetchClientes()
-}
-function onSort({ key, dir }) {
-    sort.key = key
-    sort.dir = dir
-    pagination.currentPage = 1
-    fetchClientes()
-}
-function onSearch(val) {
-    search.value = val
-    clearTimeout(searchTimeout)
-    searchTimeout = setTimeout(() => {
-        pagination.currentPage = 1
-        fetchClientes()
-    }, 400)
-}
-
-// -- Navegación -----------------------------------------------------
+// -- Navegación -------------------------------------------------
 function editCliente(row) {
     router.push(`/clientes/${row.id}/editar`)
 }
 function viewCliente(row) {
-    router.push(`/dashboard/clientes/${row.id}`)
+    // router.push(`/dashboard/clientes/${row.id}`)
 }
 
-// -- Transformar clientes -------------------------------------------
-function transformClientes(data) {
-    clientes.value = data.map(({ cliente, empresa }) => ({
-        id: cliente.id,
-        nombre: cliente.nombre,
-        identificacion: cliente.cedula,
-        aliado: empresa?.razon_social,
-        correo: cliente.email,
-        telefono: cliente.telefono,
-        fechaRegistro: cliente.fecha_creacion,
-        autorizacionCentrales: cliente.autorizacion,
-        validacionDatos: cliente.cliente_validado,
-        resultado: cliente.estado_aval,
-        fotoCliente: cliente.comprobar_cliente,
-        valorCredito: formatCurrency(cliente.ult_credito_valor),
-    }))
+// -- Transformar clientes ---------------------------------------
+function transformClientes(data = []) {
+    clientes.value = data.map(item => {
+        const { cliente, empresa } = item
+
+        return {
+            id: cliente?.id,
+            nombre: cliente?.nombre,
+            identificacion: cliente?.cedula,
+            aliado: empresa?.razon_social ?? '',
+            correo: cliente?.email,
+            telefono: cliente?.telefono,
+            fechaRegistro: cliente?.fecha_creacion,
+            autorizacionCentrales: cliente?.autorizacion,
+            validacionDatos: cliente?.cliente_validado,
+            resultado: cliente?.estado_aval,
+            fotoCliente: cliente?.comprobar_cliente,
+            valorCredito: formatCurrency(cliente?.ult_credito_valor),
+        }
+    })
 }
+
+const {
+    search,
+    pagination,
+    sort,
+    onPageChange,
+    onPerPageChange,
+    onSearch,
+    onSort,
+} = useDataTable(fetchClientes, {
+    initialSortKey: 'cliente.id',
+})
 
 onMounted(async () => {
     start()
 
     try {
-        await Promise.all([fetchEmpresas(), fetchClientes()])
+        await fetchClientes()
     } finally {
         stop()
     }

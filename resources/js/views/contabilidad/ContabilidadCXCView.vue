@@ -114,7 +114,7 @@ import { ref, reactive, onMounted } from 'vue'
 import DataTable from '@/components/table/DataTable.vue'
 import FormInput from '@/components/form/FormInput.vue'
 
-import { useEmpresasStore } from '@/stores/empresas'
+import { useOpcionesStore } from '@/stores/opciones'
 
 import { useLoader } from '@/composables/useLoader'
 const { start, stop } = useLoader()
@@ -131,7 +131,7 @@ const columns = [
     { key: 'acciones', label: 'Acciones', sortable: false, align: 'center' },
 ]
 
-const empresaStore = useEmpresasStore()
+const opcionesStore = useOpcionesStore()
 
 // -- Estado ------------------------------------------------
 const recibos = ref([])
@@ -253,8 +253,8 @@ onMounted(async () => {
         await fetchRecibos()
 
         // Obtener listado de empresas aliadas
-        await empresaStore.obtenerEmpresas()
-        establecimientosOpts.value = empresaStore.empresasSelect
+        await opcionesStore.fetchEmpresas()
+        establecimientosOpts.value = opcionesStore.empresasSelect
     } finally {
         stop()
     }

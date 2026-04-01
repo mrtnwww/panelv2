@@ -482,41 +482,30 @@ class ClienteController extends Controller
 
     public function listCreditsClients()
     {
-        try {
-            $empresaId = auth()->user()?->empresa_id;
+        $empresaId = auth()->user()?->empresa_id;
 
-            // Obtener los id de las empresas
-            $empresas = Empresa::where('aliado', $empresaId)
-                ->orWhere('sede', $empresaId)
-                ->pluck('id')
-                ->toArray();
+        $empresas = Empresa::where('aliado', $empresaId)
+            ->orWhere('sede', $empresaId)
+            ->pluck('id');
 
-            $empresas[] = $empresaId;
+        $empresas->push($empresaId);
 
-            // Obtener todos los créditos de las empresas
-            $creditos = Credito::whereIn('empresa_id', $empresas)
-                ->with('cliente')
-                ->orderBy('id', 'DESC')
-                ->get();
+        $clientes = Credito::query()
+            ->select([
+                'credito.id as credito_id',
+                'credito.consecutivo',
+                'cliente.nombre',
+                'cliente.cedula',
+                'cliente.cedula as cliente_id'
+            ])
+            ->join('cliente', 'cliente.id', '=', 'credito.client_id')
+            ->whereIn('credito.empresa_id', $empresas)
+            ->orderByDesc('credito.id')
+            ->get();
 
-            $resultado = $creditos->map(function ($credito) {
-                $cliente = $credito->cliente;
-
-                return [
-                    'credito_id'    => $credito->id,
-                    'nombre'        => $cliente->nombre,
-                    'cedula'        => $cliente->cedula,
-                    'cliente_id'    => $cliente->cedula,
-                    'consecutivo'   => $credito->consecutivo
-                ];
-            });
-
-            return response()->json([
-                'clientes' => $resultado
-            ]);
-        } catch (\Exception $ex) {
-            return response()->json(['status' => $ex->getCode(), 'message' => $ex->getMessage()], 422);
-        }
+        return response()->json([
+            'clientes' => $clientes
+        ]);
     }
 
     public function listCreditsClientsActives()
