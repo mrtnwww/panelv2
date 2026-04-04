@@ -71,13 +71,11 @@
                 />
 
                 <!-- Aliado -->
-                <FormInput
+                <FormSelectAsync
                     label="Aliado"
-                    type="select"
                     v-model="filters.aliado"
-                    :options="aliadoOpts"
+                    :fetch-options="opcionesStore.fetchEmpresas"
                     placeholder="Seleccione un aliado"
-                    :searchable="true"
                 />
 
                 <!-- Mes de corte -->
@@ -411,7 +409,7 @@
             <template #cell-acciones="{ row }">
                 <div class="flex items-center gap-1.5">
                     <button
-                        @click.stop="verEstadoCredito(row.id)"
+                        @click.stop="verEstadoCredito(null, row.id)"
                         class="h-7 px-3 rounded-lg bg-[#1a5c2a] hover:bg-[#154d22] text-white text-xs font-medium transition-all"
                     >
                         Detalle
@@ -445,24 +443,32 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 
+import dayjs from 'dayjs'
+
 // -- Componentes -----------------------------------------------------
 import EstadoCreditoModal from '@/components/modals/EstadoCreditoModal.vue'
+import FormSelectAsync from '@/components/form/FormSelectAsync.vue'
 import FormRadioGroup from '@/components/form/FormRadioGroup.vue'
 import FormCheckbox from '@/components/form/FormCheckbox.vue'
 import DataTable from '@/components/table/DataTable.vue'
 import FormInput from '@/components/form/FormInput.vue'
 
-import { useEstadoCredito } from '@/composables/useEstadoCredito'
+// -- Loader ---------------------------------------------------------
 import { useLoader } from '@/composables/useLoader'
 const { start, stop } = useLoader()
 
+// -- Composables ----------------------------------------------------
+import { useEstadoCredito } from '@/composables/useEstadoCredito'
+// -- DataTable -------------------------------------------------------
+import { useDataTable } from '@/composables/useDataTable'
+
 import { formatCurrency, formatDateYmd } from '@/utils/format'
 import api from '@/services/api'
-import dayjs from 'dayjs'
 
+// -- Store -----------------------------------------------------------
 import { useOpcionesStore } from '@/stores/opciones'
 
-// -- Columnas -----------------------------------------------------------------
+// -- Columnas ---------------------------------------------------------
 const columns = [
     {
         key: 'numCredito',
@@ -571,10 +577,8 @@ const opcionesStore = useOpcionesStore()
 const creditos = ref([])
 const loading = ref(false)
 const loadingInforme = ref(null)
-const search = ref('')
 const selected = ref([])
 const busquedaAvanzada = ref(true)
-let searchTimeout = null
 
 // Definir las fechas de corte (inicial y final) para el estado de créditos
 let fechaCorte = {
@@ -584,10 +588,7 @@ let fechaCorte = {
 
 let NumCuotasValidarEn = 'cuotas_canceladas'
 
-const pagination = reactive({ currentPage: 1, perPage: 10, total: 0 })
-const sort = reactive({ key: 'numCredito', dir: 'desc' })
-
-// ── Filtros ────────────────────────────────────────────────────────────────
+// -- Filtros ----------------------------------------------------------
 const filters = reactive({
     estadoCredito: '',
     mesesPagados: '',
@@ -611,6 +612,8 @@ const filters = reactive({
 })
 
 // -- Opciones ------------------------------------------------
+const reporteOpts = ref([])
+
 const estadoCreditoOpts = [
     { value: 'vigente', label: 'Al día' },
     { value: 'mora', label: 'En mora' },
@@ -620,13 +623,17 @@ const notificacionOpts = [
     { value: 'si', label: 'Si' },
     { value: 'no', label: 'No' },
 ]
-const reporteOpts = ref([])
-const aliadoOpts = ref([])
 
 const estadoClienteOpts = [
-    { value: 'al_dia', label: 'Al día' },
-    { value: 'mora', label: 'En mora' },
-    { value: 'acuerdo', label: 'En acuerdo' },
+    { value: 'al_dia', label: 'Cliente al día' },
+    { value: 'acuerdo_pago', label: 'Acuerdo de pago' },
+    { value: 'intension_pago', label: 'Intensión de pago' },
+    { value: 'acuerdo_incumplido', label: 'Acuerdo incumplido' },
+    { value: 'dificultad_pago', label: 'Dificultad de pago' },
+    { value: 'renuente', label: 'Renuente' },
+    { value: 'no_contesta', label: 'No contesta/Mensaje con refererencias' },
+    { value: 'ilocalizado', label: 'Ilocalizado' },
+    { value: 'paz_y_salvo', label: 'A paz y salvo' },
 ]
 
 const tiposInforme = [
@@ -635,7 +642,7 @@ const tiposInforme = [
     { value: 'cifin', label: 'Informe CIFIN' },
 ]
 
-// ── Selección ──────────────────────────────────────────────────────────────
+// -- Selección ---------------------------------------------------------
 const allSelected = computed(
     () =>
         creditos.value.length > 0 &&
@@ -797,31 +804,6 @@ async function descargarHabitoPago() {
     }
 }
 
-// ── Handlers DataTable ─────────────────────────────────────────────────────
-function onPageChange(page) {
-    pagination.currentPage = page
-    fetchCreditos()
-}
-function onPerPageChange(val) {
-    pagination.perPage = val
-    pagination.currentPage = 1
-    fetchCreditos()
-}
-function onSort({ key, dir }) {
-    sort.key = key
-    sort.dir = dir
-    pagination.currentPage = 1
-    fetchCreditos()
-}
-function onSearch(val) {
-    search.value = val
-    clearTimeout(searchTimeout)
-    searchTimeout = setTimeout(() => {
-        pagination.currentPage = 1
-        fetchCreditos()
-    }, 400)
-}
-
 // ── Acciones de fila ───────────────────────────────────────────────────────
 function habitoPago(row) {
     console.log('Hábito de pago:', row.id)
@@ -879,7 +861,10 @@ function creditosAFechaCorte(creditosSTR) {
          * Se realizarán los cálculos necesarios siempre y cuando la fecha de
          * creación del crédito sea menor o igual a la fecha de corte
          */
-        if (validationFCorteDesde && createdAtCredito < fechaCorte.hasta) {
+        if (
+            validationFCorteDesde &&
+            createdAtCredito < formatDateYmd(fechaCorte.hasta)
+        ) {
             /**
              * Almacenar las proyecciones a la fecha de corte, las cuales corresponden
              * a aquellas cuya fecha es menor o igual a la fecha de corte.
@@ -1269,15 +1254,23 @@ const {
     imprimirAbono,
 } = useEstadoCredito()
 
+const {
+    search,
+    pagination,
+    sort,
+    onPageChange,
+    onPerPageChange,
+    onSearch,
+    onSort,
+} = useDataTable(fetchCreditos, {
+    initialSortKey: 'credito.id',
+})
+
 onMounted(async () => {
     start()
 
     try {
         await Promise.all([fetchCreditos(), fetchReportesTipos()])
-
-        // Obtener listado de empresas aliadas
-        await opcionesStore.fetchEmpresas()
-        aliadoOpts.value = opcionesStore.empresasSelect
     } finally {
         stop()
     }

@@ -11,14 +11,30 @@ export function useEstadoCredito() {
 
     const opcionesStore = useOpcionesStore()
 
-    function verEstadoCredito(id) {
+    function verEstadoCredito(clienteId, creditoId) {
+        if (clienteId) {
+            // Consultar créditos por cliente
+            const cliente = opcionesStore.clientesCreditos.find(
+                c => c.id == clienteId
+            )
+
+            const creditos = cliente.credito
+
+            if (creditos.length) fetchCreditoDetail(creditos[0].id)
+        } else {
+            fetchCreditoDetail(creditoId)
+        }
+    }
+
+    function verEstadoCredito(clienteId, creditoId) {
+        if (!clienteId) return fetchCreditoDetail(creditoId)
+
         const cliente = opcionesStore.clientesCreditos.find(
-            c => c.id == id
+            c => c.id == clienteId
         )
 
-        const creditos = cliente.credito
-
-        if (creditos.length) fetchCreditoDetail(creditos[0].id)
+        const clienteCreditoId = cliente?.credito?.[0]?.id
+        if (clienteCreditoId) fetchCreditoDetail(clienteCreditoId)
     }
 
     async function fetchCreditoDetail(id) {

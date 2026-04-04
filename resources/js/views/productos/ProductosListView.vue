@@ -140,20 +140,24 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 
-// -- Componentes --------------------------------------------------------------
+// -- Componentes -------------------------------------------------------
 import DataTable from '@/components/table/DataTable.vue'
 import FormInput from '@/components/form/FormInput.vue'
 import AppModal from '@/components/AppModal.vue'
 
+// -- Loader ------------------------------------------------------------
 import { useLoader } from '@/composables/useLoader'
 const { start, stop } = useLoader()
+
+// -- DataTable ---------------------------------------------
+import { useDataTable } from '@/composables/useDataTable'
 
 import { formatCurrency } from '@/utils/format'
 import api from '@/services/api'
 
 import Swal from 'sweetalert2'
 
-// -- Columnas -----------------------------------------------------------------
+// -- Columnas ----------------------------------------------------------
 const columns = [
     {
         key: 'referencia',
@@ -166,18 +170,12 @@ const columns = [
     { key: 'acciones', label: 'Acciones', sortable: false, align: 'center' },
 ]
 
-// -- Estado ------------------------------------------------------------------
+// -- Estado --------------------------------------------------------------
 const loadingPlantilla = ref(false)
 const loading = ref(false)
 const productos = ref([])
-const search = ref('')
 
-let searchTimeout = null
-
-const pagination = reactive({ currentPage: 1, perPage: 10, total: 0 })
-const sort = reactive({ key: 'referencia', dir: 'asc' })
-
-// -- Backend -------------------------------------------------------
+// -- Backend --------------------------------------------------------------
 async function fetchProductos() {
     loading.value = true
     try {
@@ -204,34 +202,6 @@ async function fetchProductos() {
     } finally {
         loading.value = false
     }
-}
-
-// -- Handlers DataTable --------------------------------------------------
-function onPageChange(page) {
-    pagination.currentPage = page
-    fetchProductos()
-}
-
-function onPerPageChange(val) {
-    pagination.perPage = val
-    pagination.currentPage = 1
-    fetchProductos()
-}
-
-function onSearch(val) {
-    search.value = val
-    clearTimeout(searchTimeout)
-    searchTimeout = setTimeout(() => {
-        pagination.currentPage = 1
-        fetchProductos()
-    }, 400)
-}
-
-function onSort({ key, dir }) {
-    sort.key = key
-    sort.dir = dir
-    pagination.currentPage = 1
-    fetchProductos()
 }
 
 // -- Modal crear / editar ------------------------------------------------
@@ -369,6 +339,16 @@ function transformProductos(data) {
         id: producto.id,
     }))
 }
+
+const {
+    search,
+    pagination,
+    sort,
+    onPageChange,
+    onPerPageChange,
+    onSearch,
+    onSort,
+} = useDataTable(fetchProductos)
 
 onMounted(async () => {
     start()
