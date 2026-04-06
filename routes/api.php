@@ -43,6 +43,7 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
 
     // Creditos
     Route::prefix('creditos')->group(function () {
+        Route::post('/updateMora', [CreditoController::class, 'updateMora']);
         Route::get('/listCredits', [CreditoController::class, 'listCredits']);
         Route::get('/{id}/details', [CreditoController::class, 'creditDetails']);
         Route::get('/detailCredit', [CreditoController::class, 'detailCredit']);

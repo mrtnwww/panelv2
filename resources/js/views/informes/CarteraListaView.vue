@@ -29,15 +29,8 @@
                 wrapper-class="xl:w-[30%]"
             />
 
-            <!-- Botón actualizar -->
-            <button
-                @click="fetchCartera"
-                :disabled="loading"
-                class="h-9 px-4 rounded-lg bg-orange-500 hover:bg-orange-600 disabled:bg-gray-300 text-white text-sm font-medium transition-all flex items-center gap-2"
-            >
-                <i class="fa-solid fa-arrow-rotate-right"></i>
-                Actualizar mora
-            </button>
+            <!-- Botón actualizar mora -->
+            <UpdateMoraButton :onSuccess="fetchCartera" />
         </div>
 
         <!-- Tabla de cartera por edades -->
@@ -157,8 +150,10 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 
 // -- Componentes ---------------------------------------------------------
-import FormSelectAsync from '@/components/form/FormSelectAsync.vue'
 import FormInput from '@/components/form/FormInput.vue'
+
+import UpdateMoraButton from '@/components/table/UpdateMoraButton.vue'
+import FormSelectAsync from '@/components/form/FormSelectAsync.vue'
 
 // -- Loader ----------------------------------------------------------------
 import { useLoader } from '@/composables/useLoader'

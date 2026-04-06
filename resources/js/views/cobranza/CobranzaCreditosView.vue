@@ -334,27 +334,7 @@
         >
             <!-- Actualizar valores -->
             <template #actions>
-                <button
-                    @click="fetchCreditos"
-                    class="h-8 px-3 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-xs font-medium transition-all flex items-center gap-1.5"
-                >
-                    <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
-                        <path
-                            d="M11 6.5A4.5 4.5 0 1 1 6.5 2"
-                            stroke="currentColor"
-                            stroke-width="1.3"
-                            stroke-linecap="round"
-                        />
-                        <path
-                            d="M9 2h2.5V4.5"
-                            stroke="currentColor"
-                            stroke-width="1.3"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                        />
-                    </svg>
-                    Actualizar valores
-                </button>
+                <UpdateMoraButton :onSuccess="fetchCreditos" />
             </template>
 
             <!-- Estado cliente badge -->
@@ -452,8 +432,10 @@ import EstadoCreditoModal from '@/components/modals/EstadoCreditoModal.vue'
 import FormSelectAsync from '@/components/form/FormSelectAsync.vue'
 import FormRadioGroup from '@/components/form/FormRadioGroup.vue'
 import FormCheckbox from '@/components/form/FormCheckbox.vue'
-import DataTable from '@/components/table/DataTable.vue'
 import FormInput from '@/components/form/FormInput.vue'
+
+import UpdateMoraButton from '@/components/table/UpdateMoraButton.vue'
+import DataTable from '@/components/table/DataTable.vue'
 
 // -- Loader ---------------------------------------------------------
 import { useLoader } from '@/composables/useLoader'

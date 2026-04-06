@@ -24,6 +24,7 @@ use App\Models\TipoPago;
 use App\Models\Usuario;
 use App\Models\UsuarioTipoUsuario;
 use App\Traits\CalculoCobranza;
+use App\Traits\CalculoCobranzaTemp;
 use App\Traits\CalculoPagoMinimo;
 use Carbon\Carbon;
 use DateTime;
@@ -34,6 +35,7 @@ class CreditoController extends Controller
 {
     use CalculoCobranza;
     use CalculoPagoMinimo;
+    use CalculoCobranzaTemp;
 
     public function listCredits(Request $request)
     {
@@ -2130,5 +2132,67 @@ class CreditoController extends Controller
         }
 
         return [ 'continuar' => true ];
+    }
+
+    public function updateMora(Request $request) {
+        $empresaId = auth()->user()->empresa_id;
+
+        $limiteCreditos = 50;
+        $estadoFuncion = ParametrosEstadoFunciones::where('empresa_id', $empresaId)
+            ->whereHas('estado_funcion', function($query) {
+                $query->where('nombre_funcion', 'Mora un día más');
+            })
+            ->exists();
+
+        // Obtener créditos de aliados
+        $listaAliados = Empresa::where('aliado', $empresaId)
+            ->orWhere('sede', $empresaId)
+            ->pluck('id')
+            ->prepend($empresaId)
+            ->unique()
+            ->toArray();
+
+        $filtroCreditosCartera = Credito::whereIn('empresa_id', $listaAliados)
+            ->whereHas('proyeccionesCartera');
+
+        $actualizarIds = (clone $filtroCreditosCartera)
+            ->when($estadoFuncion, function ($query) {
+                $query->where(function ($q) {
+                    $q->whereNull('fecha_gcobranza_temp')
+                        ->orWhereDate('fecha_gcobranza_temp', '<', Carbon::today());
+                });
+
+            }, function ($query) {
+                $query->where(function ($q) {
+                    $q->whereNull('fecha_gcobranza')
+                        ->orWhereDate('fecha_gcobranza', '<', Carbon::today());
+                });
+            })
+            ->limit($limiteCreditos)
+            ->pluck('id')
+            ->toArray();
+
+        if (!empty($actualizarIds)) {
+            if ($estadoFuncion) {
+                $fechaMañana = Carbon::now()->addDay()->startOfDay();
+                $this->calculoCobranzaIntMoraTemp($actualizarIds, $fechaMañana);
+                Credito::whereIn('id', $actualizarIds)->update(['fecha_gcobranza_temp' => Carbon::now()]);
+            } else {
+                $this->calculoCobranzaIntMora($actualizarIds);
+                Credito::whereIn('id', $actualizarIds)->update(['fecha_gcobranza' => Carbon::now()]);
+            }
+
+            return response()->json([
+                'status' => 200,
+                'message' => 'Estado de la mora actualizado correctamente',
+                'moraPendiente' => count($actualizarIds) >= $limiteCreditos ? true : false
+            ], 200);
+        } else {
+            return response()->json([
+                'status' => 200,
+                'message' => 'No hay créditos pendientes por actualizar',
+                'moraPendiente' => false
+            ], 200);
+        }
     }
 }
