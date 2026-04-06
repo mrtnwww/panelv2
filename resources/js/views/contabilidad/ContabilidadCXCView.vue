@@ -18,14 +18,13 @@
                     v-model="filters.fechaFinal"
                 />
 
-                <div class="flex flex-col gap-1.5 xl:w-[30%]">
-                    <FormSelectAsync
-                        label="Aliado"
-                        v-model="filters.establecimiento"
-                        :fetch-options="opcionesStore.fetchEmpresas"
-                        placeholder="Seleccione un aliado"
-                    />
-                </div>
+                <FormSelectAsync
+                    label="Aliado"
+                    v-model="filters.establecimiento"
+                    :fetch-options="opcionesStore.fetchEmpresas"
+                    placeholder="Seleccione un aliado"
+                    wrapper-class="xl:w-[30%]"
+                />
 
                 <!-- Botón alineado al fondo junto a los inputs -->
                 <button

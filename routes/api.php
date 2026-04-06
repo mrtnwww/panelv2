@@ -3,6 +3,7 @@
 use App\Http\Controllers\Abonos\AbonoController;
 use App\Http\Controllers\TipoPago\TipoPagoController;
 use App\Http\Controllers\Cajeras\CajeraController;
+use App\Http\Controllers\Cartera\CarteraController;
 use App\Http\Controllers\Ciudades\CiudadController;
 use App\Http\Controllers\Clientes\ClienteController;
 use App\Http\Controllers\Contabilidad\ContabilidadController;
@@ -75,6 +76,11 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     // Contabilidad
     Route::prefix('contabilidad')->group(function () {
         Route::get('/listRecibosCXC', [ContabilidadController::class, 'listRecibosCXC']);
+    });
+
+    // Cartera
+    Route::prefix('cartera')->group(function () {
+        Route::get('/', [CarteraController::class, 'listCartera']);
     });
 
     // Usuarios

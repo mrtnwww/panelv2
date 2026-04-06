@@ -7,73 +7,27 @@
             </h1>
 
             <!-- Fecha inicial -->
-            <div class="flex flex-col gap-1.5">
-                <label
-                    class="text-xs font-medium text-gray-400 uppercase tracking-wide"
-                    >Fecha inicial</label
-                >
-                <input
-                    v-model="filters.fechaInicial"
-                    type="date"
-                    :class="inputClass"
-                />
-            </div>
+            <FormInput
+                label="Fecha inicial"
+                type="date"
+                v-model="filters.fechaInicial"
+            />
 
             <!-- Fecha final -->
-            <div class="flex flex-col gap-1.5">
-                <label
-                    class="text-xs font-medium text-gray-400 uppercase tracking-wide"
-                    >Fecha final</label
-                >
-                <input
-                    v-model="filters.fechaFinal"
-                    type="date"
-                    :class="inputClass"
-                />
-            </div>
+            <FormInput
+                label="Fecha inicial"
+                type="date"
+                v-model="filters.fechaFinal"
+            />
 
             <!-- Aliado -->
-            <div class="flex flex-col gap-1.5">
-                <label
-                    class="text-xs font-medium text-gray-400 uppercase tracking-wide"
-                    >Aliado</label
-                >
-                <div class="relative">
-                    <select
-                        v-model="filters.aliado"
-                        :class="[
-                            inputClass,
-                            'appearance-none pr-8 cursor-pointer w-48',
-                        ]"
-                    >
-                        <option value="">Seleccione un aliado...</option>
-                        <option
-                            v-for="a in aliadosOpts"
-                            :key="a.value"
-                            :value="a.value"
-                        >
-                            {{ a.label }}
-                        </option>
-                    </select>
-                    <span
-                        class="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-300 pointer-events-none"
-                    >
-                        <svg
-                            width="12"
-                            height="12"
-                            viewBox="0 0 12 12"
-                            fill="none"
-                        >
-                            <path
-                                d="M3 4.5L6 7.5L9 4.5"
-                                stroke="currentColor"
-                                stroke-width="1.3"
-                                stroke-linecap="round"
-                            />
-                        </svg>
-                    </span>
-                </div>
-            </div>
+            <FormSelectAsync
+                label="Aliado"
+                v-model="filters.aliado"
+                :fetch-options="opcionesStore.fetchEmpresas"
+                placeholder="Seleccione un aliado"
+                wrapper-class="xl:w-[30%]"
+            />
 
             <!-- Botón actualizar -->
             <button
@@ -202,7 +156,21 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 
-// ── Definición de tramos ───────────────────────────────────────────────────
+// -- Componentes ---------------------------------------------------------
+import FormSelectAsync from '@/components/form/FormSelectAsync.vue'
+import FormInput from '@/components/form/FormInput.vue'
+
+// -- Loader ----------------------------------------------------------------
+import { useLoader } from '@/composables/useLoader'
+const { start, stop } = useLoader()
+
+// -- Store ---------------------------------------------------------------
+import { useOpcionesStore } from '@/stores/opciones'
+
+import { formatCurrency } from '@/utils/format'
+import api from '@/services/api'
+
+// -- Definición de tramos ------------------------------------------------
 const tramos = [
     {
         key: 'mora_1_10',
@@ -262,7 +230,9 @@ const tramos = [
     },
 ]
 
-// ── Estado ─────────────────────────────────────────────────────────────────
+const opcionesStore = useOpcionesStore()
+
+// -- Estado -------------------------------------------------------
 const loading = ref(false)
 const cartera = reactive({
     mora_1_10: 0,
@@ -280,16 +250,6 @@ const filters = reactive({
     aliado: '',
 })
 
-const aliadosOpts = [
-    { value: 'impulsa', label: 'IMPULSA CORP SAS / CREDITRANSITO' },
-    { value: 'cda_moto', label: 'CDA MOTOCENTER RUTA 45A SAS' },
-    { value: 'cda_prad', label: 'CDA LA PRADERA' },
-]
-
-// ── Helpers ────────────────────────────────────────────────────────────────
-const inputClass =
-    'h-9 px-3 rounded-lg border border-gray-200 bg-gray-50 text-sm text-gray-600 outline-none focus:border-[#1a5c2a] focus:ring-2 focus:ring-[#1a5c2a]/10 transition-all'
-
 const totalCartera = computed(() =>
     tramos
         .filter(t => !t.isTotal)
@@ -301,15 +261,7 @@ function porcentaje(valor) {
     return (valor / totalCartera.value) * 100
 }
 
-function formatCurrency(value) {
-    return new Intl.NumberFormat('es-CO', {
-        style: 'currency',
-        currency: 'COP',
-        maximumFractionDigits: 0,
-    }).format(value ?? 0)
-}
-
-// ── Backend ────────────────────────────────────────────────────────────────
+// -- Backend -------------------------------------------------------------------
 async function fetchCartera() {
     loading.value = true
     try {
@@ -321,19 +273,8 @@ async function fetchCartera() {
             ...(filters.aliado && { aliado: filters.aliado }),
         })
 
-        const response = await fetch(`/api/informes/cartera-edades?${params}`, {
-            headers: {
-                Accept: 'application/json',
-                Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
-            },
-        })
-
-        if (!response.ok) throw new Error('Error al cargar cartera')
-
-        // Estructura esperada:
-        // { mora_1_10, mora_11_30, mora_31_60, mora_61_90, mora_91_120, mora_120_mas, total }
-        const data = await response.json()
-        Object.assign(cartera, data)
+        const { data } = await api.get('/api/cartera', { params })
+        Object.assign(cartera, data.resumenCartera)
     } catch (err) {
         console.error(err)
     } finally {
@@ -341,5 +282,13 @@ async function fetchCartera() {
     }
 }
 
-onMounted(fetchCartera)
+onMounted(async () => {
+    start()
+
+    try {
+        await fetchCartera()
+    } finally {
+        stop()
+    }
+})
 </script>
