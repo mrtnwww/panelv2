@@ -4,6 +4,8 @@ import api from '@/services/api'
 export const useOpcionesStore = defineStore('opciones', {
     state: () => ({
         clientesCreditos: [],
+        tiposPago: [],
+        destinos: [],
         cajeras: [],
     }),
 
@@ -37,7 +39,7 @@ export const useOpcionesStore = defineStore('opciones', {
 
             return this.clientesCreditos.map(c => ({
                 value: c.id,
-                label: `${c.nombre} (${c.cedula}) - ${c.empresa.razon_social}`,
+                label: `${c.nombre} (${c.cedula})\n• ${c.empresa.razon_social}`,
             }))
         },
 
@@ -55,15 +57,33 @@ export const useOpcionesStore = defineStore('opciones', {
             }))
         },
 
-        async fetchCajeras() {
-            if (this.cajeras.length) return
+        async fetchCajeras(query) {
+            const { data } = await api.get('/api/cajeras', {
+                params: { search: query, perPage: 30 },
+            })
 
-            try {
-                const { data } = await api.get('/api/cajeras')
-                this.cajeras = data.cajeras
-            } catch (err) {
-                throw new err()
-            }
+            return data.cajeras.data.map(c => ({
+                value: c.id,
+                label: `${c.nombre}`,
+            }))
+        },
+
+        async fetchDestinos() {
+            const { data } = await api.get('/api/destinos')
+
+            this.destinos = data.lineasCredito.map(c => ({
+                value: c.id,
+                label: `${c.tipo_credito}`,
+            }))
+        },
+
+        async fetchTipoPago() {
+            const { data } = await api.get('/api/tipoPago')
+
+            this.tiposPago = data.tiposPago.map(c => ({
+                value: c.id,
+                label: `${c.nombre}`,
+            }))
         },
     },
 })

@@ -58,7 +58,7 @@ class CreditoController extends Controller
         $conditions = $request->input('conditions', []);
 
         // Término de búsqueda
-        $searchTerm = $request->input('searchTerm', '');
+        $searchTerm = $request->input('search', '');
 
         // Nit de la empresa del usuario
         $empresa = Empresa::find($empresaId);

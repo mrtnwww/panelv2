@@ -68,6 +68,7 @@
                     v-model="filters.reporte"
                     :options="reporteOpts"
                     placeholder="Seleccionar reporte"
+                    :searchable="true"
                 />
 
                 <!-- Aliado -->
@@ -95,6 +96,7 @@
                     v-model="filters.estadoCliente"
                     :options="estadoClienteOpts"
                     placeholder="Seleccione un estado"
+                    :searchable="true"
                 />
             </div>
 

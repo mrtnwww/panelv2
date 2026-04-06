@@ -1,11 +1,13 @@
 <?php
 
 use App\Http\Controllers\Abonos\AbonoController;
+use App\Http\Controllers\TipoPago\TipoPagoController;
 use App\Http\Controllers\Cajeras\CajeraController;
 use App\Http\Controllers\Ciudades\CiudadController;
 use App\Http\Controllers\Clientes\ClienteController;
 use App\Http\Controllers\Contabilidad\ContabilidadController;
 use App\Http\Controllers\Creditos\CreditoController;
+use App\Http\Controllers\Destinos\DestinoController;
 use App\Http\Controllers\Empresas\EmpresaController;
 use App\Http\Controllers\Productos\ProductoController;
 use App\Http\Controllers\ReporteCentralesTipo\ReporteCentralesTipoController;
@@ -47,14 +49,14 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
         Route::get('/clienteCreditData', [CreditoController::class, 'clienteCreditData']);
     });
 
+    // Abonos
+    Route::prefix('abonos')->group(function () {
+        Route::get('/listAbonos', [AbonoController::class, 'listAbonos']);
+    });
+
     // Empresas
     Route::prefix('empresas')->group(function () {
         Route::get('/', [EmpresaController::class, 'listMyCompanys']);
-    });
-
-    // Abonos
-    Route::prefix('abonos')->group(function () {
-        // TODO
     });
 
     // Productos
@@ -83,5 +85,15 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     // Cajeras
     Route::prefix('cajeras')->group(function () {
         Route::get('/', [CajeraController::class, 'listCajerasAbono']);
+    });
+
+    // Destinos (Líneas de crédito)
+    Route::prefix('destinos')->group(function () {
+        Route::get('/', [DestinoController::class, 'listDestinos']);
+    });
+
+    // Tipos pago
+    Route::prefix('tipoPago')->group(function () {
+        Route::get('/', [TipoPagoController::class, 'listTiposPago']);
     });
 });

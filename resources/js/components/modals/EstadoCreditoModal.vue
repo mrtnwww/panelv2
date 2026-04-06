@@ -237,8 +237,7 @@
                         <InfoRow
                             label="Fecha"
                             :value="credito.fecha_creacion"
-                            class="border-t sm:border-t-0 sm:border-l border-gray-100 whitespace-nowrap"
-                            value-class="truncate"
+                            class="border-t sm:border-t-0 sm:border-l border-gray-100"
                         />
                     </div>
                 </div>

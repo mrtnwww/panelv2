@@ -110,7 +110,7 @@
                             <li
                                 v-for="opt in options"
                                 :key="opt.value"
-                                class="px-3 py-2 text-sm text-gray-600 uppercase cursor-pointer hover:bg-gray-50 transition-colors"
+                                class="px-3 py-2 text-sm text-gray-600 uppercase cursor-pointer hover:bg-gray-50 transition-colors whitespace-pre-line"
                                 :class="{
                                     'bg-emerald-50 text-emerald-700 font-medium':
                                         opt.value == modelValue,

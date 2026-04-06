@@ -56,6 +56,7 @@
                     v-model="filters.destino"
                     :options="destinoOpts"
                     placeholder="Seleccione un destino"
+                    :searchable="true"
                 />
                 <FormInput
                     label="Periodicidad"
@@ -205,7 +206,7 @@
             <template #cell-acciones="{ row }">
                 <div class="flex items-center gap-1.5">
                     <button
-                        @click.stop="verEstadoCredito(row.id)"
+                        @click.stop="verEstadoCredito(null, row.id)"
                         class="h-7 px-3 rounded-lg bg-[#1a5c2a] hover:bg-[#154d22] text-white text-xs font-medium transition-all"
                     >
                         Detalle
@@ -305,7 +306,12 @@ import FormCheckbox from '@/components/form/FormCheckbox.vue'
 import DataTable from '@/components/table/DataTable.vue'
 import FormInput from '@/components/form/FormInput.vue'
 
+// -- Composables --------------------------------------------------
 import { useEstadoCredito } from '@/composables/useEstadoCredito'
+// -- Datatable ----------------------------------------------------
+import { useDataTable } from '@/composables/useDataTable'
+
+// -- Loader -------------------------------------------------------
 import { useLoader } from '@/composables/useLoader'
 const { start, stop } = useLoader()
 
@@ -414,16 +420,11 @@ const opcionesStore = useOpcionesStore()
 const creditos = ref([])
 const loading = ref(false)
 const loadingInforme = ref(null)
-const search = ref('')
-let searchTimeout = null
 
 // -- Totales ----------------------------------------------------------------
 const valoresTotales = ref({})
 
-const pagination = reactive({ currentPage: 1, perPage: 10, total: 0 })
-const sort = reactive({ key: 'numCredito', dir: 'desc' })
-
-// ── Filtros ────────────────────────────────────────────────────────────────
+// -- Filtros ----------------------------------------------------------------
 const filters = reactive({
     fechaInicial: '',
     fechaFinal: '',
@@ -438,9 +439,7 @@ const filters = reactive({
 })
 
 // -- Opciones de selects ---------------------------------------------------
-const clienteOpts = ref([])
 const destinoOpts = ref([])
-const aliadoOpts = ref([])
 
 const estadosCredito = [
     { value: 'vigente', label: 'Al día' },
@@ -528,32 +527,7 @@ async function generarInforme(tipo) {
     }
 }
 
-// ── Handlers DataTable ─────────────────────────────────────────────────────
-function onPageChange(page) {
-    pagination.currentPage = page
-    fetchCreditos()
-}
-function onPerPageChange(val) {
-    pagination.perPage = val
-    pagination.currentPage = 1
-    fetchCreditos()
-}
-function onSearch(val) {
-    search.value = val
-    clearTimeout(searchTimeout)
-    searchTimeout = setTimeout(() => {
-        pagination.currentPage = 1
-        fetchCreditos()
-    }, 400)
-}
-function onSort({ key, dir }) {
-    sort.key = key
-    sort.dir = dir
-    pagination.currentPage = 1
-    fetchCreditos()
-}
-
-// ── Acciones de fila ───────────────────────────────────────────────────────
+// -- Acciones de fila --------------------------------------------------
 function generarExtracto(row) {
     console.log('Generar extracto:', row.id)
 }
@@ -636,11 +610,24 @@ const {
     imprimirAbono,
 } = useEstadoCredito()
 
+const {
+    search,
+    pagination,
+    sort,
+    onPageChange,
+    onPerPageChange,
+    onSearch,
+    onSort,
+} = useDataTable(fetchCreditos, {
+    initialSortKey: 'numCredito',
+})
+
 onMounted(async () => {
     start()
 
     try {
-        await fetchCreditos()
+        await Promise.all([fetchCreditos(), opcionesStore.fetchDestinos()])
+        destinoOpts.value = opcionesStore.destinos
     } finally {
         stop()
     }

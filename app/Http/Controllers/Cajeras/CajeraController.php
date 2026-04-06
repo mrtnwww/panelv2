@@ -10,11 +10,14 @@ use Illuminate\Http\Request;
 
 class CajeraController extends Controller
 {
-    public function listCajerasAbono()
+    public function listCajerasAbono(Request $request)
     {
         $usuario = auth()->user();
 
         $empresaId = $usuario->empresa_id;
+
+        $perPage = $request->input('per_page', 10);
+        $search = $request->input('search', '');
 
         $listaSedesAliados = Empresa::where('aliado', $empresaId)
             ->orWhere('sede', $empresaId)
@@ -26,22 +29,17 @@ class CajeraController extends Controller
             ->withTrashed()
             ->pluck('id');
 
-        $cajeros = Abono::select('persona.id', 'persona.nombre')
+        $cajeras = Abono::select('persona.id', 'persona.nombre')
             ->join('usuario', 'abono.user_id', '=', 'usuario.id')
             ->join('persona', 'usuario.persona_id', '=', 'persona.id')
+            ->where('persona.nombre', 'like', '%' . $search . '%')
             ->whereIn('abono.user_id', $usuarios)
             ->orderBy('persona.nombre')
             ->distinct()
-            ->get()
-            ->map(function ($usuario) {
-                return [
-                    'id' => $usuario->id,
-                    'nombre' => strtoupper($usuario->nombre)
-                ];
-            });
+            ->paginate($perPage);
 
         return response()->json([
-            'cajeras' => $cajeros
+            'cajeras' => $cajeras
         ]);
     }
 }

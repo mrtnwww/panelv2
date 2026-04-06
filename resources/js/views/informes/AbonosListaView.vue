@@ -27,30 +27,25 @@
                     v-model="filters.recibidoEn"
                     :options="recibidoEnOpts"
                     placeholder="Seleccione un filtro"
+                    :searchable="true"
                 />
-                <FormInput
+                <FormSelectAsync
                     label="Cliente"
-                    type="select"
                     v-model="filters.cliente"
-                    :options="clientesOpts"
+                    :fetch-options="opcionesStore.fetchClientesCredits"
                     placeholder="Seleccione un cliente"
-                    :searchable="true"
                 />
-                <FormInput
+                <FormSelectAsync
                     label="Cajera"
-                    type="select"
                     v-model="filters.cajero"
-                    :options="cajerasOpts"
+                    :fetch-options="opcionesStore.fetchCajeras"
                     placeholder="Seleccione una cajera"
-                    :searchable="true"
                 />
-                <FormInput
+                <FormSelectAsync
                     label="Aliado"
-                    type="select"
                     v-model="filters.aliado"
-                    :options="aliadoOpts"
+                    :fetch-options="opcionesStore.fetchEmpresas"
                     placeholder="Seleccione un aliado"
-                    :searchable="true"
                 />
             </div>
 
@@ -203,9 +198,13 @@
                 </span>
             </template>
 
-            <!-- Valor total abonado como moneda -->
-            <template #cell-vrTotalAbonado="{ value }">
-                <span class="font-medium text-gray-700">{{
+            <!-- Celdas de moneda -->
+            <template
+                v-for="col in currencyCols"
+                #[`cell-${col}`]="{ value }"
+                :key="col"
+            >
+                <span class="font-medium text-gray-600">{{
                     formatCurrency(value)
                 }}</span>
             </template>
@@ -215,16 +214,28 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
+
+// -- Componentes -----------------------------------------------------------
+import FormSelectAsync from '@/components/form/FormSelectAsync.vue'
+import FormCheckbox from '@/components/form/FormCheckbox.vue'
 import DataTable from '@/components/table/DataTable.vue'
 import FormInput from '@/components/form/FormInput.vue'
-import FormCheckbox from '@/components/form/FormCheckbox.vue'
 
+// -- Loader ----------------------------------------------------------------
 import { useLoader } from '@/composables/useLoader'
 const { start, stop } = useLoader()
 
+// -- Composables ----------------------------------------------------------
+// -- Datatable ------------------------------------------------------------
+import { useDataTable } from '@/composables/useDataTable'
+
+import { formatCurrency } from '@/utils/format'
+import api from '@/services/api'
+
+// -- Store -----------------------------------------------------------------
 import { useOpcionesStore } from '@/stores/opciones'
 
-// -- Columnas ----------------------------------------------------------------------
+// -- Columnas --------------------------------------------------------------
 const columns = [
     { key: 'fecha', label: 'Fecha', sortable: false },
     { key: 'cedula', label: 'Cédula', sortable: false },
@@ -246,6 +257,12 @@ const columns = [
         sortable: false,
         align: 'right',
     },
+    {
+        key: 'vrAbonado',
+        label: 'Vr. abonado',
+        sortable: false,
+        align: 'right',
+    },
     { key: 'aval', label: 'Aval', sortable: false },
     { key: 'ivaAval', label: 'IVA Aval', sortable: false },
     { key: 'intereses', label: 'Intereses', sortable: false },
@@ -259,22 +276,32 @@ const columns = [
         label: 'Valor condonación crédito',
         sortable: false,
     },
-    { key: 'empresa', label: 'Empresa', sortable: false, truncate: true },
+    { key: 'empresa', label: 'Empresa', sortable: false, truncate: false },
+]
+
+// Columnas que renderizan como moneda via slot dinámico
+const currencyCols = [
+    'vrTotalAbonado',
+    'vrAbonado',
+    'aval',
+    'iva_aval',
+    'intereses',
+    'firmaElectronica',
+    'capital',
+    'intMoratorio',
+    'gasCobranza',
+    'ivaGasCobranza',
+    'valorCondonacion',
 ]
 
 const opcionesStore = useOpcionesStore()
 
-// -- Estado --------------------------------------------------------------------
+// -- Estado ----------------------------------------------------------------
 const abonos = ref([])
 const loading = ref(false)
 const loadingInforme = ref(null)
-const search = ref('')
-let searchTimeout = null
 
-const pagination = reactive({ currentPage: 1, perPage: 10, total: 0 })
-const sort = reactive({ key: 'fecha', dir: 'desc' })
-
-// ── Filtros ────────────────────────────────────────────────────────────────
+// -- Filtros --------------------------------------------------------------
 const filters = reactive({
     fechaInicial: '',
     fechaFinal: '',
@@ -286,28 +313,8 @@ const filters = reactive({
     abonoAval: false,
 })
 
-// ── Opciones ───────────────────────────────────────────────────────────────
-const recibidoEnOpts = [
-    { value: 'app', label: 'App Credigital' },
-    { value: 'efectivo', label: 'Efectivo' },
-    { value: 'transferencia', label: 'Transferencia' },
-    { value: 'datafono', label: 'Datáfono' },
-]
-
-
-const clientesOpts = ref([])
-const cajerasOpts = ref([])
-const aliadoOpts = ref([])
-
-// ── Helpers ────────────────────────────────────────────────────────────────
-function formatCurrency(value) {
-    if (value == null) return '$0'
-    return new Intl.NumberFormat('es-CO', {
-        style: 'currency',
-        currency: 'COP',
-        maximumFractionDigits: 0,
-    }).format(value)
-}
+// -- Opciones Select --------------------------------------------------
+const recibidoEnOpts = ref([])
 
 function estadoBadgeClass(estado) {
     if (!estado) return 'bg-gray-100 text-gray-500'
@@ -325,7 +332,7 @@ function authHeaders() {
     }
 }
 
-// ── Backend ────────────────────────────────────────────────────────────────
+// -- Backend ----------------------------------------------------------
 async function fetchAbonos() {
     loading.value = true
     try {
@@ -347,15 +354,15 @@ async function fetchAbonos() {
             ...(filters.abonoAval && { abono_aval: 1 }),
         })
 
-        // const response = await fetch(`/api/abonos?${params}`, {
-        //     headers: authHeaders(),
-        // })
-        // if (!response.ok) throw new Error('Error al cargar abonos')
+        const { data } = await api.get('/api/abonos/listAbonos', { params })
 
-        // const data = await response.json()
-        // abonos.value = data.data
-        // pagination.total = data.meta.total
-        // pagination.currentPage = data.meta.current_page
+        const { data: abonosData, total, current_page } = data.abonos
+
+        // Lista de abonos
+        transformAbonos(abonosData, data.totales)
+
+        pagination.total = total
+        pagination.currentPage = current_page
     } catch (err) {
         console.error(err)
     } finally {
@@ -406,45 +413,61 @@ async function generarFactura() {
     }
 }
 
-// ── Handlers DataTable ─────────────────────────────────────────────────────
-function onPageChange(page) {
-    pagination.currentPage = page
-    fetchAbonos()
+function transformAbonos(data) {
+    abonos.value = data.map(abono => {
+        const totalAbonado =
+            Number(abono.abones ?? 0) +
+            Number(abono.int_mora ?? 0) +
+            Number(abono.gas_cobranza ?? 10)
+
+        return {
+            id: abono.abono_id,
+            fecha: abono.fecha,
+            cedula: abono.cedula,
+            nombre: abono.name,
+            numCredito: abono.numcredito,
+            numAbono: abono.numabono,
+            recibidoEn: abono.payed,
+            concepto: abono.concept,
+            cajero: abono.cajera,
+            estadoCredito:
+                abono.diasMora > 0
+                    ? `En mora (${abono.diasMora} días)`
+                    : 'Al día',
+            vrTotalAbonado: totalAbonado,
+            vrAbonado: abono.abones,
+            aval: abono.aval,
+            iva_aval: abono.ivaAval,
+            intereses: abono.intereses,
+            firmaElectronica: abono.firmaElectronica,
+            capital: abono.capital,
+            intMoratorio: abono.int_mora,
+            gasCobranza: abono.gas_cobranza,
+            ivaGasCobranza: abono.iva_gas_cobranza,
+            valorCondonacion: abono.valorCondonacion,
+            empresa: abono.empresa,
+        }
+    })
 }
-function onPerPageChange(val) {
-    pagination.perPage = val
-    pagination.currentPage = 1
-    fetchAbonos()
-}
-function onSearch(val) {
-    search.value = val
-    clearTimeout(searchTimeout)
-    searchTimeout = setTimeout(() => {
-        pagination.currentPage = 1
-        fetchAbonos()
-    }, 400)
-}
-function onSort({ key, dir }) {
-    sort.key = key
-    sort.dir = dir
-    pagination.currentPage = 1
-    fetchAbonos()
-}
+
+const {
+    search,
+    pagination,
+    sort,
+    onPageChange,
+    onPerPageChange,
+    onSearch,
+    onSort,
+} = useDataTable(fetchAbonos, {
+    initialSortKey: 'fecha',
+})
 
 onMounted(async () => {
     start()
 
     try {
-        await Promise.all([
-            fetchAbonos(),
-            opcionesStore.fetchEmpresas(),
-            opcionesStore.fetchClientes(),
-            opcionesStore.fetchCajeras()
-        ])
-
-        aliadoOpts.value = opcionesStore.empresasSelect
-        cajerasOpts.value = opcionesStore.cajerasSelect
-        clientesOpts.value = opcionesStore.clientesSelect
+        await Promise.all([fetchAbonos(), opcionesStore.fetchTipoPago()])
+        recibidoEnOpts.value = opcionesStore.tiposPago
     } finally {
         stop()
     }
