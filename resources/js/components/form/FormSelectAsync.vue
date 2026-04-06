@@ -3,7 +3,7 @@
         <!-- Label -->
         <label
             v-if="label"
-            class="block text-xs font-medium text-gray-500 mb-1"
+            class="block text-xs font-medium text-gray-500 uppercase mb-1"
         >
             {{ label }}
             <span v-if="required" class="text-red-400 ml-0.5">*</span>
@@ -55,7 +55,7 @@
                     v-if="dropdownOpen"
                     :data-dropdown="uid"
                     :style="dropdownStyle"
-                    class="fixed z-[9999] bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden"
+                    class="fixed z-9999 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden"
                 >
                     <!-- Búsqueda -->
                     <div class="p-2 border-b border-gray-100">
@@ -110,7 +110,7 @@
                             <li
                                 v-for="opt in options"
                                 :key="opt.value"
-                                class="px-3 py-2 text-sm text-gray-600 cursor-pointer hover:bg-gray-50 transition-colors"
+                                class="px-3 py-2 text-sm text-gray-600 uppercase cursor-pointer hover:bg-gray-50 transition-colors"
                                 :class="{
                                     'bg-emerald-50 text-emerald-700 font-medium':
                                         opt.value == modelValue,
@@ -174,7 +174,7 @@ let skipNextFetch = false
 // -- Estilos del field -------------------------------------------------
 const fieldClass = computed(() => {
     const base =
-        'w-full rounded-lg border bg-white text-gray-700 outline-none transition-all'
+        'w-full rounded-lg border bg-gray-50 text-gray-700 outline-none transition-all'
     const sizes = { sm: 'h-8 px-2.5 text-xs', md: 'h-10 px-3 text-sm' }
     const border = dropdownOpen.value
         ? 'border-[#1a5c2a] ring-1 ring-[#1a5c2a]/10'

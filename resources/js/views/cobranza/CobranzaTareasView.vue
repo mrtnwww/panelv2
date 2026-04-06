@@ -43,13 +43,11 @@
                     v-model="filters.completadaHasta"
                     type="date"
                 />
-                <FormInput
+                <FormSelectAsync
                     label="Cliente"
-                    type="select"
                     v-model="filters.cliente"
-                    :options="clientesOpts"
+                    :fetch-options="opcionesStore.fetchClientesValidated"
                     placeholder="Seleccione un cliente"
-                    :searchable="true"
                 />
                 <FormInput
                     label="Usuario asignado"
@@ -57,6 +55,7 @@
                     v-model="filters.usuarioAsignado"
                     :options="usuariosOpts"
                     placeholder="Seleccione el usuario"
+                    :searchable="true"
                 />
             </div>
 
@@ -222,11 +221,12 @@
                             :required="true"
                             wrapper-class="sm:col-span-2"
                         />
-                        <FormInput
+                        <FormSelectAsync
                             label="Cliente"
-                            type="select"
-                            v-model="modal.form.cliente"
-                            :options="clientesOpts"
+                            v-model="filters.cliente"
+                            :fetch-options="
+                                opcionesStore.fetchClientesValidated
+                            "
                             placeholder="Seleccione un cliente"
                         />
                         <FormInput
@@ -235,6 +235,7 @@
                             v-model="modal.form.usuarioAsignado"
                             :options="usuariosOpts"
                             placeholder="Seleccione el usuario"
+                            :searchable="true"
                         />
                         <FormInput
                             label="Tipo de tarea"
@@ -312,17 +313,29 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 
-// -- Componentes ---------------------------------------------------
+// -- Componentes --------------------------------------------------
+import FormSelectAsync from '@/components/form/FormSelectAsync.vue'
 import DataTable from '@/components/table/DataTable.vue'
 import FormInput from '@/components/form/FormInput.vue'
 
+// -- Loader -------------------------------------------------------
 import { useLoader } from '@/composables/useLoader'
 const { start, stop } = useLoader()
+
+// -- Composables ----------------------------------------------------
+// -- DataTable ------------------------------------------------------
+import { useDataTable } from '@/composables/useDataTable'
+
+// -- Store -------------------------------------------------------
+import { useOpcionesStore } from '@/stores/opciones'
 
 import api from '@/services/api'
 import dayjs from 'dayjs'
 
-// -- Columnas -------------------------------------------------------
+// -- Opciones de selects -----------------------------------------
+const opcionesStore = useOpcionesStore()
+
+// -- Columnas -----------------------------------------------------
 const columns = [
     { key: 'estado', label: 'Estado', sortable: false },
     { key: 'titulo', label: 'Título', sortable: false },
@@ -335,7 +348,7 @@ const columns = [
     { key: 'ultimaInteraccion', label: 'Última interacción', sortable: false },
 ]
 
-// -- Tabs -------------------------------------------------------------
+// -- Tabs ----------------------------------------------------------
 const tabs = [
     { key: 'totales', label: 'Todas' },
     { key: 'completadas', label: 'Completadas' },
@@ -353,17 +366,12 @@ const tabCounts = ref({
     proximos: 0,
 })
 
-// -- Estado -----------------------------------------------------------------
+// -- Estado ----------------------------------------------------------
 const tareas = ref([])
 const loading = ref(false)
-const search = ref('')
 const selected = ref([])
-let searchTimeout = null
 
-const pagination = reactive({ currentPage: 1, perPage: 10, total: 0 })
-const sort = reactive({ key: 'fechaCreacion', dir: 'desc' })
-
-// -- Filtros ----------------------------------------------------------------
+// -- Filtros ----------------------------------------------------------
 const filters = reactive({
     creacionDesde: '',
     creacionHasta: '',
@@ -376,8 +384,7 @@ const filters = reactive({
     tipoTarea: '',
 })
 
-// -- Opciones ---------------------------------------------------------------
-const clientesOpts = ref([])
+// -- Opciones ----------------------------------------------------------
 const usuariosOpts = ref([])
 
 const tipoTareaOpts = [
@@ -386,7 +393,7 @@ const tipoTareaOpts = [
     { value: 'otro', label: 'Otro' },
 ]
 
-// ── Selección ──────────────────────────────────────────────────────────────
+// -- Selección --------------------------------------------------------
 const allSelected = computed(
     () =>
         tareas.value.length > 0 &&
@@ -402,7 +409,7 @@ function onToggleRow(id) {
     idx === -1 ? selected.value.push(id) : selected.value.splice(idx, 1)
 }
 
-// ── Helpers ────────────────────────────────────────────────────────────────
+// -- Helpers ----------------------------------------------------------
 function estadoBadge(estado) {
     if (!estado) return 'bg-gray-100 text-gray-500'
     const s = String(estado).toLowerCase()
@@ -421,7 +428,7 @@ function authHeaders() {
     }
 }
 
-// ── Backend ────────────────────────────────────────────────────────────────
+// -- Backend --------------------------------------------------------
 function cambiarTab(key) {
     activeTab.value = key
     pagination.currentPage = 1
@@ -484,20 +491,6 @@ async function fetchTareas() {
     }
 }
 
-async function fetchClientes() {
-    try {
-        const { data } = await api.get('/api/clientes/listMyClientsValidated')
-
-        // Opciones formateadas para FormInput type="select"
-        clientesOpts.value = data.clientes.map(c => ({
-            value: c.id,
-            label: `${c.nombre} (${c.cedula})`,
-        }))
-    } catch (err) {
-        console.error(err)
-    }
-}
-
 async function fetchUsuarios() {
     try {
         const { data } = await api.get('/api/usuarios/listMyUsers')
@@ -510,31 +503,6 @@ async function fetchUsuarios() {
     } catch (err) {
         console.error(err)
     }
-}
-
-// ── Handlers DataTable ─────────────────────────────────────────────────────
-function onPageChange(page) {
-    pagination.currentPage = page
-    fetchTareas()
-}
-function onPerPageChange(val) {
-    pagination.perPage = val
-    pagination.currentPage = 1
-    fetchTareas()
-}
-function onSort({ key, dir }) {
-    sort.key = key
-    sort.dir = dir
-    pagination.currentPage = 1
-    fetchTareas()
-}
-function onSearch(val) {
-    search.value = val
-    clearTimeout(searchTimeout)
-    searchTimeout = setTimeout(() => {
-        pagination.currentPage = 1
-        fetchTareas()
-    }, 400)
 }
 
 // ── Modal crear ────────────────────────────────────────────────────────────
@@ -637,11 +605,23 @@ function addPropertiesTasksList(registros) {
     })
 }
 
+const {
+    search,
+    pagination,
+    sort,
+    onPageChange,
+    onPerPageChange,
+    onSearch,
+    onSort,
+} = useDataTable(fetchTareas, {
+    initialSortKey: 'fechaCreacion',
+})
+
 onMounted(async () => {
     start()
 
     try {
-        await Promise.all([fetchTareas(), fetchClientes(), fetchUsuarios()])
+        await Promise.all([fetchTareas(), fetchUsuarios()])
     } finally {
         stop()
     }

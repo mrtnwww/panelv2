@@ -506,7 +506,7 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
-import { formatDateToISO } from '@/utils/format'
+import { formatDateYmd } from '@/utils/format'
 
 const route = useRoute()
 
@@ -747,7 +747,7 @@ async function fetchCliente() {
 
             // 1. Datos personales
             nombre: cliente.nombre ?? '',
-            fechaNacimiento: formatDateToISO(cliente.fecha_nacimiento),
+            fechaNacimiento: formatDateYmd(cliente.fecha_nacimiento),
             telefono: cliente.telefono ?? '',
             correo: cliente.email ?? '',
             direccion: cliente.direccion ?? '',

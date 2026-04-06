@@ -31,6 +31,7 @@
                             v-for="opt in options"
                             :key="opt.value"
                             :value="opt.value"
+                            class="uppercase"
                         >
                             {{ opt.label }}
                         </option>
@@ -125,7 +126,7 @@
                                 <li
                                     v-for="opt in filteredOptions"
                                     :key="opt.value"
-                                    class="px-3 py-2 text-sm text-gray-600 cursor-pointer hover:bg-gray-50 transition-colors"
+                                    class="px-3 py-2 text-sm text-gray-600 uppercase cursor-pointer hover:bg-gray-50 transition-colors"
                                     :class="{
                                         'bg-emerald-50 text-emerald-700 font-medium':
                                             opt.value == modelValue,

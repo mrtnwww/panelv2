@@ -19,11 +19,10 @@
                     type="date"
                     v-model="filters.fechaFinal"
                 />
-                <FormInput
+                <FormSelectAsync
                     label="Cliente"
-                    type="select"
                     v-model="filters.cliente"
-                    :options="clienteOpts"
+                    :fetch-options="opcionesStore.fetchClientesCredits"
                     placeholder="Seleccione un cliente"
                 />
                 <FormInput
@@ -75,12 +74,10 @@
                             label="Solo aliados"
                         />
                     </div>
-                    <FormInput
-                        type="select"
+                    <FormSelectAsync
                         v-model="filters.aliado"
-                        :options="aliadoOpts"
+                        :fetch-options="opcionesStore.fetchEmpresas"
                         placeholder="Seleccione un aliado"
-                        :searchable="true"
                     />
                 </div>
             </div>
@@ -301,8 +298,9 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 
-// -- Componentes ----------------------------------------------------------
+// -- Componentes --------------------------------------------------
 import EstadoCreditoModal from '@/components/modals/EstadoCreditoModal.vue'
+import FormSelectAsync from '@/components/form/FormSelectAsync.vue'
 import FormCheckbox from '@/components/form/FormCheckbox.vue'
 import DataTable from '@/components/table/DataTable.vue'
 import FormInput from '@/components/form/FormInput.vue'
@@ -314,9 +312,10 @@ const { start, stop } = useLoader()
 import { formatCurrency } from '@/utils/format'
 import api from '@/services/api'
 
+// -- Store --------------------------------------------------------
 import { useOpcionesStore } from '@/stores/opciones'
 
-// -- Columnas ----------------------------------------------------------------
+// -- Columnas -----------------------------------------------------
 const columns = [
     { key: 'cliente', label: 'Cliente', sortable: false },
     {
@@ -642,10 +641,6 @@ onMounted(async () => {
 
     try {
         await fetchCreditos()
-
-        // Obtener listado de empresas aliadas
-        await opcionesStore.fetchEmpresas()
-        aliadoOpts.value = opcionesStore.empresasSelect
     } finally {
         stop()
     }

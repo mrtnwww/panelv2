@@ -662,12 +662,29 @@ function onToggleRow(id) {
 const labelClass = 'text-xs font-medium text-gray-500 uppercase tracking-wide'
 
 function estadoClienteBadge(estado) {
-    const s = String(estado).toLowerCase()
-    if (s.includes('mora')) return 'bg-red-50 text-red-600'
-    if (s.includes('día') || s.includes('dia'))
-        return 'bg-emerald-50 text-emerald-700'
-    if (s.includes('acuerdo')) return 'bg-blue-50 text-blue-600'
-    return 'bg-gray-100 text-gray-500'
+    const s = String(estado).toLowerCase().trim()
+
+    const colores = {
+        ok: 'bg-emerald-50 text-emerald-700',
+        warn: 'bg-blue-50 text-blue-600',
+        bad: 'bg-red-50 text-red-600',
+    }
+
+    const estados = {
+        'cliente al día': colores.ok,
+        'a paz y salvo': colores.ok,
+
+        'acuerdo de pago': colores.warn,
+        'intensión de pago': colores.warn,
+        'no contesta/mensaje con refererencias': colores.warn,
+        ilocalizado: colores.warn,
+
+        'acuerdo incumplido': colores.bad,
+        'dificultad de pago': colores.bad,
+        renuente: colores.bad,
+    }
+
+    return estados[s] || 'bg-gray-100 text-gray-500'
 }
 
 function authHeaders() {

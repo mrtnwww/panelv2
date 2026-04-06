@@ -16,12 +16,6 @@ export function formatCurrency(value, options = {}) {
     }).format(value)
 }
 
-export function formatDateToISO(date) {
-    if (!date) return ''
-    const [d, m, y] = date.split('/')
-    return `${y}-${m}-${d}`
-}
-
 export function formatDateYmd(date) {
     return dayjs(date).format('YYYY-MM-DD')
 }

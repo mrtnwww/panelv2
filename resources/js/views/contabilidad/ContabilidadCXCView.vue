@@ -18,14 +18,12 @@
                     v-model="filters.fechaFinal"
                 />
 
-                <div class="flex flex-col gap-1.5">
-                    <FormInput
-                        label="Establecimiento"
-                        type="select"
+                <div class="flex flex-col gap-1.5 xl:w-[30%]">
+                    <FormSelectAsync
+                        label="Aliado"
                         v-model="filters.establecimiento"
-                        :options="establecimientosOpts"
+                        :fetch-options="opcionesStore.fetchEmpresas"
                         placeholder="Seleccione un aliado"
-                        :searchable="true"
                     />
                 </div>
 
@@ -111,16 +109,23 @@
 import { ref, reactive, onMounted } from 'vue'
 
 // -- Componentes ------------------------------------------
+import FormSelectAsync from '@/components/form/FormSelectAsync.vue'
 import DataTable from '@/components/table/DataTable.vue'
 import FormInput from '@/components/form/FormInput.vue'
 
-import { useOpcionesStore } from '@/stores/opciones'
-
+// -- Loader -----------------------------------------------
 import { useLoader } from '@/composables/useLoader'
 const { start, stop } = useLoader()
 
+// -- Composables ------------------------------------------
+// -- DataTable --------------------------------------------
+import { useDataTable } from '@/composables/useDataTable'
+
 import { formatCurrency } from '@/utils/format'
 import api from '@/services/api'
+
+// -- Store -------------------------------------------------
+import { useOpcionesStore } from '@/stores/opciones'
 
 // -- Columnas ----------------------------------------------
 const columns = [
@@ -136,11 +141,6 @@ const opcionesStore = useOpcionesStore()
 // -- Estado ------------------------------------------------
 const recibos = ref([])
 const loading = ref(false)
-const search = ref('')
-let searchTimeout = null
-
-const pagination = reactive({ currentPage: 1, perPage: 10, total: 0 })
-const sort = reactive({ key: 'fecha', dir: 'desc' })
 
 // -- Filtros ---------------------------------------------------------
 const filters = reactive({
@@ -148,8 +148,6 @@ const filters = reactive({
     fechaFinal: '',
     establecimiento: '',
 })
-
-const establecimientosOpts = ref([])
 
 function authHeaders() {
     return {
@@ -212,31 +210,6 @@ async function imprimirRecibo(row) {
     }
 }
 
-// -- Handlers DataTable ------------------------------------------------
-function onPageChange(page) {
-    pagination.currentPage = page
-    fetchRecibos()
-}
-function onPerPageChange(val) {
-    pagination.perPage = val
-    pagination.currentPage = 1
-    fetchRecibos()
-}
-function onSort({ key, dir }) {
-    sort.key = key
-    sort.dir = dir
-    pagination.currentPage = 1
-    fetchRecibos()
-}
-function onSearch(val) {
-    search.value = val
-    clearTimeout(searchTimeout)
-    searchTimeout = setTimeout(() => {
-        pagination.currentPage = 1
-        fetchRecibos()
-    }, 400)
-}
-
 function transformarRecibos(data) {
     recibos.value = data.map(recibo => ({
         establecimiento: recibo.empresa.razon_social,
@@ -246,15 +219,23 @@ function transformarRecibos(data) {
     }))
 }
 
+const {
+    search,
+    pagination,
+    sort,
+    onPageChange,
+    onPerPageChange,
+    onSearch,
+    onSort,
+} = useDataTable(fetchRecibos, {
+    initialSortKey: 'fecha',
+})
+
 onMounted(async () => {
     start()
 
     try {
         await fetchRecibos()
-
-        // Obtener listado de empresas aliadas
-        await opcionesStore.fetchEmpresas()
-        establecimientosOpts.value = opcionesStore.empresasSelect
     } finally {
         stop()
     }
