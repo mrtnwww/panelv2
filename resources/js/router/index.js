@@ -132,6 +132,12 @@ const routes = [
                 component: () =>
                     import('@/views/informes/CarteraListaView.vue'),
             },
+            {
+                path: 'informes/cxc-aliado',
+                name: 'informes.cxcAliado',
+                component: () =>
+                    import('@/views/informes/CXCAliadoView.vue'),
+            },
             // -- CONFIGURACION --------------------------------------------------------------
             {
                 path: 'configuracion/usuarios',

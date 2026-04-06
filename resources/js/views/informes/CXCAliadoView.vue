@@ -1,7 +1,7 @@
 <template>
     <div class="flex flex-col gap-5">
         <!-- Encabezado -->
-        <h1 class="text-lg font-semibold text-[#0A2540]">Informe créditos</h1>
+        <h1 class="text-lg font-semibold text-[#0A2540]">Informe CXC Aliado</h1>
 
         <!-- Panel de filtros -->
         <div
@@ -25,62 +25,23 @@
                     :fetch-options="opcionesStore.fetchClientesCredits"
                     placeholder="Seleccione un cliente"
                 />
-                <FormInput
-                    label="Estado crédito"
-                    type="select"
-                    v-model="filters.estado"
-                    :options="estadosCredito"
-                    placeholder="Seleccione un estado"
+                <FormSelectAsync
+                    v-model="filters.aliado"
+                    label="Aliado"
+                    :fetch-options="opcionesStore.fetchEmpresas"
+                    placeholder="Seleccione un aliado"
                 />
             </div>
 
             <!-- Fila 2 -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <!-- Vencimiento de cuota + checkbox Por rango -->
-                <div class="flex flex-col gap-1.5">
-                    <div class="flex items-center justify-between">
-                        <label :class="labelClass">
-                            Vencimiento de cuota
-                        </label>
-                        <FormCheckbox
-                            v-model="filters.porRango"
-                            label="Por rango"
-                        />
-                    </div>
-                    <FormInput v-model="filters.vencimientoCuota" type="date" />
-                </div>
-
                 <FormInput
-                    label="Destino"
+                    label="CXC Pendientes"
                     type="select"
-                    v-model="filters.destino"
-                    :options="destinoOpts"
-                    placeholder="Seleccione un destino"
-                    :searchable="true"
+                    :options="cxcPendientesOpts"
+                    v-model="filters.cxcPendientes"
+                    placeholder="Seleccionar CXC Pendiente"
                 />
-                <FormInput
-                    label="Periodicidad"
-                    type="select"
-                    v-model="filters.periodicidad"
-                    :options="periodicidades"
-                    placeholder="Seleccione la periodicidad"
-                />
-
-                <!-- Aliado + checkbox Solo aliados -->
-                <div class="flex flex-col gap-1.5">
-                    <div class="flex items-center justify-between">
-                        <label :class="labelClass"> Aliado </label>
-                        <FormCheckbox
-                            v-model="filters.soloAliados"
-                            label="Solo aliados"
-                        />
-                    </div>
-                    <FormSelectAsync
-                        v-model="filters.aliado"
-                        :fetch-options="opcionesStore.fetchEmpresas"
-                        placeholder="Seleccione un aliado"
-                    />
-                </div>
             </div>
 
             <!-- Botones de informe -->
@@ -161,9 +122,11 @@
             @update:search="onSearch"
             @sort="onSort"
         >
-            <!-- Controles extra en la barra -->
-            <template #actions>
-                <UpdateMoraButton :onSuccess="fetchCreditos" />
+            <!-- Celda de valor cuota -->
+            <template #cell-valorCuota="{ value }">
+                <span class="text-gray-700 font-medium">{{
+                    formatCurrency(value)
+                }}</span>
             </template>
 
             <!-- Celdas de moneda -->
@@ -172,31 +135,17 @@
                 #[`cell-${col}`]="{ value }"
                 :key="col"
             >
-                <span class="font-medium text-gray-600">{{
-                    formatCurrency(value)
-                }}</span>
+                <span class="text-gray-600">{{ formatCurrency(value) }}</span>
             </template>
 
             <!-- Acciones -->
             <template #cell-acciones="{ row }">
                 <div class="flex items-center gap-1.5">
                     <button
-                        @click.stop="verEstadoCredito(null, row.id)"
+                        @click.stop="editarCXC(row)"
                         class="h-7 px-3 rounded-lg bg-[#1a5c2a] hover:bg-[#154d22] text-white text-xs font-medium transition-all"
                     >
-                        Detalle
-                    </button>
-                    <button
-                        @click.stop="generarExtracto(row)"
-                        class="h-7 px-3 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-medium transition-all"
-                    >
-                        Generar extracto
-                    </button>
-                    <button
-                        @click.stop="anularCredito(row)"
-                        class="h-7 px-3 rounded-lg bg-red-500 hover:bg-red-600 text-white text-xs font-medium transition-all"
-                    >
-                        Anular
+                        Editar CXC
                     </button>
                 </div>
             </template>
@@ -209,7 +158,7 @@
                 >
                     <td
                         class="px-3 py-3 text-center text-gray-500 pr-6"
-                        :colspan="3"
+                        :colspan="4"
                     >
                         Total:
                     </td>
@@ -223,51 +172,15 @@
                         {{ formatCurrency(valoresTotales.ivaAval) }}
                     </td>
                     <td class="px-3 py-3 text-gray-700 text-right">
-                        {{ formatCurrency(valoresTotales.intereses) }}
-                    </td>
-                    <td class="px-3 py-3 text-gray-700 text-right">
                         {{ formatCurrency(valoresTotales.valorCredito) }}
                     </td>
                     <td class="px-3 py-3 text-gray-700 text-right">
-                        {{ formatCurrency(valoresTotales.totalAbonado) }}
-                    </td>
-                    <td class="px-3 py-3 text-gray-700 text-right">
-                        {{ formatCurrency(valoresTotales.totalPendiente) }}
-                    </td>
-                    <td class="px-3 py-3 text-gray-700 text-right">
-                        {{ formatCurrency(valoresTotales.intMoratorio) }}
-                    </td>
-                    <td class="px-3 py-3 text-gray-700 text-right">
-                        {{ formatCurrency(valoresTotales.gastosCobranza) }}
-                    </td>
-                    <td class="px-3 py-3 text-gray-700 text-right">
-                        {{ formatCurrency(valoresTotales.pendienteMora) }}
-                    </td>
-                    <td class="px-3 py-3" colspan="5"></td>
-                    <td class="px-3 py-3 text-gray-700 text-right">
                         {{ formatCurrency(valoresTotales.cxcImpulsa) }}
-                    </td>
-                    <td class="px-3 py-3 text-gray-700 text-right">
-                        {{ formatCurrency(valoresTotales.cxpAliados) }}
                     </td>
                     <td colspan="2"></td>
                 </tr>
             </template>
         </DataTable>
-
-        <transition name="modal">
-            <EstadoCreditoModal
-                v-model="modalOpen"
-                :loading="loadingCredito"
-                :credito="credito"
-                @ver-historico="verHistorico"
-                @liquidar="liquidarCredito"
-                @ver-plan-pagos="verPlanPagos"
-                @descargar-paz-salvo="descargarPazSalvo"
-                @imprimir="imprimirCredito"
-                @imprimir-abono="imprimirAbono"
-            />
-        </transition>
     </div>
 </template>
 
@@ -275,16 +188,12 @@
 import { ref, reactive, onMounted } from 'vue'
 
 // -- Componentes --------------------------------------------------
-import EstadoCreditoModal from '@/components/modals/EstadoCreditoModal.vue'
 import FormSelectAsync from '@/components/form/FormSelectAsync.vue'
-import FormCheckbox from '@/components/form/FormCheckbox.vue'
 import FormInput from '@/components/form/FormInput.vue'
 
-import UpdateMoraButton from '@/components/table/UpdateMoraButton.vue'
 import DataTable from '@/components/table/DataTable.vue'
 
 // -- Composables --------------------------------------------------
-import { useEstadoCredito } from '@/composables/useEstadoCredito'
 // -- Datatable ----------------------------------------------------
 import { useDataTable } from '@/composables/useDataTable'
 
@@ -300,23 +209,13 @@ import { useOpcionesStore } from '@/stores/opciones'
 
 // -- Columnas -----------------------------------------------------
 const columns = [
+    { key: 'numCredito', label: 'Núm. Crédito', sortable: false },
+    { key: 'fechaCredito', label: 'Fecha crédito', sortable: false },
     { key: 'cliente', label: 'Cliente', sortable: false },
-    {
-        key: 'numCuotas',
-        label: 'Núm. cuotas',
-        sortable: false,
-        align: 'center',
-    },
-    {
-        key: 'valorCuota',
-        label: 'Valor cuota',
-        sortable: false,
-        align: 'right',
-    },
+    { key: 'aliado', label: 'Aliado', sortable: false },
     { key: 'valorBase', label: 'Valor base', sortable: false, align: 'right' },
     { key: 'valorAval', label: 'Valor Aval', sortable: false, align: 'right' },
     { key: 'ivaAval', label: 'IVA Aval', sortable: false, align: 'right' },
-    { key: 'intereses', label: 'Intereses', sortable: false, align: 'right' },
     {
         key: 'valorCredito',
         label: 'Valor Crédito',
@@ -324,60 +223,18 @@ const columns = [
         align: 'right',
     },
     {
-        key: 'totalAbonado',
-        label: 'Tot. Abonado',
-        sortable: false,
-        align: 'right',
-    },
-    {
-        key: 'totalPendiente',
-        label: 'Tot. Pendiente',
-        sortable: false,
-        align: 'right',
-    },
-    {
-        key: 'intMoratorio',
-        label: 'Int. moratorio',
-        sortable: false,
-        align: 'right',
-    },
-    {
-        key: 'gastosCobranza',
-        label: 'Gastos cobranza',
-        sortable: false,
-        align: 'right',
-    },
-    {
-        key: 'pendienteMora',
-        label: 'Pendiente en mora',
-        sortable: false,
-        align: 'right',
-    },
-    { key: 'numCredito', label: 'Núm. Crédito', sortable: false },
-    { key: 'aliado', label: 'Aliado', sortable: false },
-    { key: 'fechaCredito', label: 'Fecha crédito', sortable: false },
-    { key: 'vencimiento', label: 'Vencimiento', sortable: false },
-    { key: 'plazo', label: 'Plazo', sortable: false },
-    {
         key: 'cxcImpulsa',
         label: 'CXC Impulsa',
         sortable: false,
         align: 'right',
     },
-    {
-        key: 'cxpAliados',
-        label: 'CXP Aliados',
-        sortable: false,
-        align: 'right',
-    },
-    { key: 'destino', label: 'Destino', sortable: false },
-    { key: 'estadoCredito', label: 'Estado crédito', sortable: false },
-    { key: 'acciones', label: '', sortable: false },
+    { key: 'placa', label: 'Placa', sortable: false },
+    { key: 'producto', label: 'Producto', sortable: false },
+    { key: 'referencia', label: 'Referencia', sortable: false },
 ]
 
 // Columnas que renderizan como moneda via slot dinámico
 const currencyCols = [
-    'valorCuota',
     'valorBase',
     'valorAval',
     'ivaAval',
@@ -407,32 +264,15 @@ const filters = reactive({
     fechaInicial: '',
     fechaFinal: '',
     cliente: '',
-    estado: '',
-    vencimientoCuota: '',
-    porRango: false,
-    destino: '',
-    periodicidad: '',
     aliado: '',
-    soloAliados: false,
+    cxcPendientes: '',
 })
 
 // -- Opciones de selects ---------------------------------------------------
-const destinoOpts = ref([])
-
-const estadosCredito = [
-    { value: 'vigente', label: 'Al día' },
-    { value: 'finalizado', label: 'Finalizado' },
-    { value: 'mora', label: 'En mora' },
+const cxcPendientesOpts = [
+    { value: 'si', label: 'Si' },
+    { value: 'no', label: 'No' },
 ]
-
-const periodicidades = [
-    { value: 'semanal', label: 'Semanal' },
-    { value: 'quincenal', label: 'Quincenal' },
-    { value: 'mensual', label: 'Mensual' },
-]
-
-// -- Helpers ----------------------------------------------------------------
-const labelClass = 'text-xs font-medium text-gray-400 uppercase tracking-wide'
 
 // -- Backend ----------------------------------------------------------------
 async function fetchCreditos() {
@@ -506,47 +346,27 @@ async function generarInforme(tipo) {
 }
 
 // -- Acciones de fila --------------------------------------------------
-function generarExtracto(row) {
-    console.log('Generar extracto:', row.id)
-}
-function anularCredito(row) {
-    console.log('Anular crédito:', row.id)
+function editarCXC(row) {
+    console.log('Editar CXC:', row.id)
 }
 
 function transformCreditos(data, sumaTotales) {
     const toNumber = v => Number(v) || 0
 
-    const estadoCredito = cr => {
-        if (cr.anulado) return 'Anulado'
-        if (cr.enmora) return 'En mora'
-        if (cr.finalizado == 1) return 'Finalizado'
-        return 'Normal'
-    }
-
     const mapCredito = cr => ({
         id: cr.id,
         cliente: cr.nombre,
-        numCuotas: cr.num_cuotas,
-        valorCuota: cr.val_cuotas,
         valorBase: cr.valor_contado,
         valorAval: cr.valor_aval,
         ivaAval: cr.valor_iva_aval,
-        intereses: cr.intereses,
         valorCredito: cr.valor_credito,
-        totalAbonado: cr.total_abonado,
-        totalPendiente: cr.saldo,
-        intMoratorio: cr.abono_int_mora,
-        gastosCobranza: cr.abono_gas_cobranza,
-        pendienteMora: cr.valor_mora,
         numCredito: cr.consecutivo,
         aliado: cr.empresa,
         fechaCredito: cr.fecha_credito,
-        vencimiento: cr.vencimiento,
-        plazo: cr.plazo,
         cxcImpulsa: cr.valor_cxc,
-        cxpAliados: cr.valor_cxc_aliado,
-        destino: cr.destino,
-        estadoCredito: estadoCredito(cr),
+        placa: cr.placa,
+        producto: cr.producto,
+        referencia: cr.observacion,
     })
 
     creditos.value = data.map(mapCredito)
@@ -555,15 +375,8 @@ function transformCreditos(data, sumaTotales) {
         valorBase: 'valor_contado',
         valorAval: 'total_aval',
         ivaAval: 'total_iva_aval',
-        intereses: 'total_credito_intereses',
         valorCredito: 'valor_credito',
-        totalAbonado: 'total_abonado',
-        totalPendiente: 'saldo',
-        intMoratorio: 'total_abono_int_mora',
-        gastosCobranza: 'total_abono_gas_cobranza',
-        pendienteMora: 'total_credito_mora',
         cxcImpulsa: 'valor_cxc',
-        cxpAliados: 'total_cxc_aliado',
     }
 
     valoresTotales.value = Object.fromEntries(
@@ -573,20 +386,6 @@ function transformCreditos(data, sumaTotales) {
         ])
     )
 }
-
-// -- Modal estado credito --------------------------------------
-const {
-    modalOpen,
-    loadingCredito,
-    credito,
-    verEstadoCredito,
-    verHistorico,
-    liquidarCredito,
-    verPlanPagos,
-    descargarPazSalvo,
-    imprimirCredito,
-    imprimirAbono,
-} = useEstadoCredito()
 
 const {
     search,
@@ -604,8 +403,7 @@ onMounted(async () => {
     start()
 
     try {
-        await Promise.all([fetchCreditos(), opcionesStore.fetchDestinos()])
-        destinoOpts.value = opcionesStore.destinos
+        await fetchCreditos()
     } finally {
         stop()
     }
