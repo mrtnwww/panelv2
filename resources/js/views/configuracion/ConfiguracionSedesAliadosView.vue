@@ -182,143 +182,20 @@
         </div>
 
         <!-- ── Modal crear / editar ── -->
-        <transition name="modal">
-            <div
-                v-if="modal.open"
-                class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
-                @click.self="modal.open = false"
-            >
-                <div
-                    class="bg-white rounded-2xl w-full max-w-lg p-6 flex flex-col gap-5 shadow-xl"
-                >
-                    <!-- Cabecera modal -->
-                    <div class="flex items-center justify-between">
-                        <h2 class="text-base font-semibold text-[#0A2540]">
-                            {{
-                                modal.mode === 'crear'
-                                    ? 'Nueva sede / aliado'
-                                    : 'Editar sede / aliado'
-                            }}
-                        </h2>
-                        <button
-                            @click="modal.open = false"
-                            class="text-gray-300 hover:text-gray-500 transition-colors"
-                        >
-                            <svg
-                                width="18"
-                                height="18"
-                                viewBox="0 0 18 18"
-                                fill="none"
-                            >
-                                <path
-                                    d="M3 3L15 15M15 3L3 15"
-                                    stroke="currentColor"
-                                    stroke-width="1.5"
-                                    stroke-linecap="round"
-                                />
-                            </svg>
-                        </button>
-                    </div>
-
-                    <!-- Campos -->
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <FormInput
-                            label="Nombre del establecimiento"
-                            v-model="modal.form.establecimiento"
-                            placeholder="Nombre del aliado o sede"
-                            :required="true"
-                            wrapper-class="sm:col-span-2"
-                        />
-                        <FormInput
-                            label="Correo electrónico"
-                            type="email"
-                            v-model="modal.form.email"
-                            placeholder="contacto@empresa.com"
-                        />
-                        <FormInput
-                            label="Periodicidad"
-                            type="select"
-                            v-model="modal.form.periodicidad"
-                            :options="periodicidadOpts"
-                            placeholder="Seleccione"
-                        />
-                        <FormInput
-                            label="Tipo"
-                            type="select"
-                            v-model="modal.form.tipo"
-                            :options="tipoOpts"
-                            placeholder="Aliado o Sede"
-                        />
-                        <FormInput
-                            label="Vigencia usuarios (días)"
-                            type="number"
-                            v-model="modal.form.vigenciaDias"
-                            placeholder="—"
-                        />
-                        <FormInput
-                            label="Logo del establecimiento"
-                            type="file"
-                            v-model="modal.form.logo"
-                            accept="image/*"
-                            button-label="Subir logo"
-                            placeholder="PNG o JPG — máx. 2MB"
-                            wrapper-class="sm:col-span-2"
-                        />
-                    </div>
-
-                    <!-- Error -->
-                    <transition name="fade">
-                        <div
-                            v-if="modal.error"
-                            class="px-3 py-2.5 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm"
-                        >
-                            {{ modal.error }}
-                        </div>
-                    </transition>
-
-                    <!-- Acciones modal -->
-                    <div class="flex justify-end gap-2 pt-1">
-                        <button
-                            @click="modal.open = false"
-                            class="h-9 px-4 rounded-lg border border-gray-200 text-sm text-gray-500 hover:bg-gray-50 transition-all"
-                        >
-                            Cancelar
-                        </button>
-                        <button
-                            @click="guardar"
-                            :disabled="modal.loading"
-                            class="h-9 px-5 rounded-lg bg-[#1a5c2a] hover:bg-[#154d22] disabled:bg-gray-300 text-white text-sm font-medium transition-all flex items-center gap-2"
-                        >
-                            <svg
-                                v-if="modal.loading"
-                                class="animate-spin w-3.5 h-3.5"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                            >
-                                <circle
-                                    class="opacity-25"
-                                    cx="12"
-                                    cy="12"
-                                    r="10"
-                                    stroke="currentColor"
-                                    stroke-width="4"
-                                />
-                                <path
-                                    class="opacity-75"
-                                    fill="currentColor"
-                                    d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                                />
-                            </svg>
-                            {{
-                                modal.mode === 'crear'
-                                    ? 'Crear'
-                                    : 'Guardar cambios'
-                            }}
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </transition>
+        <AppModal
+            v-model="modal.open"
+            :title="'Nueva empresa'"
+            size="lg"
+            :show-footer="true"
+            :cancel-label="'Cancelar'"
+            :confirm-label="'Crear empresa'"
+            :confirm-loading="modal.loading"
+            :close-on-overlay="true"
+            @confirm="guardarEmpresa"
+            @update:modelValue="cerrarModal"
+        >
+            <RegistroForm />
+        </AppModal>
     </div>
 </template>
 
@@ -327,7 +204,9 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 
 // -- Componentes ------------------------------------------------------
+import RegistroForm from '@/components/RegistroForm.vue'
 import FormInput from '@/components/form/FormInput.vue'
+import AppModal from '@/components/AppModal.vue'
 
 import DataTable from '@/components/table/DataTable.vue'
 
@@ -474,11 +353,15 @@ function abrirModalCrear() {
     modal.open = true
 }
 
+function cerrarModal() {
+    modal.open = false
+}
+
 function panelFunciones(row) {
     // TODO
 }
 
-async function guardar() {
+async function guardarEmpresa() {
     if (!modal.form.establecimiento) {
         modal.error = 'El nombre del establecimiento es requerido.'
         return
