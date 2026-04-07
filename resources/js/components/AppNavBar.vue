@@ -27,12 +27,45 @@
         <div class="flex-1" />
 
         <!-- Fórmularios -->
-        <button
-            class="hidden md:flex items-center gap-1.5 text-sm text-gray-500 hover:text-[#1a5c2a] transition-colors"
-        >
-            <i class="fa-regular fa-file-lines"></i>
-            Fórmularios
-        </button>
+        <div class="relative" ref="formulariosRef">
+            <button
+                @click="formulariosMenuOpen = !formulariosMenuOpen"
+                class="hidden md:flex items-center gap-1.5 text-sm text-gray-500 hover:text-[#1a5c2a] transition-colors"
+            >
+                <i class="fa-regular fa-file-lines"></i>
+                Fórmularios
+            </button>
+
+            <!-- Dropdown formularios -->
+            <transition name="dropdown">
+                <div
+                    v-if="formulariosMenuOpen"
+                    class="absolute right-0 top-full mt-2 w-56 bg-white border border-gray-100 rounded-xl shadow-lg shadow-gray-200/60 py-2 z-50"
+                >
+                    <p
+                        class="px-4 py-1.5 text-[10px] font-semibold text-gray-400 uppercase tracking-widest"
+                    >
+                        Formularios
+                    </p>
+
+                    <button
+                        v-for="item in formularios"
+                        :key="item.route"
+                        @click="quickNav(item.route)"
+                        class="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 transition-colors"
+                    >
+                        <div
+                            class="w-8 h-8 rounded-full bg-[#1a5c2a] text-white flex items-center justify-center shrink-0"
+                        >
+                            <i :class="item.icon"></i>
+                        </div>
+                        <span class="text-sm text-gray-700">{{
+                            item.label
+                        }}</span>
+                    </button>
+                </div>
+            </transition>
+        </div>
 
         <!-- Notificaciones -->
         <button
@@ -240,12 +273,13 @@ const auth = useAuthStore()
 const userMenuRef = ref(null)
 const userMenuOpen = ref(false)
 const quickMenuOpen = ref(false)
+const formulariosMenuOpen = ref(false)
 
 const quickActions = [
     {
         label: 'Nuevo cliente',
         route: '/clientes/nuevo',
-        icon: 'fa-regular fa-user',
+        icon: 'fa-solid fa-user',
     },
     {
         label: 'Crear crédito',
@@ -256,6 +290,29 @@ const quickActions = [
         label: 'Generar abono',
         route: '/abonos/nuevo',
         icon: 'fa-solid fa-dollar-sign',
+    },
+]
+
+const formularios = [
+    {
+        label: 'Clientes',
+        route: '/46/solicitud-credito',
+        icon: 'fa-solid fa-user',
+    },
+    {
+        label: 'Libranza',
+        route: '/46/solicitud-credito',
+        icon: 'fa-solid fa-user-group',
+    },
+    {
+        label: 'Vehiculo',
+        route: '/46/solicitud-credito',
+        icon: 'fa-solid fa-car',
+    },
+    {
+        label: 'Vivienda',
+        route: '/46/solicitud-credito',
+        icon: 'fa-solid fa-home',
     },
 ]
 
