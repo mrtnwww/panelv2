@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Creditos;
 
 use App\Exports\CorresponsalExport;
+use App\Exports\ReporteAdministrativoExportExcel;
 use App\Http\Controllers\Clientes\ClienteController;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Mobile\MobileController;
@@ -932,7 +933,7 @@ class CreditoController extends Controller
         // $empresa = Empresa::where('id', $credito->empresa_id)->first();
         // $cliente = Cliente::where('id', $credito->client_id)->first();
 
-        $hoy = \Carbon\Carbon::now();
+        $hoy = Carbon::now();
 
         // Aval nominal, porcentual e iva
         $aval = 0;
@@ -1525,7 +1526,7 @@ class CreditoController extends Controller
 
         $posDetenida = 0;
         $sumaInteresTemp = 0;
-        $hoy = \Carbon\Carbon::now();
+        $hoy = Carbon::now();
         $i = -1;
         $proyeccionR = CreditoProyeccion::where('credito_id', $credito->id)->get();
         foreach ($proyeccionR as $p) {
@@ -2314,11 +2315,11 @@ class CreditoController extends Controller
                 return $this->procesarCredito($credito, $hoy, $estadoFuncion, $condonacionesPorCredito);
             });
 
-            $hoy = \Carbon\Carbon::now()->format('Y-m-d_H-i-s');
+            $hoy = Carbon::now()->format('Y-m-d_H-i-s');
             $nombreArchivo = 'informe_corresponsal_' . $hoy . '.xlsx';
             $excel::store(new CorresponsalExport($creditos, $estadoFuncion), $nombreArchivo, 's3');
             $fileUrl = Storage::disk('s3')->url($nombreArchivo);
-            $expiracion = \Carbon\Carbon::now()->addMinutes(30); // Establecer la expiración en 5 minutos
+            $expiracion = Carbon::now()->addMinutes(30); // Establecer la expiración en 5 minutos
             $fileUrl = Storage::disk('s3')->temporaryUrl($nombreArchivo, $expiracion);
 
             return response()->json([
@@ -2376,5 +2377,322 @@ class CreditoController extends Controller
         $credito->estado = $estado;
 
         return $credito;
+    }
+
+    public function listCreditsAdministrativo(Request $request) {
+        $empresaId = auth()->user()->empresa_id;
+
+        // Validar si la empresa es un aliado o una sede
+        $empresa = Empresa::find($empresaId);
+        if ($empresa->aliado || $empresa->sede) $empresa = Empresa::find($empresa->aliado ?? $empresa->sede);
+
+        // Filtros
+        $conditions = [
+            'generateReport' => $request->input('generateReport', false),
+            'fechaInicial' => $request->input('fechaInicial', NULL),
+            'fechaFinal' => $request->input('fechaFinal', NULL),
+            'aliado' => $request->input('aliado', ''),
+        ];
+
+        $searchTerm = $request->input('search', '');
+        $perPage = $request->input('per_page', 10);
+        $vQuery = null;
+
+        $empresasIds = Empresa::query();
+
+        if (!empty($conditions['aliado']) || !empty($searchTerm)) {
+            $empresasIds->where(function ($query) use ($conditions, $searchTerm) {
+                foreach ([$conditions['aliado'], $searchTerm] as $term) {
+                    if (!empty($term)) {
+                        $query->orWhere('razon_social', 'like', '%' . $term . '%');
+                    }
+                }
+            });
+        } else {
+            $empresasIds->where('aliado', $empresaId)
+                ->orWhere('sede', $empresaId);
+        }
+
+        $empresasIds = $empresasIds->pluck('id');
+
+        if (empty($conditions['aliado']) && empty($searchTerm)) {
+            $empresasIds->push($empresaId)->unique();
+        }
+
+        $fechaInicialParsed = $conditions['fechaInicial'] ? Carbon::parse($conditions['fechaInicial'])->startOfMonth()->addHours(5) : null;
+        $fechaFinalParsed = $conditions['fechaFinal'] ? Carbon::parse($conditions['fechaFinal'])->endOfMonth()->addHours(5) : null;
+
+        $creditosByDate = Credito::whereIn('empresa_id', $empresasIds)
+            ->when($fechaInicialParsed && $fechaFinalParsed, function ($query) use ($fechaInicialParsed, $fechaFinalParsed) {
+                $query->whereBetween('credito.created_at', [$fechaInicialParsed, $fechaFinalParsed]);
+            })
+            ->applyConditions($conditions)
+            ->applySearchAdmin($searchTerm);
+
+        if (!empty($conditions['consolidar_empresas']) && $conditions['consolidar_empresas'] == 1) {
+            // se agrupan los creditos por fecha
+            $creditosByDate->select(
+                DB::raw("DATE_FORMAT(credito.created_at, '%Y-%m') as fecha"),
+                DB::raw("COUNT(credito.id) as num_credito"),
+                DB::raw("SUM(credito.valor_base) as suma_compra"),
+                DB::raw("SUM(credito.valor_credito) as suma_credito"),
+                DB::raw("GROUP_CONCAT(credito.id) as creditos_ids"),
+                DB::raw("NULL as total_abonos")
+            )
+            ->groupBy('fecha')
+            ->orderBy('fecha', 'desc');
+        } else {
+            // se agrupan los creditos por fecha y empresa
+            $creditosByDate->select(
+                'credito.empresa_id',
+                DB::raw("DATE_FORMAT(credito.created_at, '%Y-%m') as fecha"),
+                DB::raw("COUNT(credito.id) as num_credito"),
+                DB::raw("SUM(credito.valor_base) as suma_compra"),
+                DB::raw("SUM(credito.valor_credito) as suma_credito"),
+                DB::raw("GROUP_CONCAT(credito.id) as creditos_ids"),
+                DB::raw("NULL as total_abonos")
+            )
+            ->groupBy('empresa_id', 'fecha')
+            ->orderBy('fecha', 'desc');
+        }
+
+        // Se obtienen los totales de las ventas y creditos
+        $totalesCredito = Credito::whereIn('empresa_id', $empresasIds)
+            ->select(
+                DB::raw("SUM(credito.valor_base) as total_suma_compra"),
+                DB::raw("SUM(credito.valor_credito) as total_suma_credito")
+            )
+            ->when($fechaInicialParsed && $fechaFinalParsed, function ($query) use ($fechaInicialParsed, $fechaFinalParsed) {
+                $query->whereBetween('credito.created_at', [$fechaInicialParsed, $fechaFinalParsed]);
+            })
+            ->first();
+
+        $totalCredito = $totalesCredito->total_suma_credito ?? 0;
+        $totalVentas = $totalesCredito->total_suma_compra ?? 0;
+
+        $totalAbonos = Credito::whereIn('empresa_id', $empresasIds)
+            ->leftJoin('abono', function($join) {
+                $join->on('abono.credito_id', '=', 'credito.id')
+                    ->whereNull('abono.deleted_at');
+            })
+            ->select(DB::raw("SUM(abono.valor) as total_abonos"))
+            ->when($fechaInicialParsed && $fechaFinalParsed, function ($query) use ($fechaInicialParsed, $fechaFinalParsed) {
+                $query->whereBetween('credito.created_at', [$fechaInicialParsed, $fechaFinalParsed]);
+            })
+            ->applyConditions($conditions)
+            ->applySearchAdmin($searchTerm)
+            ->value('total_abonos');
+
+        // Se obtiene el total de abonos del mes
+        if (!empty($conditions['abonos_mes']) && $conditions['abonos_mes'] == 1) {
+            $abonosByDate = Abono::join('credito', 'abono.credito_id', '=', 'credito.id')
+                ->whereIn('credito.empresa_id', $empresasIds)
+                ->when($fechaInicialParsed && $fechaFinalParsed, function ($query) use ($fechaInicialParsed, $fechaFinalParsed) {
+                    $query->whereBetween('abono.created_at', [$fechaInicialParsed, $fechaFinalParsed]);
+                });
+
+            if (!empty($conditions['consolidar_empresas']) && $conditions['consolidar_empresas'] == 1) {
+                // se agrupan los abonos por fecha
+                $abonosByDate->select(
+                    DB::raw("DATE_FORMAT(abono.created_at, '%Y-%m') as fecha"),
+                    DB::raw("NULL as num_credito"),
+                    DB::raw("NULL as suma_compra"),
+                    DB::raw("NULL as suma_credito"),
+                    DB::raw("NULL as creditos_ids"),
+                    DB::raw("SUM(abono.valor) as total_abonos")
+                )
+                ->groupBy('fecha');
+            } else {
+                // se agrupan los abonos por fecha y empresa
+                $abonosByDate->select(
+                    'credito.empresa_id',
+                    DB::raw("DATE_FORMAT(abono.created_at, '%Y-%m') as fecha"),
+                    DB::raw("NULL as num_credito"),
+                    DB::raw("NULL as suma_compra"),
+                    DB::raw("NULL as suma_credito"),
+                    DB::raw("NULL as creditos_ids"),
+                    DB::raw("SUM(abono.valor) as total_abonos")
+                )
+                ->groupBy('credito.empresa_id', 'fecha');
+            }
+
+            $combinedQuery = $creditosByDate->unionAll($abonosByDate);
+
+            if (!empty($conditions['consolidar_empresas']) && $conditions['consolidar_empresas'] == 1) {
+                // agrupar para mantener los valores de creditos y sumar abonos
+                $vQuery = DB::table(DB::raw("({$combinedQuery->toSql()}) as combined"))
+                    ->mergeBindings($combinedQuery->getQuery())
+                    ->select(
+                        'fecha',
+                        DB::raw("MAX(num_credito) as num_credito"),
+                        DB::raw("MAX(suma_compra) as suma_compra"),
+                        DB::raw("MAX(suma_credito) as suma_credito"),
+                        DB::raw("MAX(creditos_ids) as creditos_ids"),
+                        DB::raw("SUM(total_abonos) as total_abonos")
+                    )
+                    ->groupBy('fecha')
+                    ->orderBy('fecha', 'desc');
+            } else {
+                // agrupar para mantener los valores de creditos y sumar abonos
+                $vQuery = DB::table(DB::raw("({$combinedQuery->toSql()}) as combined"))
+                    ->mergeBindings($combinedQuery->getQuery())
+                    ->join('empresa', 'combined.empresa_id', '=', 'empresa.id')
+                    ->select(
+                        'empresa_id',
+                        'fecha',
+                        'empresa.razon_social as nombre_empresa',
+                        DB::raw("MAX(num_credito) as num_credito"),
+                        DB::raw("MAX(suma_compra) as suma_compra"),
+                        DB::raw("MAX(suma_credito) as suma_credito"),
+                        DB::raw("MAX(creditos_ids) as creditos_ids"),
+                        DB::raw("SUM(total_abonos) as total_abonos")
+                    )
+                    ->groupBy('empresa_id', 'fecha')
+                    ->orderBy('fecha', 'desc');
+            }
+
+            $totalAbonosMes = Abono::whereIn('credito_id', function($query) use ($empresasIds) {
+                    $query->select('id')
+                        ->from('credito')
+                        ->whereIn('empresa_id', $empresasIds);
+                })
+                ->select(DB::raw("SUM(valor) as total_abonos"))
+                ->when($fechaInicialParsed && $fechaFinalParsed, function ($query) use ($fechaInicialParsed, $fechaFinalParsed) {
+                    $query->whereBetween('abono.created_at', [$fechaInicialParsed, $fechaFinalParsed]);
+                })
+                ->whereNull('deleted_at')
+                ->value('total_abonos');
+        }
+
+        // Diferencia entre el total de ventas y el total de abonos
+        $totalSaldoRecuperacion = $this->calcularSaldoRecuperacion($totalVentas, $totalAbonos ?? 0);
+
+        // Diferencia entre el total credito y el total ventas
+        $totalSaldoUtilidad = $this->calcularSaldoUtilidad($totalCredito, $totalVentas);
+
+        // Suma entre el saldo de recuperacion y el saldo de utilidad
+        $saldoTotal = $this->calcularSaldoTotal($totalVentas, $totalAbonos ?? 0, $totalCredito);
+
+        // Se valida si se reotornaran los registros paginados a la vista o todos los registros para la impresion del informe
+        if ($vQuery) {
+            $vQuery = $conditions['generateReport'] ? $vQuery->get() : $vQuery->paginate($perPage);
+        } else {
+            $vQuery = $conditions['generateReport'] ? $creditosByDate->get() : $creditosByDate->paginate($perPage);
+        }
+
+        $vQuery->transform(function ($credito) use ($conditions, $empresasIds) {
+            $idsCredito = explode(",", $credito->creditos_ids);
+            $resultadoAbonosMes = 0;
+            $abonosMes = 0;
+
+            $resultado = DB::table('abono')
+                ->select(DB::raw("SUM(valor) as suma_abonos"))
+                ->whereIn('credito_id', function($query) use ($idsCredito) {
+                    $query->select('id')
+                        ->from('credito')
+                        ->whereIn('credito_id', $idsCredito)
+                        ->whereNull('deleted_at');
+                })
+                ->whereNull('abono.deleted_at')
+                ->first();
+
+            if (!empty($conditions['abonos_mes']) && $conditions['abonos_mes'] == 1) {
+                if (!empty($conditions['consolidar_empresas']) && $conditions['consolidar_empresas'] == 1) {
+                    // consulta para todas las empresas en ese mes
+                    $resultadoAbonosMes = DB::table('abono')
+                        ->leftJoin('credito', 'credito.id', '=', 'abono.credito_id')
+                        ->select(DB::raw("SUM(abono.valor) as suma_abonos"))
+                        ->whereIn('credito.empresa_id', $empresasIds)
+                        ->whereBetween('abono.created_at', [
+                            Carbon::createFromFormat('Y-m', $credito->fecha)->startOfMonth(),
+                            Carbon::createFromFormat('Y-m', $credito->fecha)->endOfMonth()
+                        ])
+                        ->whereNull('abono.deleted_at')
+                        ->first();
+                } else {
+                    // consulta individual por empresa
+                    $resultadoAbonosMes = DB::table('abono')
+                        ->leftJoin('credito', 'credito.id', '=', 'abono.credito_id')
+                        ->select(DB::raw("SUM(abono.valor) as suma_abonos"))
+                        ->where('credito.empresa_id', $credito->empresa_id)
+                        ->whereBetween('abono.created_at', [
+                            Carbon::createFromFormat('Y-m', $credito->fecha)->startOfMonth(),
+                            Carbon::createFromFormat('Y-m', $credito->fecha)->endOfMonth()
+                        ])
+                        ->whereNull('abono.deleted_at')
+                        ->first();
+                }
+            }
+
+            $abonosR = $resultado->suma_abonos ?? 0;
+            $abonosMes = $resultadoAbonosMes->suma_abonos ?? 0;
+
+            $credito->resumen = [
+                'abonos' => $abonosR,
+                'abonos_mes' => $abonosMes,
+                'fecha' => $credito->fecha,
+                'empresa' => $credito->nombre_empresa ?? ($credito->empresa->razon_social ?? ''),
+                'saldo_recuperacion' => $this->calcularSaldoRecuperacion($credito->suma_compra, $abonosR),
+                'saldo_utilidad' => $this->calcularSaldoUtilidad($credito->suma_credito, $credito->suma_compra),
+                'saldo_total' => $this->calcularSaldoTotal($credito->suma_compra, $abonosR, $credito->suma_credito)
+            ];
+
+            return $credito;
+        });
+
+        $total = [
+            "saldo_recuperacion" => $totalSaldoRecuperacion ?? 0,
+            "saldo_utilidad" => $totalSaldoUtilidad ?? 0,
+            "total_credito" => $totalCredito ?? 0,
+            "total_compra" => $totalVentas ?? 0,
+            "total_abonos" => $totalAbonos ?? 0,
+            "saldo_total" => $saldoTotal ?? 0,
+            "total_abono_mes" => $totalAbonosMes ?? 0,
+            "total_saldo_caja" => ($totalAbonosMes ?? 0) - $totalVentas
+        ];
+
+        if ($conditions['generateReport'] === false) {
+            return response()->json([
+                "creditos" => $vQuery,
+                "totales" => $total,
+                "empresa" => $empresa->razon_social ?? '',
+            ]);
+        } else {
+            $creditos = $vQuery;
+            $creditos = collect($creditos)->sortBy('fecha')->values()->all();
+
+            $excel = new Excel();
+            $hoy = Carbon::now();
+            $hoyFormat = $hoy->format('Y-m-d H:i:s');
+            $fileName = "informe_administrativo_" . $hoyFormat . ".xlsx";
+            $path = "Informes/informe_administrativo/" . $empresaId . "/" . $fileName;
+
+            $excel::store(new ReporteAdministrativoExportExcel($creditos, $total, $empresa->razon_social ?? ''), $path, 's3');
+            $fileUrl = Storage::disk('s3')->url($path);
+            $expiracion = Carbon::now()->addMinutes(30); // Establecer la expiración en 5 minutos
+            $fileUrl = Storage::disk('s3')->temporaryUrl($path, $expiracion);
+
+            return response()->json([
+                "empresa_id" => $empresaId,
+                "fileUrl" => $fileUrl
+            ]);
+        }
+    }
+
+    private function calcularSaldoRecuperacion($sumaCompra, $abonos) {
+        return $this->toFloat($sumaCompra) - $this->toFloat($abonos);
+    }
+
+    private function calcularSaldoUtilidad($sumaCredito, $sumaCompra) {
+        return $this->toFloat($sumaCredito) - $this->toFloat($sumaCompra);
+    }
+
+    private function calcularSaldoTotal($sumaCompra, $abonos, $sumaCredito) {
+        return $this->calcularSaldoRecuperacion($sumaCompra, $abonos) + $this->calcularSaldoUtilidad($sumaCredito, $sumaCompra);
+    }
+
+    // Método auxiliar para convertir a float y evitar errores
+    private function toFloat($value) {
+        return is_numeric($value) ? (float)$value : 0.0;
     }
 }

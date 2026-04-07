@@ -10,7 +10,7 @@
             class="bg-white rounded-xl border border-gray-200 p-5 flex flex-col gap-5"
         >
             <!-- Fila 1 -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <FormInput
                     label="Fecha inicial"
                     type="date"

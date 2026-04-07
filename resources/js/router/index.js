@@ -135,20 +135,33 @@ const routes = [
             {
                 path: 'informes/cxc-aliado',
                 name: 'informes.cxcAliado',
-                component: () =>
-                    import('@/views/informes/CXCAliadoView.vue'),
+                component: () => import('@/views/informes/CXCAliadoView.vue'),
             },
             {
                 path: 'informes/comisiones',
                 name: 'informes.comisiones',
-                component: () =>
-                    import('@/views/informes/ComisionesView.vue'),
+                component: () => import('@/views/informes/ComisionesView.vue'),
+            },
+            {
+                path: 'informes/administrativo',
+                name: 'informes.administrativo',
+                component: () => import('@/views/informes/AdministrativoView.vue'),
             },
             {
                 path: 'informes/corresponsal',
                 name: 'informes.corresponsal',
                 component: () =>
                     import('@/views/informes/CorresponsalView.vue'),
+            },
+            {
+                path: 'informes/facturas',
+                name: 'informes.facturas',
+                component: () => import('@/views/informes/FacturasView.vue'),
+            },
+            {
+                path: 'informes/ventas',
+                name: 'informes.ventas',
+                component: () => import('@/views/informes/VentasView.vue'),
             },
             // -- CONFIGURACION --------------------------------------------------------------
             {

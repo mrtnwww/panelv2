@@ -12,6 +12,7 @@ use App\Models\Empresa;
 use App\Models\ParametrosEstadoFunciones;
 use App\Models\Usuario;
 use App\Models\UsuarioTipoUsuario;
+use App\Services\FacturacionElectronicaService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -29,7 +30,9 @@ class AbonoController extends Controller
         $generarInforme = request('generarInforme', 0);
 
         // Filtros
-        $conditions = $request->input('conditions', []);
+        $conditions = [
+            'factura' => $request->input('factura', 0)
+        ];
 
         $factura = 0;
         if (isset($conditions['factura'])) $factura = $conditions['factura'];

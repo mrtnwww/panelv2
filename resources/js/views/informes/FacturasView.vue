@@ -1,16 +1,14 @@
 <template>
     <div class="flex flex-col gap-5">
         <!-- Encabezado -->
-        <h1 class="text-lg font-semibold text-[#0A2540]">Informe abonos</h1>
+        <h1 class="text-lg font-semibold text-[#0A2540]">Informe facturas</h1>
 
         <!-- Panel de filtros -->
         <div
             class="bg-white rounded-xl border border-gray-200 p-5 flex flex-col gap-5"
         >
             <!-- Fila 1: fechas + selects -->
-            <div
-                class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4"
-            >
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <FormInput
                     label="Fecha inicial"
                     type="date"
@@ -30,22 +28,10 @@
                     :searchable="true"
                 />
                 <FormSelectAsync
-                    label="Cliente"
-                    v-model="filters.cliente"
-                    :fetch-options="opcionesStore.fetchClientesCredits"
-                    placeholder="Seleccione un cliente"
-                />
-                <FormSelectAsync
                     label="Cajera"
                     v-model="filters.cajero"
                     :fetch-options="opcionesStore.fetchCajeras"
                     placeholder="Seleccione una cajera"
-                />
-                <FormSelectAsync
-                    label="Aliado"
-                    v-model="filters.aliado"
-                    :fetch-options="opcionesStore.fetchEmpresas"
-                    placeholder="Seleccione un aliado"
                 />
             </div>
 
@@ -53,10 +39,6 @@
             <div
                 class="flex flex-wrap items-center gap-x-5 gap-y-3 pt-3 border-t border-gray-100"
             >
-                <!-- Checkboxes -->
-                <FormCheckbox v-model="filters.diasMora" label="Días de mora" />
-                <FormCheckbox v-model="filters.abonoAval" label="Abono aval" />
-
                 <!-- Botones -->
                 <div class="flex flex-wrap items-center gap-2 sm:ml-auto">
                     <button
@@ -138,7 +120,7 @@
                                 d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
                             />
                         </svg>
-                        Generar factura
+                        Crear terceros (F.E)
                     </button>
                 </div>
             </div>
@@ -161,11 +143,6 @@
             @update:search="onSearch"
             @sort="onSort"
         >
-            <!-- Botón actualizar en barra -->
-            <template #actions>
-                <UpdateMoraButton :onSuccess="fetchAbonos" />
-            </template>
-
             <!-- Estado del crédito con badge de color -->
             <template #cell-estadoCredito="{ value }">
                 <span
@@ -200,7 +177,6 @@ import FormSelectAsync from '@/components/form/FormSelectAsync.vue'
 import FormCheckbox from '@/components/form/FormCheckbox.vue'
 import FormInput from '@/components/form/FormInput.vue'
 
-import UpdateMoraButton from '@/components/table/UpdateMoraButton.vue'
 import DataTable from '@/components/table/DataTable.vue'
 
 // -- Loader ----------------------------------------------------------------
@@ -319,6 +295,7 @@ async function fetchAbonos() {
     loading.value = true
     try {
         const params = new URLSearchParams({
+            factura: 1,
             page: pagination.currentPage,
             per_page: pagination.perPage,
             sort_key: sort.key,

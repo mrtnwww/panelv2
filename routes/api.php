@@ -50,6 +50,7 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
         Route::get('/creditsCobranza', [CreditoController::class, 'creditsCobranza']);
         Route::get('/clienteCreditData', [CreditoController::class, 'clienteCreditData']);
         Route::get('/listCreditsCorresponsal', [CreditoController::class, 'listCreditsCorresponsal']);
+        Route::get('/listCreditsAdministrativo', [CreditoController::class, 'listCreditsAdministrativo']);
     });
 
     // Abonos
