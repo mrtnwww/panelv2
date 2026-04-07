@@ -96,14 +96,14 @@
                 >
                     <button
                         @click.stop="abrirModalEditar(row)"
-                        class="btn-table"
+                        class="btn btn-default"
                         title="Editar"
                     >
                         <i class="fa fa-pencil"></i>
                     </button>
                     <button
                         @click.stop="eliminarUsuario(row)"
-                        class="btn-table"
+                        class="btn btn-default"
                         title="Eliminar"
                     >
                         <i class="fa fa-trash"></i>

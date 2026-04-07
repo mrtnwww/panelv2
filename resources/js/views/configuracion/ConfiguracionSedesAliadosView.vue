@@ -61,7 +61,7 @@
                 <template #cell-establecimiento="{ row }">
                     <div class="flex items-center gap-3">
                         <div
-                            class="w-10 h-10 rounded-lg bg-gray-100 flex-shrink-0 overflow-hidden border border-gray-200"
+                            class="w-10 h-10 rounded-lg bg-gray-100 shrink-0 overflow-hidden border border-gray-200"
                         >
                             <img
                                 v-if="row.logo"
@@ -106,44 +106,28 @@
                     <div class="flex items-center gap-1.5 flex-wrap">
                         <button
                             @click.stop="gestionarAliado(row)"
-                            class="h-7 px-3 rounded-lg bg-[#1a5c2a] hover:bg-[#154d22] text-white text-xs font-medium transition-all whitespace-nowrap"
+                            class="btn btn-main"
                         >
-                            Gestionar aliado
+                            Gestionar empresa
                         </button>
                         <button
                             @click.stop="formularioCliente(row)"
-                            class="h-7 px-3 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-medium transition-all whitespace-nowrap"
+                            class="btn btn-primary"
                         >
                             Formulario cliente
                         </button>
                         <button
                             @click.stop="vigenciaUsuarios(row)"
-                            class="h-7 px-3 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-xs font-medium transition-all whitespace-nowrap"
+                            class="btn btn-secondary"
                         >
                             Vigencia usuarios
                         </button>
                         <button
-                            @click.stop="abrirModalEditar(row)"
-                            class="w-7 h-7 rounded-lg bg-emerald-500 hover:bg-emerald-600 flex items-center justify-center text-white transition-all"
-                            title="Configuración"
+                            @click.stop="panelFunciones(row)"
+                            class="btn btn-primary"
+                            title="Panel de funciones"
                         >
-                            <svg
-                                width="13"
-                                height="13"
-                                viewBox="0 0 14 14"
-                                fill="none"
-                            >
-                                <path
-                                    d="M7 8.5A1.5 1.5 0 1 0 7 5.5a1.5 1.5 0 0 0 0 3z"
-                                    stroke="currentColor"
-                                    stroke-width="1.2"
-                                />
-                                <path
-                                    d="M11.2 8.5a.9.9 0 0 0 .18 1l.03.03a1.1 1.1 0 0 1-1.56 1.56l-.03-.03a.9.9 0 0 0-1-.18.9.9 0 0 0-.55.83V12a1.1 1.1 0 0 1-2.2 0v-.04a.9.9 0 0 0-.59-.83.9.9 0 0 0-1 .18l-.03.03A1.1 1.1 0 0 1 3.3 9.78l.03-.03a.9.9 0 0 0 .18-1 .9.9 0 0 0-.83-.55H2a1.1 1.1 0 0 1 0-2.2h.04a.9.9 0 0 0 .83-.59.9.9 0 0 0-.18-1l-.03-.03A1.1 1.1 0 0 1 4.22 2.8l.03.03a.9.9 0 0 0 1 .18h.04A.9.9 0 0 0 5.83 2V2a1.1 1.1 0 0 1 2.2 0v.04a.9.9 0 0 0 .55.83.9.9 0 0 0 1-.18l.03-.03A1.1 1.1 0 0 1 11.17 4.2l-.03.03a.9.9 0 0 0-.18 1v.04a.9.9 0 0 0 .83.55H12a1.1 1.1 0 0 1 0 2.2h-.04a.9.9 0 0 0-.83.55z"
-                                    stroke="currentColor"
-                                    stroke-width="1.2"
-                                />
-                            </svg>
+                            <i class="fa-solid fa-gear"></i>
                         </button>
                     </div>
                 </template>
@@ -151,28 +135,40 @@
                 <!-- Periodicidad con editar inline -->
                 <template #cell-periodicidad="{ row }">
                     <div class="flex items-center gap-1.5">
-                        <span class="text-sm text-gray-600">{{
-                            row.periodicidad || 'Semanal'
-                        }}</span>
-                        <button
-                            @click.stop="editarPeriodicidad(row)"
-                            class="text-gray-300 hover:text-[#1a5c2a] transition-colors"
-                            title="Editar periodicidad"
-                        >
-                            <svg
-                                width="12"
-                                height="12"
-                                viewBox="0 0 12 12"
-                                fill="none"
+                        <template v-if="editandoId === row.id">
+                            <FormInput
+                                v-model="periodicidadTemp"
+                                type="select"
+                                :options="periodicidadOpts"
+                            />
+
+                            <button
+                                @click.stop="guardarPeriodicidad(row)"
+                                class="text-green-600 hover:text-green-700"
                             >
-                                <path
-                                    d="M8.5 1L11 3.5L4 10.5H1.5V8L8.5 1Z"
-                                    stroke="currentColor"
-                                    stroke-width="1.1"
-                                    stroke-linejoin="round"
-                                />
-                            </svg>
-                        </button>
+                                <i class="fa-solid fa-floppy-disk"></i>
+                            </button>
+
+                            <button
+                                @click.stop="editandoId = null"
+                                class="text-red-500 hover:text-red-600"
+                            >
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                        </template>
+
+                        <template v-else>
+                            <span class="text-sm text-gray-600">{{
+                                row.periodicidad || 'Semanal'
+                            }}</span>
+                            <button
+                                @click.stop="editarPeriodicidad(row)"
+                                class="text-gray-300 hover:text-[#1a5c2a] transition-colors"
+                                title="Editar periodicidad"
+                            >
+                                <i class="fa-solid fa-pencil"></i>
+                            </button>
+                        </template>
                     </div>
                 </template>
 
@@ -181,61 +177,6 @@
                     <span class="text-sm text-gray-400">{{
                         value ?? '—'
                     }}</span>
-                </template>
-
-                <!-- Acciones para tabs de alianzas -->
-                <template #cell-accionesAlianza="{ row }">
-                    <div
-                        class="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity justify-end"
-                    >
-                        <button
-                            @click.stop="verAlianza(row)"
-                            class="w-7 h-7 rounded-lg border border-gray-200 flex items-center justify-center text-gray-400 hover:text-[#1a5c2a] hover:border-[#1a5c2a]/30 transition-all"
-                            title="Ver"
-                        >
-                            <svg
-                                width="13"
-                                height="13"
-                                viewBox="0 0 13 13"
-                                fill="none"
-                            >
-                                <ellipse
-                                    cx="6.5"
-                                    cy="6.5"
-                                    rx="5.5"
-                                    ry="3.5"
-                                    stroke="currentColor"
-                                    stroke-width="1.2"
-                                />
-                                <circle
-                                    cx="6.5"
-                                    cy="6.5"
-                                    r="1.5"
-                                    stroke="currentColor"
-                                    stroke-width="1.2"
-                                />
-                            </svg>
-                        </button>
-                        <button
-                            @click.stop="abrirModalEditar(row)"
-                            class="w-7 h-7 rounded-lg border border-gray-200 flex items-center justify-center text-gray-400 hover:text-[#1a5c2a] hover:border-[#1a5c2a]/30 transition-all"
-                            title="Editar"
-                        >
-                            <svg
-                                width="13"
-                                height="13"
-                                viewBox="0 0 13 13"
-                                fill="none"
-                            >
-                                <path
-                                    d="M9 1.5L11.5 4L4.5 11H2V8.5L9 1.5Z"
-                                    stroke="currentColor"
-                                    stroke-width="1.2"
-                                    stroke-linejoin="round"
-                                />
-                            </svg>
-                        </button>
-                    </div>
                 </template>
             </DataTable>
         </div>
@@ -384,12 +325,24 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import DataTable from '@/components/table/DataTable.vue'
+
+// -- Componentes ------------------------------------------------------
 import FormInput from '@/components/form/FormInput.vue'
+
+import DataTable from '@/components/table/DataTable.vue'
+
+// -- Loader -----------------------------------------------------------
+import { useLoader } from '@/composables/useLoader'
+const { start, stop } = useLoader()
+
+// -- DataTable --------------------------------------------------------
+import { useDataTable } from '@/composables/useDataTable'
+
+import api from '@/services/api'
 
 const router = useRouter()
 
-// ── Tabs ───────────────────────────────────────────────────────────────────
+// -- Tabs --------------------------------------------------------------
 const tabs = [
     { key: 'alianzas_firmadas', label: 'Alianzas firmadas' },
     { key: 'alianzas_pendientes', label: 'Alianzas pendientes por firmar' },
@@ -399,7 +352,7 @@ const tabs = [
 
 const activeTab = ref('aliados')
 
-// ── Columnas según tab ─────────────────────────────────────────────────────
+// -- Columnas según tab ------------------------------------------------
 const columnsAliados = [
     { key: 'establecimiento', label: 'Establecimiento', sortable: false },
     { key: 'acciones', label: 'Acciones', sortable: false },
@@ -409,9 +362,9 @@ const columnsAliados = [
 
 const columnsAlianzas = [
     { key: 'establecimiento', label: 'Establecimiento', sortable: false },
-    { key: 'fechaEnvio', label: 'Fecha envío', sortable: false },
-    { key: 'estado', label: 'Estado', sortable: false },
-    { key: 'accionesAlianza', label: 'Acciones', sortable: false },
+    { key: 'contacto', label: 'Contacto', sortable: false },
+    { key: 'registro', label: 'Registro', sortable: false },
+    { key: 'fechaFirma', label: 'Fecha de firma', sortable: false },
 ]
 
 const activeColumns = computed(() =>
@@ -420,20 +373,18 @@ const activeColumns = computed(() =>
         : columnsAlianzas
 )
 
-// ── Estado ─────────────────────────────────────────────────────────────────
+// -- Estado ----------------------------------------------------------
 const registros = ref([])
 const loading = ref(false)
-const search = ref('')
-let searchTimeout = null
 
-const pagination = reactive({ currentPage: 1, perPage: 10, total: 0 })
-const sort = reactive({ key: 'establecimiento', dir: 'asc' })
+const editandoId = ref(null)
+const periodicidadTemp = ref(null)
 
-// ── Opciones ───────────────────────────────────────────────────────────────
+// -- Opciones ---------------------------------------------------------
 const periodicidadOpts = [
-    { value: 'semanal', label: 'Semanal' },
-    { value: 'quincenal', label: 'Quincenal' },
-    { value: 'mensual', label: 'Mensual' },
+    { value: 'Semanal', label: 'Semanal' },
+    { value: 'Quincenal', label: 'Quincenal' },
+    { value: 'Mensual', label: 'Mensual' },
 ]
 
 const tipoOpts = [
@@ -441,15 +392,7 @@ const tipoOpts = [
     { value: 'sede', label: 'Sede' },
 ]
 
-// ── Helpers ────────────────────────────────────────────────────────────────
-function authHeaders() {
-    return {
-        Accept: 'application/json',
-        Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
-    }
-}
-
-// ── Backend ────────────────────────────────────────────────────────────────
+// -- Backend -----------------------------------------------------------
 async function fetchRegistros() {
     loading.value = true
     try {
@@ -461,14 +404,16 @@ async function fetchRegistros() {
             search: search.value,
             tab: activeTab.value,
         })
-        const response = await fetch(`/api/sedes-aliados?${params}`, {
-            headers: authHeaders(),
-        })
-        if (!response.ok) throw new Error()
-        const data = await response.json()
-        registros.value = data.data
-        pagination.total = data.meta.total
-        pagination.currentPage = data.meta.current_page
+
+        const { data } = await api.get('/api/empresas', { params })
+
+        const { data: empresasData, total, current_page } = data.empresas
+
+        // Lista de empresas
+        transformEmpresas(empresasData)
+
+        pagination.total = total
+        pagination.currentPage = current_page
     } catch (err) {
         console.error(err)
     } finally {
@@ -482,32 +427,7 @@ function cambiarTab(key) {
     fetchRegistros()
 }
 
-// ── Handlers DataTable ─────────────────────────────────────────────────────
-function onPageChange(page) {
-    pagination.currentPage = page
-    fetchRegistros()
-}
-function onPerPageChange(val) {
-    pagination.perPage = val
-    pagination.currentPage = 1
-    fetchRegistros()
-}
-function onSort({ key, dir }) {
-    sort.key = key
-    sort.dir = dir
-    pagination.currentPage = 1
-    fetchRegistros()
-}
-function onSearch(val) {
-    search.value = val
-    clearTimeout(searchTimeout)
-    searchTimeout = setTimeout(() => {
-        pagination.currentPage = 1
-        fetchRegistros()
-    }, 400)
-}
-
-// ── Acciones de fila ───────────────────────────────────────────────────────
+// -- Acciones de fila ----------------------------------------------
 function gestionarAliado(row) {
     router.push(`/dashboard/configuracion/sedes-aliados/${row.id}`)
 }
@@ -518,13 +438,11 @@ function vigenciaUsuarios(row) {
     console.log('Vigencia usuarios:', row.id)
 }
 function editarPeriodicidad(row) {
-    console.log('Editar periodicidad:', row.id)
-}
-function verAlianza(row) {
-    console.log('Ver alianza:', row.id)
+    editandoId.value = row.id
+    periodicidadTemp.value = row.periodicidad || 'Semanal'
 }
 
-// ── Modal crear / editar ───────────────────────────────────────────────────
+// -- Modal crear / editar ------------------------------------------
 const modal = reactive({
     open: false,
     mode: 'crear',
@@ -556,11 +474,8 @@ function abrirModalCrear() {
     modal.open = true
 }
 
-function abrirModalEditar(row) {
-    Object.assign(modal.form, { ...row, logo: null })
-    modal.mode = 'editar'
-    modal.error = ''
-    modal.open = true
+function panelFunciones(row) {
+    // TODO
 }
 
 async function guardar() {
@@ -577,13 +492,9 @@ async function guardar() {
             if (k === 'logo' && v) payload.append('logo', v)
             else if (k !== 'logo') payload.append(k, v ?? '')
         })
-        const response = await fetch(
-            isEditar
-                ? `/api/sedes-aliados/${modal.form.id}`
-                : '/api/sedes-aliados',
-            { method: 'POST', headers: authHeaders(), body: payload }
-        )
-        if (!response.ok) throw new Error()
+
+        //
+
         modal.open = false
         fetchRegistros()
     } catch {
@@ -593,5 +504,44 @@ async function guardar() {
     }
 }
 
-onMounted(fetchRegistros)
+function transformEmpresas(data) {
+    if (activeTab.value == 'sedes' || activeTab.value == 'aliados') {
+        registros.value = data.map(r => ({
+            id: r.id,
+            establecimiento: r.razon_social,
+            email: r.correo ?? '',
+            periodicidad: r.periodicidad_empresa ?? 'Semanal',
+        }))
+    } else {
+        registros.value = data.map(r => ({
+            establecimiento: `${r.nombre} ( ${r.nit} )`,
+            contacto:
+                r.nombreContacto && r.numContacto
+                    ? `${r.nombreContacto} - ${r.numContacto}`
+                    : '- -',
+            registro: r.created_at,
+            fechaFirma: r.firmado ? r.firmado : '',
+        }))
+    }
+}
+
+const {
+    search,
+    pagination,
+    sort,
+    onPageChange,
+    onPerPageChange,
+    onSearch,
+    onSort,
+} = useDataTable(fetchRegistros)
+
+onMounted(async () => {
+    start()
+
+    try {
+        await fetchRegistros()
+    } finally {
+        stop()
+    }
+})
 </script>

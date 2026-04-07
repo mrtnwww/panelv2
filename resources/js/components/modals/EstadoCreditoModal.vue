@@ -214,7 +214,7 @@
                                 {{ cuota.fecha_pago || '- -' }}
                                 <button
                                     v-if="cuota.fecha_pago !== '- -'"
-                                    class="btn-table ml-2"
+                                    class="btn btn-default ml-2"
                                     title="Imprimir abono"
                                     @click="$emit('imprimir-abono')"
                                 >

@@ -32,18 +32,18 @@
                 >
                     <button
                         v-if="row.autorizacionConsulta"
-                        class="btn-table"
+                        class="btn btn-default"
                         @click.stop="validateCliente(row)"
                     >
                         Validar
                         <i class="fa-solid fa-check"></i>
                     </button>
-                    <button class="btn-table" @click.stop="editCliente(row)">
+                    <button class="btn btn-default" @click.stop="editCliente(row)">
                         Editar
                         <i class="fa-solid fa-pencil"></i>
                     </button>
                     <button
-                        class="btn-table"
+                        class="btn btn-default"
                         @click.stop="sendAutorizacion(row)"
                     >
                         Reenviar autorización

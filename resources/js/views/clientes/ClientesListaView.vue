@@ -218,14 +218,14 @@
                 >
                     <button
                         @click.stop="editCliente(row)"
-                        class="btn-table"
+                        class="btn btn-default"
                         title="Editar"
                     >
                         <i class="fa-solid fa-pencil"></i>
                     </button>
                     <button
                         @click.stop="viewCliente(row)"
-                        class="btn-table"
+                        class="btn btn-default"
                         title="Ver historico"
                     >
                         <i class="fa-solid fa-eye"></i>

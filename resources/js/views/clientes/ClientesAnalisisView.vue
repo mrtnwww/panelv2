@@ -31,7 +31,7 @@
                     class="flex items-center gap-2 justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                 >
                     <button
-                        class="btn-table"
+                        class="btn btn-default"
                         @click.stop="validateCliente(row)"
                     >
                         Análisis
