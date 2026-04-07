@@ -123,7 +123,6 @@
                     required
                 />
 
-                <!-- El error va dentro del body, antes del footer -->
                 <transition name="fade">
                     <div
                         v-if="modal.error"
@@ -149,13 +148,15 @@ import AppModal from '@/components/AppModal.vue'
 import { useLoader } from '@/composables/useLoader'
 const { start, stop } = useLoader()
 
-// -- DataTable ---------------------------------------------
+// -- DataTable -------------------------------------------------------
 import { useDataTable } from '@/composables/useDataTable'
 
+// -- Utils -------------------------------------------------------------
 import { formatCurrency } from '@/utils/format'
-import api from '@/services/api'
+import { confirmAlert } from '../../utils/alert'
 
-import Swal from 'sweetalert2'
+// -- API ---------------------------------------------------------------
+import api from '@/services/api'
 
 // -- Columnas ----------------------------------------------------------
 const columns = [
@@ -261,31 +262,23 @@ async function guardarProducto() {
     }
 }
 
-function eliminarProducto(row) {
-    Swal.fire({
-        title: 'Eliminar producto',
-        text: `¿Esta seguro(a) de eliminar el producto ${row.nombre}?`,
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#3085d6',
-        cancelButtonColor: '#d33',
-        confirmButtonText: 'Aceptar',
-        cancelButtonText: 'Cancelar',
-    })
-        .then(async result => {
-            if (result.isConfirmed) {
-                await api.delete('/api/productos', {
-                    data: {
-                        id: row.id,
-                    },
-                })
+async function eliminarProducto(row) {
+    try {
+        const confirmado = await confirmAlert({
+            title: 'Eliminar producto',
+            text: `¿Está seguro(a) de eliminar el producto ${row.nombre}?`,
+        })
 
-                await fetchProductos()
-            }
+        if (!confirmado) return
+
+        await api.delete('/api/productos', {
+            data: { id: row.id },
         })
-        .catch(err => {
-            console.error(err)
-        })
+
+        await fetchProductos()
+    } catch (err) {
+        console.error(err)
+    }
 }
 
 // -- Plantilla ---------------------------------------------------------

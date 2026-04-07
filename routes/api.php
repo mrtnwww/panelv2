@@ -89,6 +89,7 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     // Usuarios
     Route::prefix('usuarios')->group(function () {
         Route::get('/listMyUsers', [UsuarioController::class, 'listMyUsers']);
+        Route::get('/listRoles', [UsuarioController::class, 'listRoles']);
     });
 
     // Cajeras

@@ -496,7 +496,7 @@ async function fetchUsuarios() {
         const { data } = await api.get('/api/usuarios/listMyUsers')
 
         // Opciones formateadas para FormInput type="select"
-        usuariosOpts.value = data.clientes.map(c => ({
+        usuariosOpts.value = data.usuarios.map(c => ({
             value: c.idUsuario,
             label: c.nombre,
         }))

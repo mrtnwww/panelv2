@@ -87,7 +87,7 @@
             :sort-key="sort.key"
             :sort-dir="sort.dir"
             :search="search"
-            empty-message="No se encontraron creditos con los filtros aplicados."
+            empty-message="No se encontraron registros con los filtros aplicados."
             @update:current-page="onPageChange"
             @update:per-page="onPerPageChange"
             @update:search="onSearch"
