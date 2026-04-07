@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Creditos;
 
+use App\Exports\CorresponsalExport;
 use App\Http\Controllers\Clientes\ClienteController;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Mobile\MobileController;
@@ -26,16 +27,20 @@ use App\Models\UsuarioTipoUsuario;
 use App\Traits\CalculoCobranza;
 use App\Traits\CalculoCobranzaTemp;
 use App\Traits\CalculoPagoMinimo;
+use App\Traits\CalculoPagoMinimoTemp;
 use Carbon\Carbon;
 use DateTime;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Maatwebsite\Excel\Facades\Excel;
 
 class CreditoController extends Controller
 {
     use CalculoCobranza;
     use CalculoPagoMinimo;
     use CalculoCobranzaTemp;
+    use CalculoPagoMinimoTemp;
 
     public function listCredits(Request $request)
     {
@@ -2194,5 +2199,182 @@ class CreditoController extends Controller
                 'moraPendiente' => false
             ], 200);
         }
+    }
+
+    public function listCreditsCorresponsal(Excel $excel) {
+        $empresaId = auth()->user()->empresa_id;
+
+        $hoy = Carbon::now()->startOfDay();
+
+        $generarInforme = request('generarInforme', 0);
+
+        $currentEmpresaId = $empresaId;
+
+        $perPage = request('per_page', 10);
+        $search = request('search', '');
+
+        // Formulario desde donde se genera la busqueda
+        $form = request('form', null);
+
+        // Filtros
+        $conditions = request('conditions', []);
+
+        $empresasAliados = Empresa::where('aliado', $currentEmpresaId)
+            ->orWhere('sede', $currentEmpresaId)
+            ->pluck('id')
+            ->push($currentEmpresaId)
+            ->toArray();
+
+        $query = Credito::whereIn('empresa_id', $empresasAliados)
+            ->select('id', 'created_at', 'consecutivo', 'client_id', 'fecha_cierre', 'val_cuotas', 'fecha_gcobranza', 'fecha_gcobranza_temp')
+            ->with([
+                'cliente:id,nombre,cedula',
+                'abonos',
+                'proyecciones'
+            ])
+            ->whereNull('fecha_cierre')
+            ->applyConditions($conditions)
+            ->applySearch($search, $form)
+            ->orderBy('created_at', 'desc');
+
+        $creditos = $generarInforme ? $query->get() : $query->paginate($perPage);
+
+        // Calculo gastos de cobranza e intereses moratorios de la vista actual
+        $vCreditoIds = [];
+
+        // Validar si el valor minimo a pagar se calcula con un dia de mora más
+        $estadoFuncion = ParametrosEstadoFunciones::where('empresa_id', $empresaId)
+            ->whereHas('estado_funcion', function($query) {
+                $query->where('nombre_funcion', 'Mora un día más');
+            })
+            ->exists();
+
+        if (!$generarInforme) {
+            foreach ($creditos->items() as $credito) {
+                $cuotaPendiente = $credito->proyecciones->where('pagado', 0)->first();
+                if ($cuotaPendiente) {
+                    $fechaVence = Carbon::parse($cuotaPendiente->fecha)->startOfDay();
+                    if ($fechaVence->lt($hoy)) {
+                        if ($estadoFuncion) {
+                            if (!$credito->fecha_gcobranza_temp || Carbon::parse($credito->fecha_gcobranza_temp)->lessThan(Carbon::today())) {
+                                $vCreditoIds[] = $credito->id;
+                            }
+                        } else {
+                            if (!$credito->fecha_gcobranza || Carbon::parse($credito->fecha_gcobranza)->lessThan(Carbon::today())) {
+                                $vCreditoIds[] = $credito->id;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if (!empty($vCreditoIds)) {
+            $fechaMañana = Carbon::now()->addDay()->startOfDay();
+
+            if ($estadoFuncion) {
+                $this->calculoCobranzaIntMoraTemp($vCreditoIds, $fechaMañana);
+                Credito::whereIn('id', $vCreditoIds)->update(['fecha_gcobranza_temp' => Carbon::now()]);
+            } else {
+                $this->calculoCobranzaIntMora($vCreditoIds);
+                Credito::whereIn('id', $vCreditoIds)->update(['fecha_gcobranza' => Carbon::now()]);
+            }
+
+            $creditosActualizados = Credito::whereIn('id', $vCreditoIds)->with('proyecciones')->get();
+
+            if ($generarInforme) {
+                foreach ($creditos as $credito) {
+                    if (in_array($credito->id, $vCreditoIds)) {
+                        $credito->setRelation('proyecciones', $creditosActualizados->where('id', $credito->id)->first()->proyecciones);
+                    }
+                }
+            } else {
+                foreach ($creditos->items() as $credito) {
+                    if (in_array($credito->id, $vCreditoIds)) {
+                        $credito->setRelation('proyecciones', $creditosActualizados->where('id', $credito->id)->first()->proyecciones);
+                    }
+                }
+            }
+        }
+
+        $creditoIds = $creditos->pluck('id')->toArray();
+        $condonacionesPorCredito = Condonacion::whereIn('abono_id', function ($query) use ($creditoIds) {
+                $query->select('id')
+                    ->from('abono')
+                    ->whereIn('credito_id', $creditoIds);
+            })
+            ->where('concepto_condonacion', 'credito')
+            ->join('abono', 'condonaciones.abono_id', '=', 'abono.id')
+            ->select('abono.credito_id', DB::raw('SUM(valor_condonado) as total'))
+            ->groupBy('abono.credito_id')
+            ->pluck('total', 'credito_id');
+
+        if ($generarInforme) {
+            $creditos->transform(function ($credito) use ($hoy, $estadoFuncion, $condonacionesPorCredito) {
+                return $this->procesarCredito($credito, $hoy, $estadoFuncion, $condonacionesPorCredito);
+            });
+
+            $hoy = \Carbon\Carbon::now()->format('Y-m-d_H-i-s');
+            $nombreArchivo = 'informe_corresponsal_' . $hoy . '.xlsx';
+            $excel::store(new CorresponsalExport($creditos, $estadoFuncion), $nombreArchivo, 's3');
+            $fileUrl = Storage::disk('s3')->url($nombreArchivo);
+            $expiracion = \Carbon\Carbon::now()->addMinutes(30); // Establecer la expiración en 5 minutos
+            $fileUrl = Storage::disk('s3')->temporaryUrl($nombreArchivo, $expiracion);
+
+            return response()->json([
+                'fileUrl' => $fileUrl
+            ]);
+        } else {
+            $creditos->getCollection()->transform(function ($credito) use ($hoy, $estadoFuncion, $condonacionesPorCredito) {
+                return $this->procesarCredito($credito, $hoy, $estadoFuncion, $condonacionesPorCredito);
+            });
+
+            return response()->json([
+                'creditos' => $creditos,
+                'estadoFuncion' => $estadoFuncion
+            ]);
+        }
+    }
+
+    private function procesarCredito($credito, $hoy, $estadoFuncion, $condonacionesPorCredito) {
+        $estado = 'Finalizado';
+        $cuotaMinPago = 0;
+        $fechaVencimiento = '';
+
+        $proyecciones = $credito->proyecciones;
+        $pendientePago = $proyecciones->where('pagado', 0)->first();
+
+        if ($pendientePago) {
+            $fechaVencimiento = Carbon::parse($pendientePago->fecha)->startOfDay();
+            $estado = $fechaVencimiento->lt($hoy) ? 'En mora' : 'Al día';
+
+            // $abonos = Abono::where('credito_id', $credito->id)->sum('valor');
+            $abonos = $credito->abonos->sum('valor');
+
+            // Se valida si se ha realizado condonaciones al credito
+            $valorCondonaciones = $condonacionesPorCredito[$credito->id] ?? 0;
+
+            // Se añade el valor de las condonaciones al total abonado
+            $abonos += ($valorCondonaciones ?? 0);
+
+            // Calculo a favor del cliente
+            $modular = $this->calculoValorAFavor($proyecciones[0]->valor_cuota, $abonos, $proyecciones, $credito) ?? 0;
+
+            $cuotaMinPago = $estadoFuncion
+                ? $this->pagoMinimoTemp($proyecciones, $modular, $credito->val_cuotas)
+                : $this->pagoMinimo($proyecciones, $modular, $credito->val_cuotas);
+        }
+
+        // convertir el nombre del cliente a caracteres en mayuscula
+        if ($credito->cliente && isset($credito->cliente->nombre)) {
+            $credito->cliente->nombre = strtoupper(str_replace(['ñ', 'Ñ'], ['n', 'N'], $credito->cliente->nombre));
+        }
+
+        $credito->fecha = Carbon::parse($credito->created_at)->format('Y-m-d');
+        $credito->fecha_vencimiento = $fechaVencimiento ? $fechaVencimiento->format('Y-m-d') : '';
+        $credito->cuotaMinPago = $cuotaMinPago;
+        $credito->estado = $estado;
+
+        return $credito;
     }
 }

@@ -138,6 +138,18 @@ const routes = [
                 component: () =>
                     import('@/views/informes/CXCAliadoView.vue'),
             },
+            {
+                path: 'informes/comisiones',
+                name: 'informes.comisiones',
+                component: () =>
+                    import('@/views/informes/ComisionesView.vue'),
+            },
+            {
+                path: 'informes/corresponsal',
+                name: 'informes.corresponsal',
+                component: () =>
+                    import('@/views/informes/CorresponsalView.vue'),
+            },
             // -- CONFIGURACION --------------------------------------------------------------
             {
                 path: 'configuracion/usuarios',

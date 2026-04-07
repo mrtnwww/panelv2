@@ -252,11 +252,14 @@ watch(dropdownOpen, async open => {
     }
 })
 
-watch(() => props.modelValue, (val) => {
-    if (!val) {
-        selectedLabel.value = ''
+watch(
+    () => props.modelValue,
+    val => {
+        if (!val) {
+            selectedLabel.value = ''
+        }
     }
-})
+)
 
 // -- Acciones -----------------------------------------------------------------
 function toggleDropdown() {

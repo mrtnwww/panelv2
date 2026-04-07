@@ -3,7 +3,7 @@
         <!-- Encabezado + filtros en una línea -->
         <div class="flex flex-wrap items-end gap-4">
             <h1 class="text-lg font-semibold text-[#0A2540] mr-auto">
-                Cartera por edades
+                Informe cartera por edades
             </h1>
 
             <!-- Fecha inicial -->

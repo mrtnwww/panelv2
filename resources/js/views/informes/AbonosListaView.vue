@@ -231,7 +231,7 @@ const columns = [
     { key: 'numAbono', label: '# de abono', sortable: false, align: 'center' },
     { key: 'recibidoEn', label: 'Recibido en', sortable: false },
     { key: 'concepto', label: 'Concepto', sortable: false },
-    { key: 'cajero', label: 'Cajera(o)', sortable: false, truncate: true },
+    { key: 'cajero', label: 'Cajera', sortable: false, truncate: true },
     { key: 'estadoCredito', label: 'Estado del crédito', sortable: false },
     {
         key: 'vrTotalAbonado',
