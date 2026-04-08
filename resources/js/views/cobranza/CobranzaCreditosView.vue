@@ -255,7 +255,7 @@
                     <button
                         @click="descargarInforme"
                         :disabled="loadingInforme === 'informe'"
-                        class="h-9 px-4 rounded-lg bg-[#1a5c2a] hover:bg-[#154d22] disabled:bg-gray-300 text-white text-sm font-medium transition-all flex items-center gap-2"
+                        class="btn btn-main"
                     >
                         <svg
                             v-if="loadingInforme === 'informe'"
@@ -282,7 +282,7 @@
                     <button
                         @click="descargarHabitoPago"
                         :disabled="loadingInforme === 'habito'"
-                        class="h-9 px-4 rounded-lg bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 text-white text-sm font-medium transition-all flex items-center gap-2"
+                        class="btn btn-primary"
                     >
                         <svg
                             v-if="loadingInforme === 'habito'"

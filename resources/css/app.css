@@ -75,5 +75,17 @@
 }
 
 .btn-secondary {
-    @apply bg-orange-500 hover:bg-orange-600 text-white;
+    @apply bg-orange-400 hover:bg-orange-500 text-white;
+}
+
+.btn-info {
+    @apply bg-sky-500 hover:bg-sky-600 text-white;
+}
+
+.btn-warning {
+    @apply bg-yellow-500 hover:bg-yellow-600 text-white;
+}
+
+.btn-danger {
+    @apply bg-red-500 hover:bg-red-600 text-white;
 }

@@ -30,7 +30,7 @@
                 <button
                     @click="fetchRecibos"
                     :disabled="loading"
-                    class="h-9 px-5 rounded-lg bg-emerald-500 hover:bg-emerald-600 disabled:bg-gray-300 text-white text-sm font-semibold transition-all flex items-center gap-2 self-end"
+                    class="btn btn-primary"
                 >
                     <svg
                         v-if="loading"
@@ -52,7 +52,7 @@
                             d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
                         />
                     </svg>
-                    Generar
+                    Generar CXC
                 </button>
             </div>
         </div>

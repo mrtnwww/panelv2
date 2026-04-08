@@ -23,7 +23,7 @@
                     <button
                         @click="descargarPlantilla"
                         :disabled="loadingPlantilla"
-                        class="h-9 px-4 rounded-lg bg-sky-500 hover:bg-sky-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white text-sm font-medium transition-all flex items-center gap-2"
+                        class="btn btn-primary"
                     >
                         <svg
                             v-if="loadingPlantilla"
@@ -51,22 +51,12 @@
 
                     <div class="hidden sm:block w-px h-6 bg-gray-200 mx-1" />
 
-                    <button
-                        @click="condonacionMasiva"
-                        class="h-9 px-4 rounded-lg bg-[#1a5c2a] hover:bg-[#154d22] text-white text-sm font-medium transition-all flex items-center gap-2"
-                    >
+                    <button @click="condonacionMasiva" class="btn btn-main">
                         <i class="fa-solid fa-plus"></i>
                         Condonación masiva
                     </button>
 
-                    <button
-                        @click="fetchData"
-                        :disabled="loadingRefresh"
-                        class="h-9 w-9 rounded-lg bg-orange-500 hover:bg-orange-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white transition-all flex items-center justify-center shrink-0"
-                        title="Actualizar valores"
-                    >
-                        <i class="fa-solid fa-arrow-rotate-right"></i>
-                    </button>
+                    <UpdateMoraButton />
                 </div>
             </div>
 
@@ -330,7 +320,7 @@
                             }}</span>
                             <button
                                 @click="verEstadoCredito(form.cliente_id)"
-                                class="h-7 px-3 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-medium transition-all"
+                                class="btn btn-primary"
                             >
                                 Detalle
                             </button>
@@ -494,6 +484,7 @@ import { ref, reactive, computed, onMounted } from 'vue'
 
 // -- Componentes -------------------------------------------
 import EstadoCreditoModal from '@/components/modals/EstadoCreditoModal.vue'
+import UpdateMoraButton from '@/components/table/UpdateMoraButton.vue'
 import FormSelectAsync from '@/components/form/FormSelectAsync.vue'
 import FormInput from '@/components/form/FormInput.vue'
 

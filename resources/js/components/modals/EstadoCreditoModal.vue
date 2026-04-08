@@ -7,10 +7,7 @@
     >
         <template #header>
             <div class="flex items-center gap-3">
-                <button
-                    @click="$emit('ver-historico')"
-                    class="h-8 px-3 rounded-lg bg-[#1a5c2a] hover:bg-[#154d22] text-white text-xs font-medium transition-all flex items-center gap-2"
-                >
+                <button @click="$emit('ver-historico')" class="btn btn-main">
                     <i class="fa-regular fa-clock"></i>
                     Ver histórico
                 </button>
@@ -214,7 +211,7 @@
                                 {{ cuota.fecha_pago || '- -' }}
                                 <button
                                     v-if="cuota.fecha_pago !== '- -'"
-                                    class="btn btn-default ml-2"
+                                    class="btn btn-default"
                                     title="Imprimir abono"
                                     @click="$emit('imprimir-abono')"
                                 >

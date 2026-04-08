@@ -90,7 +90,7 @@
                 <button
                     @click="generarInforme('resumido')"
                     :disabled="loadingInforme === 'resumido'"
-                    class="h-9 px-5 rounded-lg bg-[#1a5c2a] hover:bg-[#154d22] disabled:bg-gray-300 text-white text-sm font-medium transition-all flex items-center gap-2"
+                    class="btn btn-main disabled:bg-gray-300!"
                 >
                     <svg
                         v-if="loadingInforme === 'resumido'"
@@ -117,7 +117,7 @@
                 <button
                     @click="generarInforme('detallado')"
                     :disabled="loadingInforme === 'detallado'"
-                    class="h-9 px-5 rounded-lg bg-emerald-500 hover:bg-emerald-600 disabled:bg-gray-300 text-white text-sm font-medium transition-all flex items-center gap-2"
+                    class="btn btn-primary disabled:bg-gray-300!"
                 >
                     <svg
                         v-if="loadingInforme === 'detallado'"
@@ -182,19 +182,19 @@
                 <div class="flex items-center gap-1.5">
                     <button
                         @click.stop="verEstadoCredito(null, row.id)"
-                        class="h-7 px-3 rounded-lg bg-[#1a5c2a] hover:bg-[#154d22] text-white text-xs font-medium transition-all"
+                        class="btn btn-main"
                     >
                         Detalle
                     </button>
                     <button
                         @click.stop="generarExtracto(row)"
-                        class="h-7 px-3 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-medium transition-all"
+                        class="btn btn-info"
                     >
                         Generar extracto
                     </button>
                     <button
                         @click.stop="anularCredito(row)"
-                        class="h-7 px-3 rounded-lg bg-red-500 hover:bg-red-600 text-white text-xs font-medium transition-all"
+                        class="btn btn-danger"
                     >
                         Anular
                     </button>

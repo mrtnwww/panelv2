@@ -179,14 +179,11 @@
                 <div class="flex items-center gap-2 ml-auto">
                     <button
                         @click="resetFilters"
-                        class="h-9 px-4 rounded-lg border border-gray-200 text-sm text-gray-500 hover:bg-gray-50 hover:border-gray-300 transition-all"
+                        class="btn border border-gray-200 text-sm text-gray-500 hover:bg-gray-50 hover:border-gray-300"
                     >
                         Limpiar
                     </button>
-                    <button
-                        @click="fetchClientes"
-                        class="h-9 px-4 rounded-lg bg-[#1a5c2a] text-white text-sm font-medium hover:bg-[#154d22] transition-all"
-                    >
+                    <button @click="fetchClientes" class="btn btn-main">
                         Aplicar filtros
                     </button>
                 </div>

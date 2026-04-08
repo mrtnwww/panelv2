@@ -1,8 +1,5 @@
 <template>
-    <button
-        @click="handleClick"
-        class="h-8 px-3 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium transition-all flex items-center gap-1.5"
-    >
+    <button @click="handleClick" class="btn btn-secondary">
         <i class="fa-solid fa-rotate"></i>
 
         <span>Actualizar Mora</span>

@@ -180,7 +180,7 @@
                             type="button"
                             @click="handleSave"
                             :disabled="loading"
-                            class="h-10 px-6 rounded-lg bg-emerald-500 hover:bg-emerald-600 disabled:bg-gray-300 text-white text-sm font-semibold transition-all flex items-center gap-2"
+                            class="btn btn-main"
                         >
                             <svg
                                 v-if="loading"

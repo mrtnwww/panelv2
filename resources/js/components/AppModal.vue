@@ -65,7 +65,7 @@
                 >
                     <button
                         @click="$emit('update:modelValue', false)"
-                        class="h-9 px-4 rounded-lg border border-gray-200 text-sm text-gray-500 hover:bg-gray-50 transition-all"
+                        class="btn btn-default"
                     >
                         {{ cancelLabel }}
                     </button>
@@ -73,7 +73,7 @@
                         @click="$emit('confirm')"
                         :disabled="confirmLoading || confirmDisabled"
                         :class="[
-                            'h-9 px-5 rounded-lg text-white text-sm font-medium transition-all flex items-center gap-2',
+                            'btn btn-main',
                             confirmVariant === 'danger'
                                 ? 'bg-red-500 hover:bg-red-600 disabled:bg-gray-300'
                                 : 'bg-[#1a5c2a] hover:bg-[#154d22] disabled:bg-gray-300',

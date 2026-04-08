@@ -208,7 +208,7 @@
                         <button
                             @click="handleSubmit"
                             :disabled="loading || !form.valor_compra"
-                            class="h-9 px-8 rounded-lg bg-[#1a5c2a] hover:bg-[#154d22] disabled:bg-gray-300 disabled:cursor-not-allowed text-white text-sm font-medium transition-all flex items-center gap-2"
+                            class="btn btn-main disabled:bg-gray-300! disabled:cursor-not-allowed"
                         >
                             <svg
                                 v-if="loading"

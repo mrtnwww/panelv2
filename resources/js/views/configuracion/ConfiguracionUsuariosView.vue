@@ -5,10 +5,7 @@
             <h1 class="text-lg font-semibold text-[#0A2540]">
                 Gestión de usuarios
             </h1>
-            <button
-                @click="abrirModalCrear"
-                class="h-9 px-4 rounded-lg bg-[#1a5c2a] hover:bg-[#154d22] text-white text-sm font-medium transition-all flex items-center gap-2"
-            >
+            <button @click="abrirModalCrear" class="btn btn-main">
                 <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
                     <path
                         d="M6.5 1v11M1 6.5h11"

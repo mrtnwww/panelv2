@@ -71,10 +71,7 @@
                 />
 
                 <div class="flex items-center gap-2">
-                    <button
-                        @click="abrirModalCrear"
-                        class="h-9 px-4 rounded-lg bg-[#1a5c2a] hover:bg-[#154d22] text-white text-sm font-medium transition-all flex items-center gap-2"
-                    >
+                    <button @click="abrirModalCrear" class="btn btn-main">
                         <svg
                             width="13"
                             height="13"
@@ -93,7 +90,7 @@
                     <button
                         @click="iniciarTarea"
                         :disabled="selected.length === 0"
-                        class="h-9 px-4 rounded-lg bg-yellow-500 hover:bg-yellow-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white text-sm font-medium transition-all"
+                        class="btn btn-warning disabled:bg-gray-300! disabled:cursor-not-allowed"
                     >
                         Iniciar tarea
                     </button>

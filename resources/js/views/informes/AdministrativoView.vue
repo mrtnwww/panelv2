@@ -48,7 +48,7 @@
                     <button
                         @click="generarInforme('resumido')"
                         :disabled="loadingInforme === 'resumido'"
-                        class="h-9 px-4 rounded-lg bg-[#1a5c2a] hover:bg-[#154d22] disabled:bg-gray-300 text-white text-sm font-medium transition-all flex items-center gap-2"
+                        class="btn btn-main"
                     >
                         <svg
                             v-if="loadingInforme === 'resumido'"

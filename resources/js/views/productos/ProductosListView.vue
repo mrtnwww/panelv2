@@ -22,10 +22,7 @@
         >
             <!-- Acciones en la barra superior -->
             <template #actions>
-                <button
-                    @click="abrirModalCrear"
-                    class="h-8 px-3 rounded-lg bg-[#1a5c2a] hover:bg-[#154d22] text-white text-xs font-medium transition-all flex items-center gap-1.5"
-                >
+                <button @click="abrirModalCrear" class="btn btn-main">
                     <i class="fa-solid fa-plus"></i>
                     Crear producto
                 </button>
@@ -33,7 +30,7 @@
                 <button
                     @click="descargarPlantilla"
                     :disabled="loadingPlantilla"
-                    class="h-8 px-3 rounded-lg bg-[#1a5c2a] hover:bg-[#154d22] disabled:bg-gray-300 text-white text-xs font-medium transition-all flex items-center gap-1.5"
+                    class="btn btn-primary"
                 >
                     <i class="fa-solid fa-download"></i>
                     Descargar plantilla
