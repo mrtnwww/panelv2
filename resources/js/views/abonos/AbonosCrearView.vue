@@ -338,127 +338,27 @@
                     </div>
 
                     <!-- Recibos de pago -->
-                    <div
-                        class="bg-white rounded-xl border border-gray-200 overflow-hidden"
+                    <TableGrid
+                        title="Recibos de pago"
+                        :items="creditoInfo.recibos"
+                        :columns="cols"
                     >
-                        <div class="px-4 py-3 border-b border-gray-100">
-                            <p class="text-sm font-semibold text-[#1a5c2a]">
-                                Recibos de pago
-                            </p>
-                        </div>
+                        <template #cell(valor)="{ item }">
+                            <span class="font-medium sm:font-normal">
+                                {{ formatCurrency(item.valor) }}
+                            </span>
+                        </template>
 
-                        <div
-                            class="hidden sm:grid grid-cols-12 gap-4 px-4 py-2 bg-gray-50 border-b border-gray-100"
-                        >
-                            <span
-                                class="col-span-2 text-xs font-medium text-gray-500"
-                                >Código</span
-                            >
-                            <span
-                                class="col-span-2 text-xs font-medium text-gray-500"
-                                >Valor</span
-                            >
-                            <span
-                                class="col-span-3 text-xs font-medium text-gray-500"
-                                >Fecha generación</span
-                            >
-                            <span
-                                class="col-span-4 text-xs font-medium text-gray-500"
-                                >Generado por</span
-                            >
-                            <span
-                                class="col-span-1 text-xs font-medium text-gray-500 text-center"
-                                >Acciones</span
-                            >
-                        </div>
-
-                        <div class="divide-y divide-gray-100">
-                            <div
-                                v-for="recibo in creditoInfo.recibos"
-                                :key="recibo.codigo"
-                                class="flex flex-col sm:grid sm:grid-cols-12 gap-2 sm:gap-4 sm:items-center px-4 py-3 sm:py-2.5 hover:bg-gray-50/50 transition-colors"
-                            >
-                                <div
-                                    class="flex justify-between items-center sm:contents"
+                        <template #cell(acciones)="{ item }">
+                            <div class="flex justify-center">
+                                <button
+                                    class="bg-[#10b981] text-white p-1.5 rounded-lg hover:bg-[#059669]"
                                 >
-                                    <span
-                                        class="text-sm font-medium sm:text-xs sm:font-normal text-gray-800 sm:text-gray-600 sm:col-span-2"
-                                    >
-                                        <span
-                                            class="sm:hidden text-gray-400 font-normal mr-1"
-                                            >Cód:</span
-                                        >{{ recibo.codigo }}
-                                    </span>
-
-                                    <button
-                                        @click="descargarRecibo(recibo)"
-                                        class="sm:hidden h-8 w-8 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white transition-all flex items-center justify-center shadow-sm"
-                                        title="Descargar recibo"
-                                    >
-                                        <i class="fa-solid fa-print"></i>
-                                    </button>
-                                </div>
-
-                                <div
-                                    class="flex flex-col gap-1 sm:contents text-xs text-gray-600"
-                                >
-                                    <div
-                                        class="flex justify-between sm:block sm:col-span-2"
-                                    >
-                                        <span class="sm:hidden text-gray-400"
-                                            >Valor:</span
-                                        >
-                                        <span
-                                            class="font-medium sm:font-normal"
-                                            >{{
-                                                formatCurrency(recibo.valor)
-                                            }}</span
-                                        >
-                                    </div>
-
-                                    <div
-                                        class="flex justify-between sm:block sm:col-span-3"
-                                    >
-                                        <span class="sm:hidden text-gray-400"
-                                            >Fecha:</span
-                                        >
-                                        <span>{{ recibo.fecha }}</span>
-                                    </div>
-
-                                    <div
-                                        class="flex justify-between items-center sm:block sm:col-span-4 min-w-0 gap-2"
-                                    >
-                                        <span
-                                            class="sm:hidden text-gray-400 shrink-0"
-                                            >Por:</span
-                                        >
-                                        <span class="truncate block">{{
-                                            recibo.generado_por
-                                        }}</span>
-                                    </div>
-                                </div>
-
-                                <div
-                                    class="hidden sm:flex sm:justify-center sm:col-span-1"
-                                >
-                                    <button
-                                        @click="descargarRecibo(recibo)"
-                                        class="h-7 w-7 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white transition-all flex items-center justify-center"
-                                        title="Descargar recibo"
-                                    >
-                                        <i class="fa-solid fa-print"></i>
-                                    </button>
-                                </div>
+                                    <i class="fa-solid fa-print"></i>
+                                </button>
                             </div>
-                        </div>
-
-                        <div
-                            v-if="!creditoInfo.recibos?.length"
-                            class="px-4 py-6 text-sm text-gray-400 text-center"
-                        >
-                            No hay recibos generados
-                        </div>
-                    </div>
+                        </template>
+                    </TableGrid>
                 </div>
             </div>
         </transition>
@@ -480,13 +380,14 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed } from 'vue'
 
 // -- Componentes -------------------------------------------
 import EstadoCreditoModal from '@/components/modals/EstadoCreditoModal.vue'
 import UpdateMoraButton from '@/components/table/UpdateMoraButton.vue'
 import FormSelectAsync from '@/components/form/FormSelectAsync.vue'
 import FormInput from '@/components/form/FormInput.vue'
+import TableGrid from '@/components/TableGrid.vue'
 
 // -- Composables -------------------------------------------
 import { useEstadoCredito } from '@/composables/useEstadoCredito'
@@ -523,6 +424,19 @@ const form = reactive({
 
 // -- Opciones de selects -------------------------------------
 const opcionesStore = useOpcionesStore()
+
+const cols = [
+    { key: 'codigo', label: 'Código', width: '80px' },
+    { key: 'valor', label: 'Valor', width: '80px' },
+    { key: 'fecha', label: 'Fecha generación', width: '2fr' },
+    { key: 'generado_por', label: 'Generado por', width: '2fr' },
+    {
+        key: 'acciones',
+        label: 'Acciones',
+        width: '80px',
+        headerClass: 'text-center',
+    },
+]
 
 // -- Opciones ----------------------------------------------------------
 const creditos = ref([])

@@ -5,10 +5,8 @@
                 <h2 class="text-[#28a745] font-bold text-lg">
                     Tu próximo pago
                 </h2>
-                <button
-                    class="bg-[#ff7f50] hover:bg-[#ff6a33] text-white px-6 py-1.5 rounded-lg flex items-center gap-2 text-sm font-bold shadow-sm transition-colors"
-                >
-                    Pagar <i class="fa-solid fa-money-bill-wave"></i>
+                <button class="btn btn-secondary">
+                    Pagar <i class="fa-solid fa-dollar-sign"></i>
                 </button>
             </div>
 
@@ -56,11 +54,6 @@
                 </div>
             </div>
 
-            <p class="text-[10px] text-gray-400 mt-2 text-center italic">
-                *El costo mensual es del de acuerdo a los créditos otorgados en
-                el mes y se liquida sobre el valor total mes vencido.
-            </p>
-
             <div
                 v-if="showHistory"
                 class="mt-4 p-4 border rounded-xl bg-gray-50"
@@ -69,6 +62,11 @@
                     Cargando historial...
                 </p>
             </div>
+
+            <p class="text-xs text-gray-400 mt-2 text-center italic">
+                *El costo mensual es del de acuerdo a los créditos otorgados en
+                el mes y se liquida sobre el valor total mes vencido.
+            </p>
         </div>
 
         <div>
@@ -82,16 +80,14 @@
                     class="flex flex-col md:flex-row md:items-center justify-between py-3 px-2 hover:bg-gray-50 transition-colors"
                 >
                     <div class="flex items-center gap-3">
-                        <input
-                            type="checkbox"
+                        <FormCheckbox
+                            :label="modulo.nombre"
                             v-model="modulo.active"
-                            class="rounded text-[#28a745] focus:ring-[#28a745]"
                         />
-                        <span class="text-sm text-gray-700">{{
-                            modulo.nombre
-                        }}</span>
                     </div>
-                    <span class="text-[11px] text-gray-500 italic mt-1 md:mt-0">
+                    <span
+                        class="text-xs text-gray-500 italic mt-1 select-none md:mt-0"
+                    >
                         {{ modulo.descripcion }}
                     </span>
                 </div>
@@ -102,6 +98,9 @@
 
 <script setup>
 import { ref, reactive } from 'vue'
+
+// -- Componentes ----------------------------------------------
+import FormCheckbox from '@/components/form/FormCheckbox.vue'
 
 const showHistory = ref(false)
 
@@ -142,17 +141,3 @@ const modulos = reactive([
     },
 ])
 </script>
-
-<style scoped>
-/* Estilo personalizado para los inputs con bordes muy suaves */
-input[readonly] {
-    border-color: #e2e8f0;
-    background-color: #ffffff;
-}
-
-input[type='checkbox'] {
-    width: 1rem;
-    height: 1rem;
-    cursor: pointer;
-}
-</style>

@@ -2,79 +2,35 @@
     <div class="p-6">
         <div class="mb-6 max-w-sm">
             <div class="relative">
-                <input
-                    type="text"
-                    v-model="searchQuery"
+                <FormInput
+                    :model-value="searchQuery"
                     placeholder="Buscar función..."
-                    class="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm pl-10 focus:ring-2 focus:ring-green-500/20 focus:border-[#1a5c2a] outline-none transition-all"
+                    size="lg"
+                    icon-left="search"
+                    wrapper-class="w-full sm:w-full"
+                    @update:model-value="$emit('update:search', $event)"
                 />
-                <i
-                    class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-gray-400 text-xs"
-                ></i>
             </div>
         </div>
 
-        <div class="border rounded-xl overflow-hidden shadow-sm bg-white">
-            <div class="overflow-y-auto max-h-[600px]">
-                <table class="w-full text-left text-xs border-collapse">
-                    <thead class="bg-gray-50 sticky top-0 z-10 shadow-sm">
-                        <tr class="text-gray-600 font-bold border-b">
-                            <th class="px-4 py-4 w-1/4">
-                                Nombre de la función
-                            </th>
-                            <th class="px-4 py-4 text-center w-32">
-                                Activar/Inactivar
-                            </th>
-                            <th class="px-4 py-4 text-center w-24">Acciones</th>
-                            <th class="px-4 py-4">Descripción</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-100">
-                        <tr
-                            v-for="funcion in filteredFunciones"
-                            :key="funcion.id"
-                            class="hover:bg-gray-50 transition-colors"
-                        >
-                            <td
-                                class="px-4 py-3 font-medium text-gray-700 uppercase tracking-tight"
-                            >
-                                {{ funcion.nombre }}
-                            </td>
-                            <td class="px-4 py-3 text-center">
-                                <label
-                                    class="relative inline-flex items-center cursor-pointer"
-                                >
-                                    <input
-                                        type="checkbox"
-                                        v-model="funcion.activa"
-                                        class="sr-only peer"
-                                    />
-                                    <div
-                                        class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#1a5c2a]"
-                                    ></div>
-                                </label>
-                            </td>
-                            <td class="px-4 py-3 text-center">
-                                <button
-                                    v-if="funcion.hasConfig"
-                                    class="text-green-700 hover:text-green-900"
-                                >
-                                    <i class="fa-solid fa-table-cells"></i>
-                                </button>
-                            </td>
-                            <td class="px-4 py-3 text-gray-500 leading-relaxed">
-                                {{ funcion.descripcion }}
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
+        <TableGrid :items="[]" :columns="cols">
+            <template #cell(acciones)="{ item }">
+                <div class="flex justify-center">
+                    <button class="btn btn-danger">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                </div>
+            </template>
+        </TableGrid>
     </div>
 </template>
 
 <script setup>
 import { ref, computed } from 'vue'
+
+// -- Componentes ---------------------------------------------------
+import FormInput from '@/components/form/FormInput.vue'
+import TableGrid from '@/components/TableGrid.vue'
 
 const searchQuery = ref('')
 
@@ -130,6 +86,13 @@ const funciones = ref([
     // ... añadir el resto según sea necesario
 ])
 
+const cols = [
+    { key: 'nombre', label: 'Nombre de la función' },
+    { key: 'activar', label: 'Activar/Inactivar' },
+    { key: 'acciones', label: 'Acciones' },
+    { key: 'descripcion', label: 'Descripción' },
+]
+
 const filteredFunciones = computed(() => {
     return funciones.value.filter(
         f =>
@@ -140,20 +103,3 @@ const filteredFunciones = computed(() => {
     )
 })
 </script>
-
-<style scoped>
-/* Estilo para el scrollbar para que sea más sutil */
-.overflow-y-auto::-webkit-scrollbar {
-    width: 6px;
-}
-.overflow-y-auto::-webkit-scrollbar-track {
-    background: #f1f1f1;
-}
-.overflow-y-auto::-webkit-scrollbar-thumb {
-    background: #ccc;
-    border-radius: 10px;
-}
-.overflow-y-auto::-webkit-scrollbar-thumb:hover {
-    background: #999;
-}
-</style>

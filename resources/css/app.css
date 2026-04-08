@@ -35,6 +35,18 @@
     background-color: #9ca3af;
 }
 
+/* Para quitar las flechas del input type number en Chrome/Safari/Edge */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+/* Firefox */
+input[type='number'] {
+    -moz-appearance: textfield;
+}
+
 .modal-enter-active,
 .modal-leave-active {
     transition: opacity 0.15s ease;
@@ -59,7 +71,7 @@
 }
 
 .btn {
-    @apply inline-flex items-center justify-center gap-2 h-9 px-4 rounded-lg text-sm font-medium transition-all whitespace-nowrap border;
+    @apply inline-flex items-center justify-center gap-2 h-9 px-4 rounded-lg text-sm font-medium transition-all whitespace-nowrap border cursor-pointer;
 }
 
 .btn-default {

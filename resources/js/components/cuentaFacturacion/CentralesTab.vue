@@ -1,10 +1,7 @@
 <template>
     <div class="p-6">
         <div class="mb-6">
-            <h2 class="text-sm font-bold text-gray-700 uppercase">
-                Configuración de centrales de riesgo
-            </h2>
-            <p class="text-[11px] text-gray-500 italic">
+            <p class="text-xs text-gray-500 italic">
                 * Establece los parámetros a tener en cuenta al momento de
                 realizar el análisis y consulta en centrales de riesgo de un
                 nuevo cliente.
@@ -21,11 +18,10 @@
                         Digita un número de 0 a 950 que defina el puntaje mínimo
                         que debe tener el cliente.
                     </p>
-                    <input
+                    <FormInput
                         type="number"
                         v-model="form.min_score"
                         placeholder="Digita el puntaje mínimo"
-                        class="w-full bg-white border border-gray-200 rounded-lg px-4 py-2 text-sm text-center outline-none focus:border-[#1a5c2a]"
                     />
                 </div>
 
@@ -37,11 +33,10 @@
                         El número de meses hacia atrás en los que el cliente no
                         debió haber incurrido EN MORA.
                     </p>
-                    <input
+                    <FormInput
                         type="number"
                         v-model="form.meses_al_dia"
                         placeholder="Número de meses al día"
-                        class="w-full bg-white border border-gray-200 rounded-lg px-4 py-2 text-sm text-center outline-none focus:border-[#1a5c2a]"
                     />
                 </div>
 
@@ -53,11 +48,10 @@
                         El porcentaje de capacidad de endeudamiento que debe
                         tener el cliente.
                     </p>
-                    <input
+                    <FormInput
                         type="number"
                         v-model="form.capacidad_endeudamiento"
                         placeholder="Digita el porcentaje"
-                        class="w-full bg-white border border-gray-200 rounded-lg px-4 py-2 text-sm text-center outline-none focus:border-[#1a5c2a]"
                     />
                 </div>
 
@@ -69,11 +63,10 @@
                         Los ingresos mínimos que el cliente debe devengar al
                         mes.
                     </p>
-                    <input
+                    <FormInput
                         type="number"
                         v-model="form.ingresos_minimos"
                         placeholder="Digita los ingresos mínimos"
-                        class="w-full bg-white border border-gray-200 rounded-lg px-4 py-2 text-sm text-center outline-none focus:border-[#1a5c2a]"
                     />
                 </div>
 
@@ -93,25 +86,19 @@
 
                     <div class="space-y-2">
                         <div class="flex items-center gap-4">
-                            <span class="text-xs text-gray-600 w-24"
-                                >Máximo</span
-                            >
-                            <input
+                            <FormInput
                                 type="number"
+                                label="Máximo"
                                 v-model="form.huellas_maximas"
                                 placeholder="Número de huellas"
-                                class="flex-1 bg-white border border-gray-200 rounded-lg px-4 py-1.5 text-sm text-center outline-none focus:border-[#1a5c2a]"
+                                :wrapper-class="'w-full'"
                             />
-                        </div>
-                        <div class="flex items-center gap-4">
-                            <span class="text-xs text-gray-600 w-24"
-                                >En los últimos</span
-                            >
-                            <input
+                            <FormInput
                                 type="number"
+                                label="En los últimos"
                                 v-model="form.huellas_meses"
                                 placeholder="Número de meses"
-                                class="flex-1 bg-white border border-gray-200 rounded-lg px-4 py-1.5 text-sm text-center outline-none focus:border-[#1a5c2a]"
+                                :wrapper-class="'w-full'"
                             />
                         </div>
                     </div>
@@ -129,6 +116,10 @@
 
 <script setup>
 import { reactive } from 'vue'
+
+// -- Componentes ----------------------------------------------
+import FormInput from '@/components/form/FormInput.vue'
+
 import api from '@/services/api'
 
 const form = reactive({
@@ -150,17 +141,3 @@ async function saveConfig() {
     }
 }
 </script>
-
-<style scoped>
-/* Para quitar las flechas del input type number en Chrome/Safari/Edge */
-input::-webkit-outer-spin-button,
-input::-webkit-inner-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
-}
-
-/* Firefox */
-input[type='number'] {
-    -moz-appearance: textfield;
-}
-</style>

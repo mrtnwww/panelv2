@@ -2,7 +2,7 @@
     <div class="p-6">
         <div class="grid grid-cols-1 xl:grid-cols-2 gap-8">
             <div
-                class="border border-gray-200 rounded-lg p-5 bg-white relative"
+                class="relative p-5 bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm"
             >
                 <div class="space-y-6">
                     <div class="space-y-3 pb-4 border-b border-gray-100">
@@ -44,7 +44,9 @@
                                     v-model="form.intereses_enabled"
                                     label="Intereses"
                                 />
-                                <p class="text-xs text-justify ml-4">
+                                <p
+                                    class="text-xs text-justify text-gray-400 ml-4"
+                                >
                                     Corrobore y verifique que los intereses
                                     correspondan al mes y no superen la máxima
                                     tasa de usura permitida. En Colombia la
@@ -89,7 +91,9 @@
                                     v-model="form.otros_intereses_enabled"
                                     label="Otros intereses"
                                 />
-                                <p class="text-xs text-justify ml-4">
+                                <p
+                                    class="text-xs text-justify text-gray-400 ml-4"
+                                >
                                     Digite un valor efectivo anual o nominal
                                     mensual que será calculado y sumado al valor
                                     del crédito.
@@ -206,7 +210,9 @@
                                     v-model="form.otros_enabled"
                                     label="Otros"
                                 />
-                                <p class="text-xs text-justify ml-4">
+                                <p
+                                    class="text-xs text-justify text-gray-400 ml-4"
+                                >
                                     Los valores adicionales que usted cobre a
                                     sus clientes, debe describirlos en la
                                     sección de concepto del plan de pagos.
@@ -251,68 +257,32 @@
                         <FormCheckbox
                             v-for="opt in adicionalesDestinosOpts"
                             :label="opt.label"
-                            :value="opt.value"
                             v-model="form.funciones"
                         />
                     </div>
                 </div>
 
-                <div class="overflow-hidden border rounded-lg">
-                    <table class="w-full text-left text-xs">
-                        <thead
-                            class="bg-gray-50 border-b text-gray-500 font-medium uppercase"
-                        >
-                            <tr>
-                                <th class="px-4 py-3">Nombre</th>
-                                <th class="px-4 py-3">Periodicidad</th>
-                                <th class="px-4 py-3">Máximo</th>
-                                <th class="px-4 py-3 text-center">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-100">
-                            <tr
-                                v-for="credito in creditos"
-                                :key="credito.id"
-                                class="hover:bg-gray-50"
+                <TableGrid
+                    title="Líneas de crédito"
+                    :items="[]"
+                    :columns="cols"
+                >
+                    <template #cell(acciones)="{ item }">
+                        <div class="flex justify-center">
+                            <button
+                                class="bg-[#10b981] text-white p-1.5 rounded-lg hover:bg-[#059669]"
                             >
-                                <td class="px-4 py-3 font-medium">
-                                    {{ credito.nombre }}
-                                </td>
-                                <td class="px-4 py-3">
-                                    {{ credito.periodicidad }}
-                                </td>
-                                <td class="px-4 py-3">{{ credito.maximo }}</td>
-                                <td class="px-4 py-3 flex justify-center gap-2">
-                                    <button
-                                        class="text-gray-400 hover:text-blue-600"
-                                    >
-                                        <i class="fa-solid fa-table-list"></i>
-                                    </button>
-                                    <button
-                                        class="text-gray-400 hover:text-green-600"
-                                    >
-                                        <i class="fa-solid fa-pen"></i>
-                                    </button>
-                                    <button
-                                        class="text-gray-400 hover:text-red-600"
-                                    >
-                                        <i class="fa-solid fa-trash"></i>
-                                    </button>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+                                <i class="fa-solid fa-print"></i>
+                            </button>
+                        </div>
+                    </template>
+                </TableGrid>
             </div>
         </div>
 
         <div class="flex gap-3 mt-8">
-            <button
-                class="bg-[#28a745] text-white px-8 py-2 rounded-md font-bold text-sm hover:bg-[#218838] transition-colors"
-            >
-                Aceptar
-            </button>
-            <button class="btn btn-main">Crear línea de crédito</button>
+            <button class="btn btn-main">Aceptar</button>
+            <button class="btn btn-primary">Crear línea de crédito</button>
         </div>
     </div>
 </template>
@@ -325,6 +295,7 @@ import FormRadioGroup from '@/components/form/FormRadioGroup.vue'
 import FormCheckbox from '@/components/form/FormCheckbox.vue'
 import FileUpload from '@/components/form/FileUpload.vue'
 import FormInput from '@/components/form/FormInput.vue'
+import TableGrid from '@/components/TableGrid.vue'
 
 const form = reactive({
     firma_electronica_enabled: false,
@@ -379,4 +350,17 @@ const creditos = ref([
         maximo: '$2,000,000',
     },
 ])
+
+const cols = [
+    { key: 'nombre', label: 'Nombre', width: '1.5fr' },
+    { key: 'periodicidad', label: 'Periodicidad', width: '80px' },
+    { key: 'valor_minimo', label: 'Valor mínimo', width: '1.5fr' },
+    { key: 'valor_maximo', label: 'Valor máximo', width: '1.5fr' },
+    {
+        key: 'acciones',
+        label: 'Acciones',
+        width: '80px',
+        headerClass: 'text-center',
+    },
+]
 </script>
