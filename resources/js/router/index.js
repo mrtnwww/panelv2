@@ -195,6 +195,13 @@ const routes = [
                 component: () =>
                     import('@/views/usuario/CambiarContraseñaView.vue'),
             },
+            // -- CUENTA Y FACTURACIÓN ---------------------------------------------------------
+            {
+                path: 'usuario/cuenta-facturacion',
+                name: 'usuario.cuentaFacturacion',
+                component: () =>
+                    import('@/views/usuario/CuentaFacturacionView.vue'),
+            },
         ],
     },
     {

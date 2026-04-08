@@ -201,7 +201,7 @@
                     </button>
                     <button
                         class="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
-                        @click="goTo('/dashboard/cuenta-facturacion')"
+                        @click="goTo('/usuario/cuenta-facturacion')"
                     >
                         <i class="fa-solid fa-gears"></i>
                         Cuenta y facturación
