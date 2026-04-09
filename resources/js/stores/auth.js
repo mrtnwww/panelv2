@@ -3,7 +3,7 @@ import api from '@/services/api'
 
 export const useAuthStore = defineStore('auth', {
     state: () => ({
-        user: null
+        user: null,
     }),
 
     getters: {

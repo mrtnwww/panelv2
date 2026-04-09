@@ -28,6 +28,7 @@
                         :key="index"
                         class="grid gap-4 px-4 py-3 items-center hover:bg-gray-50/50 transition-colors"
                         :style="{ gridTemplateColumns: gridTemplate }"
+                        @click="$emit('row-click', item)"
                     >
                         <div
                             v-for="col in columns"
@@ -40,6 +41,7 @@
                             </slot>
                         </div>
                     </div>
+                    <slot name="insertion-row" />
                 </div>
 
                 <div

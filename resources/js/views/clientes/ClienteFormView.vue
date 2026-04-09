@@ -284,7 +284,7 @@
                         type="button"
                         @click="reenviarAutorizacion('centrales')"
                         :disabled="loadingReenvio === 'centrales'"
-                        class="h-9 px-4 rounded-lg border border-[#1a5c2a] text-[#1a5c2a] text-sm font-medium hover:bg-[#1a5c2a] hover:text-white transition-all flex items-center gap-2 disabled:opacity-50"
+                        class="btn btn-main"
                     >
                         <svg
                             v-if="loadingReenvio === 'centrales'"
@@ -465,7 +465,7 @@
         <div class="flex justify-end gap-2 pt-2 pb-6">
             <button
                 type="button"
-                class="h-9 px-4 rounded-lg border border-gray-200 text-sm text-gray-500 hover:bg-gray-50 transition-all"
+                class="btn btn-default"
                 @click="router.push('/clientes')"
             >
                 Cancelar
@@ -474,7 +474,7 @@
                 type="button"
                 @click="handleSubmit"
                 :disabled="loading"
-                class="h-9 px-5 rounded-lg bg-[#1a5c2a] hover:bg-[#154d22] disabled:bg-gray-300 text-white text-sm font-medium transition-all flex items-center gap-2"
+                class="btn btn-main"
             >
                 <svg
                     v-if="loading"

@@ -306,9 +306,10 @@
                 </span>
 
                 <input
-                    :type="type"
+                    :type="type === 'number' ? 'text' : type"
                     :value="modelValue"
-                    @input="$emit('update:modelValue', $event.target.value)"
+                    @input="handleNumberInput"
+                    @keypress="blockInvalidChars"
                     :placeholder="placeholder"
                     :required="required"
                     :disabled="disabled"
@@ -468,5 +469,42 @@ function onClickOutside(e) {
     if (selectWrapRef.value && !selectWrapRef.value.contains(e.target)) {
         dropdownOpen.value = false
     }
+}
+
+function blockInvalidChars(e) {
+    if (props.type === 'number') {
+        // Permitir: números, punto, coma (y teclas de control como backspace)
+        const allowedRegex = /[0-9.,]/
+        if (
+            !allowedRegex.test(e.key) &&
+            !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab'].includes(
+                e.key
+            )
+        ) {
+            e.preventDefault()
+        }
+
+        // Evitar múltiples puntos o comas
+        if (
+            (e.key === '.' || e.key === ',') &&
+            (e.target.value.includes('.') || e.target.value.includes(','))
+        ) {
+            e.preventDefault()
+        }
+    }
+}
+
+function handleNumberInput(e) {
+    let val = e.target.value
+
+    if (props.type === 'number') {
+        val = val.replace(',', '.')
+        val = val.replace(/[^0-9.]/g, '')
+
+        const parts = val.split('.')
+        if (parts.length > 2) val = parts[0] + '.' + parts.slice(1).join('')
+    }
+
+    emit('update:modelValue', val)
 }
 </script>

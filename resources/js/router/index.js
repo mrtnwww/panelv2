@@ -145,7 +145,8 @@ const routes = [
             {
                 path: 'informes/administrativo',
                 name: 'informes.administrativo',
-                component: () => import('@/views/informes/AdministrativoView.vue'),
+                component: () =>
+                    import('@/views/informes/AdministrativoView.vue'),
             },
             {
                 path: 'informes/corresponsal',

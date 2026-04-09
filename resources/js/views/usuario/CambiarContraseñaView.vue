@@ -125,7 +125,7 @@
                             type="button"
                             @click="handleChangePassword"
                             :disabled="loadingPass || !canChangePass"
-                            class="btn btn-main disabled:bg-gray-300!"
+                            class="btn btn-main"
                         >
                             <svg
                                 v-if="loadingPass"

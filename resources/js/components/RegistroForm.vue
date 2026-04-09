@@ -257,7 +257,7 @@
         <button
             type="submit"
             :disabled="loading || !form.terms"
-            class="w-full h-11 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] disabled:bg-gray-300 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-lg transition-all duration-150 flex items-center justify-center gap-2"
+            class="w-full h-11 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white text-sm font-semibold rounded-lg transition-all duration-150 flex items-center justify-center gap-2"
         >
             <svg
                 v-if="loading"

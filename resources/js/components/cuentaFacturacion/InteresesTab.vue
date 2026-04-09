@@ -4,65 +4,87 @@
             <div
                 class="relative p-5 bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm"
             >
-                <div class="space-y-6">
-                    <div class="space-y-3 pb-4 border-b border-gray-100">
-                        <div class="flex flex-col gap-1.5">
+                <div class="border-b border-gray-100 mb-6 pb-4">
+                    <h2
+                        class="text-center text-xl font-bold text-gray-800 tracking-tight uppercase"
+                    >
+                        {{ form.nombreLinea }}
+                    </h2>
+                    <p
+                        class="text-center text-xs text-gray-400 font-medium mt-1"
+                    >
+                        Configuración de parámetros de la línea
+                    </p>
+                </div>
+                <div class="space-y-8 max-w-full">
+                    <div class="pb-6 border-b border-gray-100">
+                        <div class="flex flex-col gap-4">
                             <FormCheckbox
                                 v-model="form.firma_electronica_enabled"
                                 label="Firma electrónica"
                             />
-                        </div>
 
-                        <div class="ml-6 space-y-4">
-                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                                <FormInput
-                                    label="Valor firma electrónica"
-                                    type="number"
-                                    v-model="form.firma_electronica"
-                                    placeholder="$0"
-                                />
-                                <FormInput
-                                    label="% Firma electrónica"
-                                    type="number"
-                                    v-model="form.porcentaje_firma_electronica"
-                                    placeholder="14%"
-                                />
-                                <FormInput
-                                    label="% IVA Firma electrónica"
-                                    type="number"
-                                    v-model="form.iva_firma_electronica"
-                                    placeholder="19%"
-                                />
+                            <div
+                                v-if="form.firma_electronica_enabled"
+                                class="ml-0 sm:ml-6 space-y-4"
+                            >
+                                <div
+                                    class="grid grid-cols-1 md:grid-cols-3 gap-4"
+                                >
+                                    <FormInput
+                                        label="Valor firma electrónica"
+                                        type="number"
+                                        v-model="form.firma_electronica"
+                                        placeholder="$0"
+                                    />
+                                    <FormInput
+                                        label="% Firma electrónica"
+                                        type="number"
+                                        v-model="
+                                            form.porcentaje_firma_electronica
+                                        "
+                                        placeholder="14%"
+                                    />
+                                    <FormInput
+                                        label="% IVA Firma electrónica"
+                                        type="number"
+                                        v-model="form.iva_firma_electronica"
+                                        placeholder="19%"
+                                    />
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <div class="space-y-3">
-                        <div class="flex items-start justify-between gap-4">
-                            <div class="flex flex-1 flex-col gap-1.5">
+                    <div class="pb-6 border-b border-gray-100">
+                        <div class="flex flex-col lg:flex-row gap-6">
+                            <div class="flex-1 space-y-3">
                                 <FormCheckbox
                                     v-model="form.intereses_enabled"
                                     label="Intereses"
                                 />
                                 <p
-                                    class="text-xs text-justify text-gray-400 ml-4"
+                                    v-if="form.intereses_enabled"
+                                    class="text-xs text-justify text-gray-400 pl-6 border-l-2 border-gray-50"
                                 >
                                     Corrobore y verifique que los intereses
                                     correspondan al mes y no superen la máxima
                                     tasa de usura permitida. En Colombia la
                                     Superintendencia Financiera es la entidad
-                                    encargada de calcular y certificar mediante
-                                    resolución la tasa de interés.
+                                    encargada de certificar la tasa.
                                 </p>
                             </div>
 
-                            <div class="flex flex-col gap-1.5">
+                            <div
+                                v-if="form.intereses_enabled"
+                                class="flex-1 flex flex-col gap-4 bg-gray-50/50 p-4 rounded-lg"
+                            >
                                 <FormRadioGroup
                                     v-model="form.tipo_interes"
                                     :options="tipoIntereses"
                                     :vertical="false"
                                 />
-                                <div class="flex gap-1.5">
+                                <div class="grid grid-cols-2 gap-3">
                                     <FormInput
                                         label="% E.A."
                                         type="number"
@@ -78,34 +100,40 @@
                                 </div>
                                 <FormCheckbox
                                     v-model="form.interes_automatico_enabled"
-                                    label="Automático"
+                                    label="Cálculo Automático"
                                 />
                             </div>
                         </div>
                     </div>
 
-                    <div class="space-y-3">
-                        <div class="flex items-start justify-between gap-4">
-                            <div class="flex flex-1 flex-col gap-1.5">
+                    <div class="pb-6 border-b border-gray-100">
+                        <div class="flex flex-col lg:flex-row gap-6">
+                            <div class="flex-1 space-y-3">
                                 <FormCheckbox
                                     v-model="form.otros_intereses_enabled"
                                     label="Otros intereses"
                                 />
-                                <p
-                                    class="text-xs text-justify text-gray-400 ml-4"
+                                <div
+                                    v-if="form.otros_intereses_enabled"
+                                    class="pl-6 space-y-3"
                                 >
-                                    Digite un valor efectivo anual o nominal
-                                    mensual que será calculado y sumado al valor
-                                    del crédito.
-                                </p>
-                                <FormInput
-                                    v-model="form.otros_intereses_concepto"
-                                    placeholder="Definir concepto otros intereses"
-                                />
+                                    <p class="text-xs text-gray-400 italic">
+                                        Digite un valor efectivo anual o nominal
+                                        mensual que será calculado y sumado al
+                                        valor del crédito.
+                                    </p>
+                                    <FormInput
+                                        v-model="form.otros_intereses_concepto"
+                                        placeholder="Definir concepto otros intereses"
+                                    />
+                                </div>
                             </div>
 
-                            <div class="flex flex-col gap-1.5">
-                                <div class="flex gap-1.5">
+                            <div
+                                v-if="form.otros_intereses_enabled"
+                                class="flex-1"
+                            >
+                                <div class="grid grid-cols-2 gap-3">
                                     <FormInput
                                         label="% E.A."
                                         type="number"
@@ -123,109 +151,122 @@
                         </div>
                     </div>
 
-                    <div class="space-y-3 pt-4 border-t border-gray-100">
-                        <div class="flex flex-col gap-1.5">
+                    <div class="pb-6 border-b border-gray-100">
+                        <div class="space-y-4">
                             <FormCheckbox
                                 v-model="form.aval_enabled"
                                 label="Aval"
                             />
 
                             <div
-                                class="bg-yellow-50 border-l-4 border-yellow-400 p-2 ml-6"
+                                v-if="form.aval_enabled"
+                                class="ml-0 sm:ml-6 space-y-6"
                             >
-                                <p class="text-xs text-yellow-800 font-bold">
-                                    ⚠️ Advertencia
-                                </p>
-                                <p class="text-xs text-yellow-700">
-                                    Usted debe contratar este servicio y
-                                    adjuntar aquí el documento correspondiente.
-                                    Tenga en cuenta que el valor a cobrar a sus
-                                    clientes será el mismo que usted pagará por
-                                    este servicio.
-                                </p>
-                            </div>
-                        </div>
+                                <div
+                                    class="bg-yellow-50 border-l-4 border-yellow-400 p-3 rounded-r-md"
+                                >
+                                    <p
+                                        class="text-xs text-yellow-800 font-bold mb-1"
+                                    >
+                                        ⚠️ Advertencia
+                                    </p>
+                                    <p
+                                        class="text-xs text-yellow-700 leading-relaxed"
+                                    >
+                                        Usted debe contratar este servicio y
+                                        adjuntar el documento. El valor a cobrar
+                                        será el mismo que usted pagará.
+                                    </p>
+                                </div>
 
-                        <div class="ml-6 space-y-4">
-                            <FileUpload
-                                label="Adjuntar documento"
-                                v-model="form.documento_aval"
-                            />
+                                <FileUpload
+                                    label="Adjuntar documento"
+                                    v-model="form.documento_aval"
+                                />
 
-                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                                <FormInput
-                                    label="Valor aval"
-                                    type="number"
-                                    v-model="form.aval"
-                                    placeholder="$0"
-                                />
-                                <FormInput
-                                    label="% Aval"
-                                    type="number"
-                                    v-model="form.porcentaje_aval"
-                                    placeholder="14%"
-                                />
-                                <FormInput
-                                    label="% IVA Aval"
-                                    type="number"
-                                    v-model="form.iva_aval"
-                                    placeholder="19%"
-                                />
-                            </div>
+                                <div
+                                    class="grid grid-cols-1 md:grid-cols-3 gap-4"
+                                >
+                                    <FormInput
+                                        label="Valor aval"
+                                        type="number"
+                                        v-model="form.aval"
+                                        placeholder="$0"
+                                    />
+                                    <FormInput
+                                        label="% Aval"
+                                        type="number"
+                                        v-model="form.porcentaje_aval"
+                                        placeholder="14%"
+                                    />
+                                    <FormInput
+                                        label="% IVA Aval"
+                                        type="number"
+                                        v-model="form.iva_aval"
+                                        placeholder="19%"
+                                    />
+                                </div>
 
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <FormInput
-                                    label="Nombre empresa avalista"
-                                    v-model="form.empresa_avalista"
-                                    placeholder="Mi empresa S.A"
-                                />
-                                <FormInput
-                                    label="NIT empresa avalista"
-                                    v-model="form.empresa_avalista_nit"
-                                    placeholder="123456789-0"
-                                />
-                            </div>
+                                <div
+                                    class="grid grid-cols-1 sm:grid-cols-2 gap-4"
+                                >
+                                    <FormInput
+                                        label="Empresa avalista"
+                                        v-model="form.empresa_avalista"
+                                        placeholder="Mi empresa S.A"
+                                    />
+                                    <FormInput
+                                        label="NIT"
+                                        v-model="form.empresa_avalista_nit"
+                                        placeholder="123456789-0"
+                                    />
+                                </div>
 
-                            <div class="flex justify-center items-center gap-4">
-                                <FormCheckbox
-                                    v-model="form.mostrar_aval_total"
-                                    label="Mostrar Aval totalizado"
-                                />
-                                <FormCheckbox
-                                    v-model="form.mostrar_aval_columnas"
-                                    label="Mostrar Aval en columnas"
-                                />
-                                <FormCheckbox
-                                    v-model="form.restar_aval"
-                                    label="Restar Aval"
-                                />
+                                <div
+                                    class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2"
+                                >
+                                    <FormCheckbox
+                                        v-model="form.mostrar_aval_total"
+                                        label="Totalizado"
+                                    />
+                                    <FormCheckbox
+                                        v-model="form.mostrar_aval_columnas"
+                                        label="En columnas"
+                                    />
+                                    <FormCheckbox
+                                        v-model="form.restar_aval"
+                                        label="Restar Aval"
+                                    />
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <div class="space-y-3 pt-4 border-t border-gray-100">
-                        <div class="flex items-start justify-between gap-4">
-                            <div class="flex flex-1 flex-col gap-1.5">
+                    <div class="pb-6">
+                        <div class="flex flex-col lg:flex-row gap-6">
+                            <div class="flex-1 space-y-3">
                                 <FormCheckbox
                                     v-model="form.otros_enabled"
                                     label="Otros"
                                 />
-                                <p
-                                    class="text-xs text-justify text-gray-400 ml-4"
+                                <div
+                                    v-if="form.otros_enabled"
+                                    class="pl-6 space-y-3"
                                 >
-                                    Los valores adicionales que usted cobre a
-                                    sus clientes, debe describirlos en la
-                                    sección de concepto del plan de pagos.
-                                    Emitiendo factura + IVA.
-                                </p>
-                                <FormInput
-                                    v-model="form.otros_concepto"
-                                    placeholder="Otros"
-                                />
+                                    <p class="text-xs text-gray-400 italic">
+                                        Describa los valores adicionales en el
+                                        concepto del plan de pagos. Emitiendo
+                                        factura + IVA.
+                                    </p>
+                                    <FormInput
+                                        v-model="form.otros_concepto"
+                                        placeholder="Concepto (Ej: Otros)"
+                                    />
+                                </div>
                             </div>
 
-                            <div class="flex flex-col gap-1.5">
-                                <div class="flex gap-1.5">
+                            <div v-if="form.otros_enabled" class="flex-1">
+                                <div class="grid grid-cols-2 gap-3">
                                     <FormInput
                                         label="Valor otros"
                                         type="number"
@@ -257,22 +298,85 @@
                         <FormCheckbox
                             v-for="opt in adicionalesDestinosOpts"
                             :label="opt.label"
-                            v-model="form.funciones"
+                            :value="opt.value"
+                            v-model="form.adicionalesDestinos"
                         />
                     </div>
                 </div>
 
                 <TableGrid
                     title="Líneas de crédito"
-                    :items="[]"
+                    :items="lineasCredito"
                     :columns="cols"
+                    @row-click="showParametros"
+                    class="cursor-pointer"
                 >
+                    <template #insertion-row v-if="creandoNuevaLinea">
+                        <div
+                            ref="insertionRowRef"
+                            class="grid gap-4 px-4 py-4 items-center animate-new-row shadow-xl z-10 relative rounded-lg my-1"
+                        >
+                            <div
+                                class="col-span-full mb-2 flex items-center gap-2"
+                            >
+                                <span
+                                    class="flex h-2 w-2 rounded-full bg-[#1a5c2a] animate-ping"
+                                ></span>
+                                <span
+                                    class="text-xs font-bold text-[#1a5c2a] uppercase tracking-widest"
+                                >
+                                    Nueva Línea de Crédito
+                                </span>
+                            </div>
+
+                            <FormInput
+                                v-model="nuevaLinea.nombre"
+                                placeholder="Línea de crédito"
+                            />
+                            <FormInput
+                                v-model="nuevaLinea.periodicidad"
+                                type="number"
+                                placeholder="Periodicidad"
+                            />
+                            <FormInput
+                                v-model="nuevaLinea.valor_minimo"
+                                type="number"
+                                placeholder="Valor mínimo"
+                            />
+                            <FormInput
+                                v-model="nuevaLinea.valor_maximo"
+                                type="number"
+                                placeholder="Valor máximo"
+                            />
+
+                            <div class="flex gap-2 justify-center">
+                                <button
+                                    @click="guardarNuevaLinea"
+                                    class="bg-[#10b981] text-white p-2 rounded-lg hover:bg-[#059669] transition-all"
+                                >
+                                    <i class="fa-solid fa-check"></i>
+                                </button>
+                                <button
+                                    @click="creandoNuevaLinea = false"
+                                    class="bg-gray-100 text-gray-500 p-2 rounded-lg hover:bg-gray-200 transition-all"
+                                >
+                                    <i class="fa-solid fa-xmark"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </template>
+
                     <template #cell(acciones)="{ item }">
-                        <div class="flex justify-center">
+                        <div class="flex gap-1.5 justify-center">
                             <button
                                 class="bg-[#10b981] text-white p-1.5 rounded-lg hover:bg-[#059669]"
                             >
-                                <i class="fa-solid fa-print"></i>
+                                <i class="fa-solid fa-pencil"></i>
+                            </button>
+                            <button
+                                class="bg-red-500 text-white p-1.5 rounded-lg hover:bg-red-600"
+                            >
+                                <i class="fa-solid fa-trash"></i>
                             </button>
                         </div>
                     </template>
@@ -281,14 +385,22 @@
         </div>
 
         <div class="flex gap-3 mt-8">
-            <button class="btn btn-main">Aceptar</button>
-            <button class="btn btn-primary">Crear línea de crédito</button>
+            <button :disabled="creandoNuevaLinea" class="btn btn-main">
+                Aceptar
+            </button>
+            <button
+                class="btn btn-primary"
+                :disabled="creandoNuevaLinea"
+                @click="habilitarCreacion"
+            >
+                Crear línea de crédito
+            </button>
         </div>
     </div>
 </template>
 
 <script setup>
-import { reactive, ref } from 'vue'
+import { reactive, ref, nextTick, onMounted } from 'vue'
 
 // -- Componentes --------------------------------------------------
 import FormRadioGroup from '@/components/form/FormRadioGroup.vue'
@@ -297,21 +409,37 @@ import FileUpload from '@/components/form/FileUpload.vue'
 import FormInput from '@/components/form/FormInput.vue'
 import TableGrid from '@/components/TableGrid.vue'
 
-const form = reactive({
+// -- Loader ----------------------------------------------------------
+import { useLoader } from '@/composables/useLoader'
+const { start, stop } = useLoader()
+
+import { formatCurrency, toNumber } from '@/utils/format'
+import api from '@/services/api'
+
+const getDefaultForm = () => ({
+    nombreLinea: '',
+
+    // Firma electrónica
     firma_electronica_enabled: false,
     firma_electronica: null,
     porcentaje_firma_electronica: null,
     iva_firma_electronica: null,
-    intereses_enabled: true,
-    tipo_interes: 'general',
+
+    // Intereses
+    intereses_enabled: false,
+    tipo_interes: 'individual',
     ea_intereses: null,
     nm_intereses: null,
     interes_automatico_enabled: false,
+
+    // Otros intereses
     otros_intereses_enabled: false,
     otros_intereses_concepto: '',
     ea_otros_intereses: null,
     nm_otros_intereses: null,
-    aval_enabled: true,
+
+    // Aval
+    aval_enabled: false,
     documento_aval: null,
     aval: null,
     porcentaje_aval: null,
@@ -321,41 +449,51 @@ const form = reactive({
     mostrar_aval_total: false,
     mostrar_aval_columnas: false,
     restar_aval: false,
+
+    // Otros
     otros_enabled: false,
     otros_concepto: '',
     otros: null,
     porcentaje_otros: null,
-    funciones: [],
+
+    adicionalesDestinos: [],
 })
 
-const tipoIntereses = [
-    { value: 'general', label: 'General' },
-    { value: 'individual', label: 'Individual' },
-]
+const form = reactive(getDefaultForm())
 
-const adicionalesDestinosOpts = [
-    { label: 'Redondear valores intereses', value: 'redondear' },
-    { label: 'Exención de interés y otros', value: 'exencion' },
-    { label: 'Línea de liquidez', value: 'liquidez' },
-    { label: 'Valor de consulta a centrales', value: 'consulta' },
-]
+const creandoNuevaLinea = ref(false)
+const insertionRowRef = ref(null)
+const nuevaLinea = ref({
+    nombre: '',
+    valor_minimo: null,
+    valor_maximo: null,
+    periodicidad: null,
+    parametros: {},
+})
 
-const creditos = ref([
-    { id: 1, nombre: 'TÉCNICO MECÁNICA', periodicidad: 6, maximo: '$600,000' },
-    { id: 2, nombre: 'SOAT', periodicidad: 6, maximo: '$1,600,000' },
-    {
-        id: 3,
-        nombre: 'SOAT Y TÉCNICO MECÁNICA',
-        periodicidad: 6,
-        maximo: '$2,000,000',
-    },
-])
-
+// -- TableGrid -------------------------------------------------
 const cols = [
     { key: 'nombre', label: 'Nombre', width: '1.5fr' },
-    { key: 'periodicidad', label: 'Periodicidad', width: '80px' },
-    { key: 'valor_minimo', label: 'Valor mínimo', width: '1.5fr' },
-    { key: 'valor_maximo', label: 'Valor máximo', width: '1.5fr' },
+    {
+        key: 'periodicidad',
+        label: 'Periodicidad',
+        width: '80px',
+        cellClass: 'text-center',
+    },
+    {
+        key: 'valor_minimo',
+        label: 'Valor mínimo',
+        width: '1.5fr',
+        cellClass: 'text-right',
+        headerClass: 'text-right',
+    },
+    {
+        key: 'valor_maximo',
+        label: 'Valor máximo',
+        width: '1.5fr',
+        cellClass: 'text-right',
+        headerClass: 'text-right',
+    },
     {
         key: 'acciones',
         label: 'Acciones',
@@ -363,4 +501,235 @@ const cols = [
         headerClass: 'text-center',
     },
 ]
+
+const tipoIntereses = [
+    { value: 'general', label: 'General' },
+    { value: 'individual', label: 'Individual' },
+]
+
+const adicionalesDestinosOpts = [
+    { label: 'Redondear valores intereses', value: 'redondear_intereses' },
+    { label: 'Exención de interés y otros', value: 'isexention' },
+    { label: 'Línea de liquidez', value: 'isexentionGracia' },
+    { label: 'Valor de consulta a centrales', value: 'valor_consulta' },
+]
+
+const lineasCredito = ref([])
+
+// -- Backend ------------------------------------------------
+async function fetchAccountInfo() {
+    try {
+        const { data } = await api.get('/api/cuentaFacturacion/getParametros')
+
+        // Líneas crédito
+        lineasCredito.value = data.lineasCredito.map(l => ({
+            id: l.id,
+            nombre: l.tipo_credito,
+            parametros: l.parametros,
+            valor_minimo: l.valor_minimo
+                ? formatCurrency(l.valor_minimo)
+                : '- -',
+            valor_maximo: l.valor_maximo
+                ? formatCurrency(l.valor_maximo)
+                : '- -',
+            empresa_avalista: l.empresa_avalista,
+            periodicidad: l.parametros?.periodicidad,
+        }))
+
+        showParametros(lineasCredito.value[0])
+    } catch (err) {
+        console.error(err)
+    }
+}
+
+async function guardarNuevaLinea() {
+    if (!nuevaLinea.value.nombre || !nuevaLinea.value.periodicidad) return
+
+    try {
+        start()
+
+        console.log(form)
+
+        const payload = {
+            ...nuevaLinea.value,
+            parametros: { ...form },
+        }
+
+        const { data } = await api.post(
+            '/api/cuentaFacturacion/saveParametros',
+            payload
+        )
+
+
+        const recordParaTabla = {
+            ...nuevaLinea.value,
+            valor_minimo: nuevaLinea.value.valor_minimo ?
+                formatCurrency(nuevaLinea.value.valor_minimo) :
+                '- -',
+            valor_maximo: nuevaLinea.value.valor_maximo ?
+                formatCurrency(nuevaLinea.value.valor_maximo) :
+                '- -',
+        }
+
+        lineasCredito.value.push(recordParaTabla)
+        creandoNuevaLinea.value = false
+
+        // Seleccionar automáticamente la nueva línea
+        showParametros(data.parametrosIntereses)
+    } catch (err) {
+        console.error('Error al guardar:', err)
+    } finally {
+        stop()
+    }
+}
+
+function showParametros(data) {
+    if (!data || typeof data !== 'object' || creandoNuevaLinea.value) return
+
+    const parametros = data.parametros || {}
+    Object.assign(form, getDefaultForm())
+
+    form.nombreLinea = data.nombre
+
+    // ========================
+    // Firma electrónica
+    // ========================
+    const firmaFija = toNumber(parametros.firma_elec)
+    const firmaPorcentual = toNumber(parametros.firma_elec_porcentual)
+    const ivaFirma = toNumber(parametros.firma_elec_iva)
+
+    if (firmaFija || firmaPorcentual) {
+        form.firma_electronica_enabled = true
+        form.iva_firma_electronica = ivaFirma
+
+        if (firmaFija) form.firma_electronica = firmaFija
+        if (firmaPorcentual) form.porcentaje_firma_electronica = firmaPorcentual
+    }
+
+    // ========================
+    // Intereses
+    // ========================
+    if (parametros.interes_mode === 'gen') {
+        form.intereses_enabled = true
+        form.ea_intereses = toNumber(parametros.interes_ea)
+        form.nm_intereses = toNumber(parametros.interes_nm)
+    } else {
+        form.tipo_interes = 'ind'
+    }
+
+    // ========================
+    // Otros intereses
+    // ========================
+    const otroEa = toNumber(parametros.otro_por_ea)
+    const otroNm = toNumber(parametros.otro_por_nm)
+
+    if (otroEa || otroNm) {
+        form.otros_intereses_enabled = true
+        form.otros_intereses_concepto = parametros.otro_por_observacion ?? ''
+
+        if (otroEa) form.ea_otros_intereses = otroEa
+        if (otroNm) form.nm_otros_intereses = otroNm
+    }
+
+    // ========================
+    // Aval
+    // ========================
+    const avalFija = toNumber(parametros.aval_nominal)
+    const avalPorcentual = toNumber(parametros.aval_porcentual)
+    const ivaAval = toNumber(parametros.aval_iva)
+
+    if (avalFija || avalPorcentual) {
+        form.aval_enabled = true
+
+        form.empresa_avalista = data?.empresa_avalista?.nombre_empresa ?? ''
+        form.empresa_avalista_nit = data?.empresa_avalista?.nit_empresa ?? ''
+
+        if (avalFija) form.aval = avalFija
+        if (avalPorcentual) form.porcentaje_aval = avalPorcentual
+
+        if (ivaAval) form.iva_aval = ivaAval
+
+        form.mostrar_aval_columnas = !!parametros.aval_columnas
+        form.mostrar_aval_total = !parametros.aval_columnas
+
+        form.restar_aval = !!parametros.restar_aval
+    }
+
+    // ========================
+    // Otros
+    // ========================
+    const otrosFija = toNumber(parametros.otros_nominal)
+    const otrosPorcentual = toNumber(parametros.otros_porcentual)
+
+    if (otrosFija || otrosPorcentual) {
+        form.otros_enabled = true
+        form.otros_concepto = parametros.otros_observacion ?? ''
+
+        if (otrosFija) form.otros = otrosFija
+        if (otrosPorcentual) form.porcentaje_otros = otrosPorcentual
+    }
+
+    // Adicionales destinos
+    const keys = [
+        'redondear_intereses',
+        'isexentionGracia',
+        'valor_consulta',
+        'isexention',
+    ]
+
+    form.adicionalesDestinos = keys.filter(key => Number(parametros[key]) != 0)
+}
+
+async function habilitarCreacion() {
+    nuevaLinea.value = {
+        nombre: '',
+        valor_minimo: null,
+        valor_maximo: null,
+        periodicidad: null,
+        parametros: {},
+    }
+
+    creandoNuevaLinea.value = true
+    Object.assign(form, getDefaultForm())
+
+    await nextTick()
+
+    if (insertionRowRef.value) {
+        insertionRowRef.value.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center',
+        })
+    }
+}
+
+onMounted(async () => {
+    start()
+
+    try {
+        await fetchAccountInfo()
+    } finally {
+        stop()
+    }
+})
 </script>
+
+<style scoped>
+@keyframes highlight-fade {
+    0% {
+        background-color: rgba(59, 130, 246, 0.2);
+        transform: scale(0.99);
+    }
+    50% {
+        background-color: rgba(59, 130, 246, 0.1);
+        transform: scale(1);
+    }
+    100% {
+        background-color: rgba(249, 250, 251, 1);
+    }
+}
+
+.animate-new-row {
+    animation: highlight-fade 1.5s ease-out forwards;
+    border: 2px solid var(--color-emerald-500);
+}
+</style>

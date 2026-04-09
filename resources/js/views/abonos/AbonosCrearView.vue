@@ -249,7 +249,7 @@
                         <button
                             @click="generarAbono"
                             :disabled="loadingAbono"
-                            class="h-9 px-6 rounded-lg bg-[#1a5c2a] hover:bg-[#154d22] disabled:bg-gray-300 disabled:cursor-not-allowed text-white text-sm font-medium transition-all flex items-center gap-2"
+                            class="btn btn-main"
                         >
                             <svg
                                 v-if="loadingAbono"
@@ -276,7 +276,7 @@
                         <button
                             @click="liquidarHoy"
                             :disabled="loadingLiquidar"
-                            class="h-9 px-6 rounded-lg bg-emerald-500 hover:bg-emerald-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white text-sm font-medium transition-all flex items-center gap-2"
+                            class="btn btn-primary"
                         >
                             <svg
                                 v-if="loadingLiquidar"
@@ -427,7 +427,13 @@ const opcionesStore = useOpcionesStore()
 
 const cols = [
     { key: 'codigo', label: 'Código', width: '80px' },
-    { key: 'valor', label: 'Valor', width: '80px' },
+    {
+        key: 'valor',
+        label: 'Valor',
+        width: '80px',
+        cellClass: 'text-right',
+        headerClass: 'text-right',
+    },
     { key: 'fecha', label: 'Fecha generación', width: '2fr' },
     { key: 'generado_por', label: 'Generado por', width: '2fr' },
     {

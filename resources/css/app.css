@@ -71,7 +71,7 @@ input[type='number'] {
 }
 
 .btn {
-    @apply inline-flex items-center justify-center gap-2 h-9 px-4 rounded-lg text-sm font-medium transition-all whitespace-nowrap border cursor-pointer;
+    @apply inline-flex items-center justify-center gap-2 h-9 px-4 rounded-lg text-sm font-medium transition-all whitespace-nowrap border cursor-pointer disabled:bg-gray-300 disabled:pointer-events-none;
 }
 
 .btn-default {

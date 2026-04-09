@@ -197,9 +197,9 @@
                 <div class="sm:col-span-2">
                     <FormInput
                         label="Nombre de la empresa"
-                        v-model="form.business_name"
+                        v-model="form.razon_social"
                         placeholder="Mi Empresa S.A.S"
-                        :error="fieldErrors.business_name"
+                        :error="errors.razon_social"
                     />
                 </div>
 
@@ -207,40 +207,40 @@
                     label="Número de identificación tributaria"
                     v-model="form.nit"
                     placeholder="900.123.456-7"
-                    :error="fieldErrors.nit"
+                    :error="errors.nit"
                 />
 
-                <FormInput
-                    label="Ciudad de tu empresa"
-                    type="select"
-                    v-model="form.city"
-                    :options="cityOpts"
-                    placeholder="Selecciona ciudad"
-                    :error="fieldErrors.city"
+                <FormSelectAsync
+                    label="Ciudad de la empresa"
+                    v-model="form.ciudad_id"
+                    :fetch-options="opcionesStore.fetchCiudades"
+                    :initial-option="ciudadInicial"
+                    placeholder="Selecciona la ciudad"
+                    :error="errors.ciudad_id"
                 />
 
                 <FormInput
                     label="Dirección principal de la empresa"
-                    v-model="form.address"
+                    v-model="form.direccion"
                     placeholder="Calle 123 # 45-67"
-                    :error="fieldErrors.address"
+                    :error="errors.direccion"
                 />
 
                 <FormInput
                     label="Número de contacto de clientes"
                     type="tel"
-                    v-model="form.contact_phone"
+                    v-model="form.telefono"
                     placeholder="300 123 4567"
-                    :error="fieldErrors.contact_phone"
+                    :error="errors.telefono"
                 />
 
                 <div class="sm:col-span-2">
                     <FormInput
                         label="Correo de contacto de clientes"
                         type="email"
-                        v-model="form.contact_email"
+                        v-model="form.correo"
                         placeholder="contacto@miempresa.com"
-                        :error="fieldErrors.contact_email"
+                        :error="errors.correo"
                     />
                 </div>
 
@@ -313,11 +313,11 @@
             >
                 <button
                     @click="saveEmpresa"
-                    :disabled="saving"
+                    :disabled="loading"
                     class="btn btn-main"
                 >
                     <svg
-                        v-if="saving"
+                        v-if="loading"
                         class="animate-spin w-3.5 h-3.5"
                         viewBox="0 0 24 24"
                         fill="none"
@@ -336,10 +336,7 @@
                             d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
                         />
                     </svg>
-                    {{ saving ? 'Guardando...' : 'Guardar información' }}
-                </button>
-                <button @click="resetForm" class="btn btn-default">
-                    Cancelar
+                    {{ loading ? 'Guardando...' : 'Guardar información' }}
                 </button>
             </div>
         </div>
@@ -350,8 +347,9 @@
 import { ref, reactive, onMounted } from 'vue'
 
 // -- Componentes -----------------------------------------------------
-import FormInput from '@/components/form/FormInput.vue'
+import FormSelectAsync from '@/components/form/FormSelectAsync.vue'
 import FileUpload from '@/components/form/FileUpload.vue'
+import FormInput from '@/components/form/FormInput.vue'
 
 // -- Loader ----------------------------------------------------------
 import { useLoader } from '@/composables/useLoader'
@@ -359,59 +357,52 @@ const { start, stop } = useLoader()
 
 import api from '@/services/api'
 
+// -- Store --------------------------------------------------------
+import { useOpcionesStore } from '@/stores/opciones'
+
 // -- Formulario ------------------------------------------------------
 const form = reactive({
-    business_name: '',
+    razon_social: '',
     nit: '',
-    city: '',
-    address: '',
-    contact_phone: '',
-    contact_email: '',
+    ciudad_id: '',
+    direccion: '',
+    telefono: '',
+    correo: '',
     logo: null,
     logo_url: null,
 })
 
-const fieldErrors = reactive({
-    business_name: '',
+const errors = reactive({
+    razon_social: '',
     nit: '',
-    city: '',
-    address: '',
-    contact_phone: '',
-    contact_email: '',
+    ciudad_id: '',
+    direccion: '',
+    telefono: '',
+    correo: '',
 })
 
-const saving = ref(false)
+const opcionesStore = useOpcionesStore()
 
-const cityOpts = [
-    'Bogotá D.C.',
-    'Medellín',
-    'Cali',
-    'Barranquilla',
-    'Cartagena',
-    'Cúcuta',
-    'Bucaramanga',
-    'Pereira',
-    'Santa Marta',
-    'Ibagué',
-    'Pasto',
-    'Manizales',
-    'Neiva',
-    'Villavicencio',
-    'Armenia',
-].map(c => ({ value: c, label: c }))
+const loading = ref(false)
+const ciudadInicial = ref(null)
 
 // -- Backend ---------------------------------------------------
 async function fetchEmpresa() {
     try {
-        const { data } = await api.get('/api/empresa')
+        const { data } = await api.get('/api/empresas/infoEmpresa')
+
+        const empresa = data.resultado.datosEmpresa
+
+        ciudadInicial.value = empresa.ciudad_nombre
+
         Object.assign(form, {
-            business_name: data.razon_social ?? '',
-            nit: data.nit ?? '',
-            city: data.ciudad ?? '',
-            address: data.direccion ?? '',
-            contact_phone: data.telefono ?? '',
-            contact_email: data.correo ?? '',
-            logo_url: data.logo ?? null,
+            razon_social: empresa.razon_social ?? '',
+            nit: empresa.nit ?? '',
+            ciudad_id: empresa.ciudad_id ?? '',
+            direccion: empresa.direccion ?? '',
+            telefono: empresa.telefonoComercial ?? '',
+            correo: empresa.correo_comercial ?? '',
+            logo_url: empresa.logo ?? null,
         })
     } catch (err) {
         console.error(err)
@@ -419,42 +410,38 @@ async function fetchEmpresa() {
 }
 
 async function saveEmpresa() {
-    Object.keys(fieldErrors).forEach(k => (fieldErrors[k] = ''))
-    saving.value = true
+    Object.keys(errors).forEach(k => (errors[k] = ''))
+    loading.value = true
+
     try {
         const payload = new FormData()
-        payload.append('razon_social', form.business_name)
+        payload.append('razon_social', form.razon_social)
         payload.append('nit', form.nit)
-        payload.append('ciudad', form.city)
-        payload.append('direccion', form.address)
-        payload.append('telefono', form.contact_phone)
-        payload.append('correo', form.contact_email)
+        payload.append('ciudad_id', form.ciudad_id)
+        payload.append('direccion', form.direccion)
+        payload.append('telefono', form.telefono)
+        payload.append('correo', form.correo)
         if (form.logo) payload.append('logo', form.logo)
 
-        await api.post('/api/empresa', payload)
+        await api.post('/api/empresas/saveInfoEmpresa', payload)
     } catch (err) {
         if (err.response?.status === 422 && err.response.data?.errors) {
             const map = {
-                razon_social: 'business_name',
+                razon_social: 'razon_social',
                 nit: 'nit',
-                ciudad: 'city',
-                direccion: 'address',
-                telefono: 'contact_phone',
-                correo: 'contact_email',
+                ciudad_id: 'ciudad_id',
+                direccion: 'direccion',
+                telefono: 'telefono',
+                correo: 'correo',
             }
             Object.entries(err.response.data.errors).forEach(([k, v]) => {
                 const key = map[k] ?? k
-                if (fieldErrors[key] !== undefined) fieldErrors[key] = v[0]
+                if (errors[key] !== undefined) errors[key] = v[0]
             })
         }
     } finally {
-        saving.value = false
+        loading.value = false
     }
-}
-
-function resetForm() {
-    Object.keys(fieldErrors).forEach(k => (fieldErrors[k] = ''))
-    fetchEmpresa()
 }
 
 onMounted(async () => {

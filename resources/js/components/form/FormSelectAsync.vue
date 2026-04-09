@@ -134,7 +134,7 @@
         </div>
 
         <!-- Error -->
-        <p v-if="error" class="mt-1 text-xs text-red-400">{{ error }}</p>
+        <p v-if="error" class="text-xs text-red-500">{{ error }}</p>
     </div>
 </template>
 
@@ -156,6 +156,7 @@ const props = defineProps({
     clearable: { type: Boolean, default: true },
     debounce: { type: Number, default: 350 },
     size: { type: String, default: 'md' }, // sm | md
+    initialOption: { type: String, default: '' },
 })
 
 const emit = defineEmits(['update:modelValue', 'change'])
@@ -259,6 +260,14 @@ watch(
             selectedLabel.value = ''
         }
     }
+)
+
+watch(
+    () => props.initialOption,
+    opt => {
+        if (opt) selectedLabel.value = opt
+    },
+    { immediate: true }
 )
 
 // -- Acciones -----------------------------------------------------------------

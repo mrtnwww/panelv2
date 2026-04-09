@@ -6,6 +6,7 @@ export const useOpcionesStore = defineStore('opciones', {
         clientesCreditos: [],
         tiposPago: [],
         destinos: [],
+        ciudades: [],
         cajeras: [],
     }),
 
@@ -64,8 +65,16 @@ export const useOpcionesStore = defineStore('opciones', {
 
             return data.cajeras.data.map(c => ({
                 value: c.id,
-                label: `${c.nombre}`,
+                label: c.nombre,
             }))
+        },
+
+        async fetchCiudades(query) {
+            const { data } = await api.get('/api/ciudades', {
+                params: { search: query, perPage: 30 },
+            })
+
+            return data.ciudades.data
         },
 
         async fetchDestinos() {

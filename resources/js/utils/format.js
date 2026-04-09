@@ -1,5 +1,10 @@
 import dayjs from 'dayjs'
 
+export const toNumber = val => {
+    const num = Number(val)
+    return isNaN(num) ? 0 : num
+}
+
 export function formatCurrency(value, options = {}) {
     if (value === null || value === undefined || value === '') return ''
 

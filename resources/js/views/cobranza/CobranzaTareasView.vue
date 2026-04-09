@@ -90,7 +90,7 @@
                     <button
                         @click="iniciarTarea"
                         :disabled="selected.length === 0"
-                        class="btn btn-warning disabled:bg-gray-300! disabled:cursor-not-allowed"
+                        class="btn btn-warning"
                     >
                         Iniciar tarea
                     </button>
@@ -276,7 +276,7 @@
                         <button
                             @click="guardarTarea"
                             :disabled="modal.loading"
-                            class="h-9 px-5 rounded-lg bg-[#1a5c2a] hover:bg-[#154d22] disabled:bg-gray-300 text-white text-sm font-medium transition-all flex items-center gap-2"
+                            class="btn btn-main"
                         >
                             <svg
                                 v-if="modal.loading"

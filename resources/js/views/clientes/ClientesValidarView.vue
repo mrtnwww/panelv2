@@ -38,7 +38,10 @@
                         Validar
                         <i class="fa-solid fa-check"></i>
                     </button>
-                    <button class="btn btn-default" @click.stop="editCliente(row)">
+                    <button
+                        class="btn btn-default"
+                        @click.stop="editCliente(row)"
+                    >
                         Editar
                         <i class="fa-solid fa-pencil"></i>
                     </button>

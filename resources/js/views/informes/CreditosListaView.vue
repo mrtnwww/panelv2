@@ -90,7 +90,7 @@
                 <button
                     @click="generarInforme('resumido')"
                     :disabled="loadingInforme === 'resumido'"
-                    class="btn btn-main disabled:bg-gray-300!"
+                    class="btn btn-main"
                 >
                     <svg
                         v-if="loadingInforme === 'resumido'"
@@ -117,7 +117,7 @@
                 <button
                     @click="generarInforme('detallado')"
                     :disabled="loadingInforme === 'detallado'"
-                    class="btn btn-primary disabled:bg-gray-300!"
+                    class="btn btn-primary"
                 >
                     <svg
                         v-if="loadingInforme === 'detallado'"

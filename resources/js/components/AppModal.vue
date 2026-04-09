@@ -75,8 +75,8 @@
                         :class="[
                             'btn btn-main',
                             confirmVariant === 'danger'
-                                ? 'bg-red-500 hover:bg-red-600 disabled:bg-gray-300'
-                                : 'bg-[#1a5c2a] hover:bg-[#154d22] disabled:bg-gray-300',
+                                ? 'bg-red-500 hover:bg-red-600'
+                                : 'bg-[#1a5c2a] hover:bg-[#154d22]',
                         ]"
                     >
                         <svg

@@ -8,6 +8,7 @@ use App\Http\Controllers\Ciudades\CiudadController;
 use App\Http\Controllers\Clientes\ClienteController;
 use App\Http\Controllers\Contabilidad\ContabilidadController;
 use App\Http\Controllers\Creditos\CreditoController;
+use App\Http\Controllers\CuentaFacturacion\CuentaFacturacionController;
 use App\Http\Controllers\Destinos\DestinoController;
 use App\Http\Controllers\Empresas\EmpresaController;
 use App\Http\Controllers\Productos\ProductoController;
@@ -61,6 +62,8 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     // Empresas
     Route::prefix('empresas')->group(function () {
         Route::get('/', [EmpresaController::class, 'listMyCompanys']);
+        Route::get('/infoEmpresa', [EmpresaController::class, 'infoEmpresa']);
+        Route::post('/saveInfoEmpresa', [EmpresaController::class, 'saveInfoEmpresa']);
     });
 
     // Productos
@@ -106,4 +109,11 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     Route::prefix('tipoPago')->group(function () {
         Route::get('/', [TipoPagoController::class, 'listTiposPago']);
     });
+
+    // Cuenta y Facturación
+    Route::prefix('cuentaFacturacion')->group(function () {
+        Route::get('/getParametros', [CuentaFacturacionController::class, 'getParametros']);
+        Route::post('/saveParametros', [CuentaFacturacionController::class, 'saveParametros']);
+    });
+
 });

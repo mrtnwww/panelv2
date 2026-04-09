@@ -24,11 +24,18 @@ class LineasCredito extends Model
         'deleted_at'
     ];
 
-    public function parametros() {
+    public function parametros()
+    {
         return $this->belongsTo(ParametrosInterese::class, 'id', 'lineas_credito_id');
     }
 
-    public function condiciones_registro(){
+    public function empresaAvalista()
+    {
+        return $this->hasOne(EmpresasAvalistas::class, 'lineas_credito_id', 'id');
+    }
+
+    public function condiciones_registro()
+    {
         return $this->hasMany(CondicionRegistro::class, 'linea_credito_id');
     }
 }
