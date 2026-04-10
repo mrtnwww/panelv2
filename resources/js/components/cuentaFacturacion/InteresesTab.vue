@@ -357,7 +357,7 @@
                                     <i class="fa-solid fa-check"></i>
                                 </button>
                                 <button
-                                    @click="creandoNuevaLinea = false"
+                                    @click="cancelarCreacion"
                                     class="bg-gray-100 text-gray-500 p-2 rounded-lg hover:bg-gray-200 transition-all"
                                 >
                                     <i class="fa-solid fa-xmark"></i>
@@ -517,26 +517,17 @@ const adicionalesDestinosOpts = [
 const lineasCredito = ref([])
 
 // -- Backend ------------------------------------------------
-async function fetchAccountInfo() {
+async function fetchAccountInfo(nuevaLinea = false) {
     try {
         const { data } = await api.get('/api/cuentaFacturacion/getParametros')
 
-        // Líneas crédito
-        lineasCredito.value = data.lineasCredito.map(l => ({
-            id: l.id,
-            nombre: l.tipo_credito,
-            parametros: l.parametros,
-            valor_minimo: l.valor_minimo
-                ? formatCurrency(l.valor_minimo)
-                : '- -',
-            valor_maximo: l.valor_maximo
-                ? formatCurrency(l.valor_maximo)
-                : '- -',
-            empresa_avalista: l.empresa_avalista,
-            periodicidad: l.parametros?.periodicidad,
-        }))
+        const lineas = (data?.lineasCredito || []).map(mapLineaCredito)
+        lineasCredito.value = lineas
 
-        showParametros(lineasCredito.value[0])
+        if (!lineas.length) return
+
+        const lineaSeleccionada = nuevaLinea ? lineas.at(-1) : lineas[0]
+        showParametros(lineaSeleccionada)
     } catch (err) {
         console.error(err)
     }
@@ -548,8 +539,6 @@ async function guardarNuevaLinea() {
     try {
         start()
 
-        console.log(form)
-
         const payload = {
             ...nuevaLinea.value,
             parametros: { ...form },
@@ -560,22 +549,10 @@ async function guardarNuevaLinea() {
             payload
         )
 
-
-        const recordParaTabla = {
-            ...nuevaLinea.value,
-            valor_minimo: nuevaLinea.value.valor_minimo ?
-                formatCurrency(nuevaLinea.value.valor_minimo) :
-                '- -',
-            valor_maximo: nuevaLinea.value.valor_maximo ?
-                formatCurrency(nuevaLinea.value.valor_maximo) :
-                '- -',
-        }
-
-        lineasCredito.value.push(recordParaTabla)
         creandoNuevaLinea.value = false
 
-        // Seleccionar automáticamente la nueva línea
-        showParametros(data.parametrosIntereses)
+        // Actualizar tabla líneas de crédito
+        await fetchAccountInfo(true)
     } catch (err) {
         console.error('Error al guardar:', err)
     } finally {
@@ -583,10 +560,23 @@ async function guardarNuevaLinea() {
     }
 }
 
+function mapLineaCredito(l) {
+    return {
+        id: l.id,
+        nombre: l.tipo_credito,
+        parametros: l.parametros,
+        valor_minimo: l.valor_minimo ? formatCurrency(l.valor_minimo) : '- -',
+        valor_maximo: l.valor_maximo ? formatCurrency(l.valor_maximo) : '- -',
+        empresa_avalista: l.empresa_avalista,
+        periodicidad: l.parametros?.periodicidad,
+    }
+}
+
 function showParametros(data) {
     if (!data || typeof data !== 'object' || creandoNuevaLinea.value) return
-
     const parametros = data.parametros || {}
+
+    // Limpiar formulario de parámetros
     Object.assign(form, getDefaultForm())
 
     form.nombreLinea = data.nombre
@@ -700,6 +690,11 @@ async function habilitarCreacion() {
             block: 'center',
         })
     }
+}
+
+function cancelarCreacion() {
+    creandoNuevaLinea.value = false
+    showParametros(lineasCredito.value[0])
 }
 
 onMounted(async () => {
