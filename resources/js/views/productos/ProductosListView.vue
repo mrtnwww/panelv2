@@ -150,7 +150,7 @@ import { useDataTable } from '@/composables/useDataTable'
 
 // -- Utils -------------------------------------------------------------
 import { formatCurrency } from '@/utils/format'
-import { confirmAlert } from '../../utils/alert'
+import { confirmAlert } from '@/utils/alert'
 
 // -- API ---------------------------------------------------------------
 import api from '@/services/api'
@@ -260,14 +260,16 @@ async function guardarProducto() {
 }
 
 async function eliminarProducto(row) {
+    const confirmado = await confirmAlert({
+        title: 'Eliminar producto',
+        text: `¿Está seguro(a) de eliminar el producto ${row.nombre}?`,
+    })
+
+    if (!confirmado) return
+
+    start()
+
     try {
-        const confirmado = await confirmAlert({
-            title: 'Eliminar producto',
-            text: `¿Está seguro(a) de eliminar el producto ${row.nombre}?`,
-        })
-
-        if (!confirmado) return
-
         await api.delete('/api/productos', {
             data: { id: row.id },
         })
@@ -275,6 +277,8 @@ async function eliminarProducto(row) {
         await fetchProductos()
     } catch (err) {
         console.error(err)
+    } finally {
+        stop()
     }
 }
 

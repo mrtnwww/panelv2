@@ -13,7 +13,7 @@
                     <p
                         class="text-center text-xs text-gray-400 font-medium mt-1"
                     >
-                        Configuración de parámetros de la línea
+                        Configuración de parámetros de la línea de crédito
                     </p>
                 </div>
                 <div class="space-y-8 max-w-full">
@@ -94,7 +94,7 @@
                                     <FormInput
                                         label="% N.M."
                                         type="number"
-                                        v-model="form.tnm"
+                                        v-model="form.nm_intereses"
                                         placeholder="2.00%"
                                     />
                                 </div>
@@ -374,6 +374,7 @@
                                 <i class="fa-solid fa-pencil"></i>
                             </button>
                             <button
+                                @click="eliminarLineaCredito(item)"
                                 class="bg-red-500 text-white p-1.5 rounded-lg hover:bg-red-600"
                             >
                                 <i class="fa-solid fa-trash"></i>
@@ -400,7 +401,7 @@
 </template>
 
 <script setup>
-import { reactive, ref, nextTick, onMounted } from 'vue'
+import { reactive, ref, nextTick, onMounted, watch } from 'vue'
 
 // -- Componentes --------------------------------------------------
 import FormRadioGroup from '@/components/form/FormRadioGroup.vue'
@@ -409,11 +410,15 @@ import FileUpload from '@/components/form/FileUpload.vue'
 import FormInput from '@/components/form/FormInput.vue'
 import TableGrid from '@/components/TableGrid.vue'
 
-// -- Loader ----------------------------------------------------------
+// -- Loader -------------------------------------------------------
 import { useLoader } from '@/composables/useLoader'
 const { start, stop } = useLoader()
 
+// -- Utils --------------------------------------------------------
 import { formatCurrency, toNumber } from '@/utils/format'
+import { confirmAlert } from '@/utils/alert'
+
+// -- API ----------------------------------------------------------
 import api from '@/services/api'
 
 const getDefaultForm = () => ({
@@ -427,7 +432,7 @@ const getDefaultForm = () => ({
 
     // Intereses
     intereses_enabled: false,
-    tipo_interes: 'individual',
+    tipo_interes: 'general',
     ea_intereses: null,
     nm_intereses: null,
     interes_automatico_enabled: false,
@@ -544,10 +549,7 @@ async function guardarNuevaLinea() {
             parametros: { ...form },
         }
 
-        const { data } = await api.post(
-            '/api/cuentaFacturacion/saveParametros',
-            payload
-        )
+        await api.post('/api/cuentaFacturacion/saveParametros', payload)
 
         creandoNuevaLinea.value = false
 
@@ -555,6 +557,29 @@ async function guardarNuevaLinea() {
         await fetchAccountInfo(true)
     } catch (err) {
         console.error('Error al guardar:', err)
+    } finally {
+        stop()
+    }
+}
+
+async function eliminarLineaCredito(row) {
+    const confirmado = await confirmAlert({
+        title: 'Eliminar línea de crédito',
+        text: `¿Está seguro(a) de eliminar la línea de crédito ${row.nombre}?`,
+    })
+
+    if (!confirmado) return
+
+    start()
+
+    try {
+        await api.delete('/api/cuentaFacturacion/deleteParametros', {
+            data: { id: row.id },
+        })
+
+        await fetchAccountInfo()
+    } catch (err) {
+        console.error(err)
     } finally {
         stop()
     }
@@ -603,8 +628,9 @@ function showParametros(data) {
         form.intereses_enabled = true
         form.ea_intereses = toNumber(parametros.interes_ea)
         form.nm_intereses = toNumber(parametros.interes_nm)
+        form.tipo_interes = 'general'
     } else {
-        form.tipo_interes = 'ind'
+        form.tipo_interes = 'individual'
     }
 
     // ========================
@@ -696,6 +722,80 @@ function cancelarCreacion() {
     creandoNuevaLinea.value = false
     showParametros(lineasCredito.value[0])
 }
+
+// Reglas de exclusión
+const syncFields = (changedField, fieldToClear) => {
+    if (form[changedField] !== null && form[changedField] !== '') {
+        form[fieldToClear] = null
+    }
+}
+
+watch(
+    () => [
+        form.firma_electronica,
+        form.porcentaje_firma_electronica,
+        form.ea_intereses,
+        form.nm_intereses,
+        form.ea_otros_intereses,
+        form.nm_otros_intereses,
+        form.aval,
+        form.porcentaje_aval,
+        form.otros,
+        form.porcentaje_otros,
+    ],
+    (newValues, oldValues) => {
+        const [
+            firma,
+            porcentajeFirma,
+            ea,
+            nm,
+            eaOtros,
+            nmOtros,
+            aval,
+            porcentajeAval,
+            otros,
+            porcentajeOtros,
+        ] = newValues
+        const [
+            oldFirma,
+            oldPorcentajeFirma,
+            oldEa,
+            oldNm,
+            oldEaOtros,
+            oldNmOtros,
+            oldAval,
+            oldPorcentajeAval,
+            oldOtros,
+            oldPorcentajeOtros,
+        ] = oldValues
+
+        // Limpiar valores firma electrónica
+        if (firma !== oldFirma)
+            syncFields('firma_electronica', 'porcentaje_firma_electronica')
+        if (porcentajeFirma !== oldPorcentajeFirma)
+            syncFields('porcentaje_firma_electronica', 'firma_electronica')
+
+        // Limpiar valores intereses
+        if (ea !== oldEa) syncFields('ea_intereses', 'nm_intereses')
+        if (nm !== oldNm) syncFields('nm_intereses', 'ea_intereses')
+
+        // Limpiar otros intereses
+        if (eaOtros !== oldEaOtros)
+            syncFields('ea_otros_intereses', 'nm_otros_intereses')
+        if (nmOtros !== oldNmOtros)
+            syncFields('nm_otros_intereses', 'ea_otros_intereses')
+
+        // Limpiar Aval
+        if (aval !== oldAval) syncFields('aval', 'porcentaje_aval')
+        if (porcentajeAval !== oldPorcentajeAval)
+            syncFields('porcentaje_aval', 'aval')
+
+        // Limpiar otros
+        if (otros !== oldOtros) syncFields('otros', 'porcentaje_otros')
+        if (porcentajeOtros !== oldPorcentajeOtros)
+            syncFields('porcentaje_otros', 'otros')
+    }
+)
 
 onMounted(async () => {
     start()

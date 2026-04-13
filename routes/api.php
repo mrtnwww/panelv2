@@ -18,6 +18,7 @@ use App\Http\Controllers\Usuarios\UsuarioController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
+// #########################################################
 // -- Rutas publicas----------------------------------------
 
 // Lista de ciudades CO
@@ -26,6 +27,7 @@ Route::get('/ciudades', [CiudadController::class, 'index']);
 // Reporte Centrales Tipos
 Route::get('/reportes', [ReporteCentralesTipoController::class, 'index']);
 
+// ############################################################################
 // -- Rutas protegidas --------------------------------------------------------
 Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     // Usuario autenticado
@@ -114,6 +116,6 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     Route::prefix('cuentaFacturacion')->group(function () {
         Route::get('/getParametros', [CuentaFacturacionController::class, 'getParametros']);
         Route::post('/saveParametros', [CuentaFacturacionController::class, 'saveParametros']);
+        Route::delete('/deleteParametros', [CuentaFacturacionController::class, 'deleteParametros']);
     });
-
 });
