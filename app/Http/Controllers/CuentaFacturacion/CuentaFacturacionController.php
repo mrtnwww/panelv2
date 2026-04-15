@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\CuentaFacturacion;
 
 use App\Http\Controllers\Controller;
+use App\Models\Banco;
 use App\Models\Empresa;
 use App\Models\EmpresasAvalistas;
 use App\Models\LineasCredito;
 use App\Models\ParametrosInterese;
+use App\Models\Pasarela;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -238,6 +240,36 @@ class CuentaFacturacionController extends Controller
 
         return response()->json([
             'message' => 'Módulo actualizado correctamente'
+        ]);
+    }
+
+    public function getPasarelas()
+    {
+        $pasarelas = Banco::where('tipo', 'pasarela')->get();
+
+        return response()->json([
+            'pasarelas' => $pasarelas
+        ]);
+    }
+
+    public function getPasarelasConfig()
+    {
+        $empresaId = auth()->user()->empresa_id;
+
+        $pasarelasEmpresa = Pasarela::select('pasarela.*', 'bancos.nombre AS pasarela_nombre')
+            ->where('pasarela.empresa_id', $empresaId)
+            ->join('bancos', 'bancos.id', '=', 'pasarela.banco_id')
+            ->get()
+            ->map(function ($item) {
+                $item->public_api_key = $item->public_api_key ? true : false;
+                $item->secret_pasarela = $item->secret_pasarela ? true : false;
+                $item->user_id_pasarela = $item->user_id_pasarela ? true : false;
+
+                return $item;
+            });
+
+        return response()->json([
+            'pasarelasEmpresa' => $pasarelasEmpresa
         ]);
     }
 }

@@ -7,7 +7,7 @@
         </div>
 
         <div class="overflow-x-auto">
-            <div class="min-w-150">
+            <div :class="minWidth">
                 <div
                     class="grid gap-4 px-4 py-2 bg-gray-50 border-b border-gray-100"
                     :style="{ gridTemplateColumns: gridTemplate }"
@@ -60,6 +60,7 @@ import { computed } from 'vue'
 
 const props = defineProps({
     title: String,
+    minWidth: 'min-w-150',
     items: { type: Array, default: () => [] },
     columns: { type: Array, required: true }, // [{ key, label, width }]
     emptyText: { type: String, default: 'No hay registros disponibles' },

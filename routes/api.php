@@ -123,5 +123,9 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
         // Suscripcion y transacciones
         Route::get('/getModulos', [CuentaFacturacionController::class, 'getModulos']);
         Route::put('/updateModulos', [CuentaFacturacionController::class, 'updateModulos']);
+
+        // Pasarelas
+        Route::get('/getPasarelas', [CuentaFacturacionController::class, 'getPasarelas']);
+        Route::get('/getPasarelasConfig', [CuentaFacturacionController::class, 'getPasarelasConfig']);
     });
 });
