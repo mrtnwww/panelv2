@@ -97,7 +97,7 @@ class EmpresaController extends Controller
         ]);
     }
 
-    public function saveInfoEmpresa(Request $request)
+    public function udpateInfoEmpresa(Request $request)
     {
         $request->validate([
             'razon_social'  => 'required|string|max:255',

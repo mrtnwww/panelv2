@@ -416,14 +416,21 @@ async function saveEmpresa() {
     try {
         const payload = new FormData()
         payload.append('razon_social', form.razon_social)
-        payload.append('nit', form.nit)
         payload.append('ciudad_id', form.ciudad_id)
         payload.append('direccion', form.direccion)
         payload.append('telefono', form.telefono)
         payload.append('correo', form.correo)
+        payload.append('nit', form.nit)
+
+        payload.append('_method', 'PUT')
+
         if (form.logo) payload.append('logo', form.logo)
 
-        await api.post('/api/empresas/saveInfoEmpresa', payload)
+        await api.post('/api/empresas/udpateInfoEmpresa', payload, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        })
     } catch (err) {
         if (err.response?.status === 422 && err.response.data?.errors) {
             const map = {

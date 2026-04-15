@@ -65,7 +65,7 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     Route::prefix('empresas')->group(function () {
         Route::get('/', [EmpresaController::class, 'listMyCompanys']);
         Route::get('/infoEmpresa', [EmpresaController::class, 'infoEmpresa']);
-        Route::post('/saveInfoEmpresa', [EmpresaController::class, 'saveInfoEmpresa']);
+        Route::put('/udpateInfoEmpresa', [EmpresaController::class, 'udpateInfoEmpresa']);
     });
 
     // Productos
@@ -116,6 +116,7 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     Route::prefix('cuentaFacturacion')->group(function () {
         Route::get('/getParametros', [CuentaFacturacionController::class, 'getParametros']);
         Route::post('/saveParametros', [CuentaFacturacionController::class, 'saveParametros']);
+        Route::put('/updateParametros', [CuentaFacturacionController::class, 'updateParametros']);
         Route::delete('/deleteParametros', [CuentaFacturacionController::class, 'deleteParametros']);
     });
 });

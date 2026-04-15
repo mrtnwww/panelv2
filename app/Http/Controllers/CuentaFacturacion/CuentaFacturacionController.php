@@ -42,6 +42,20 @@ class CuentaFacturacionController extends Controller
 
     public function saveParametros(Request $request)
     {
+        return $this->procesarPersistencia($request);
+    }
+
+    public function updateParametros(Request $request)
+    {
+        return $this->procesarPersistencia($request);
+    }
+
+    // Lógica compartida para Crear y Actualizar líneas de crédito
+    private function procesarPersistencia(Request $request, $id = null)
+    {
+        $id = $request->input('id', null);
+        $esEdicion = !is_null($id);
+
         $request->validate([
             'nombre' => 'required|string',
             'periodicidad' => 'required|integer'
@@ -50,86 +64,70 @@ class CuentaFacturacionController extends Controller
             'periodicidad.required' => 'La periodicidad es obligatoria.'
         ]);
 
-        $parametros = $request->parametros ?? [];
         $empresaId = auth()->user()->empresa_id;
         $usuarioId = auth()->user()->id;
 
-        return DB::transaction(function () use ($request, $empresaId, $usuarioId, $parametros) {
-            // Validación existencia
-            $existe = LineasCredito::where('empresa_id', $empresaId)
-                ->where('tipo_credito', $request->nombre)
-                ->exists();
+        $parametros = $request->input('parametros', []);
 
-            if ($existe) {
+        return DB::transaction(function () use ($request, $empresaId, $usuarioId, $parametros, $id, $esEdicion) {
+            // Validar duplicados
+            $queryExiste = LineasCredito::where('empresa_id', $empresaId)
+                ->where('tipo_credito', $request->nombre);
+
+            if ($esEdicion)
+                $queryExiste->where('id', '!=', $id);
+
+            if ($queryExiste->exists()) {
                 return response()->json([
                     'message' => "Ya existe una línea con el nombre {$request->nombre}"
                 ], 409);
             }
 
-            // Crear línea crédito
-            $tipoCredito = LineasCredito::create([
-                'empresa_id' => $empresaId,
-                'tipo_credito' => strtoupper($request->nombre),
-                'valor_minimo' => $request->valor_minimo ?? 0,
-                'valor_maximo' => $request->valor_maximo ?? 0,
-            ]);
+            // Guardar línea de crédito
+            $tipoCredito = LineasCredito::updateOrCreate(
+                ['id' => $id, 'empresa_id' => $empresaId],
+                [
+                    'tipo_credito' => strtoupper($request->nombre),
+                    'valor_minimo' => $request->valor_minimo ?? 0,
+                    'valor_maximo' => $request->valor_maximo ?? 0,
+                ]
+            );
 
-            // Construcción limpia de parámetros
-            $data = $this->buildParametrosIntereses(
+            // Información empresa avalista
+            if ($parametros['aval_enabled']) {
+                $avalista = EmpresasAvalistas::withTrashed()->firstOrNew([
+                    'empresa_id' => $empresaId,
+                    'lineas_credito_id' => $id
+                ]);
+
+                if ($avalista->trashed())
+                    $avalista->restore();
+
+                $avalista->nit_empresa = $request->parametros['empresa_avalista_nit'];
+                $avalista->nombre_empresa = $request->parametros['empresa_avalista'];
+                $avalista->lineas_credito_id = $id;
+                $avalista->save();
+            }
+
+            // Construcción y persistencia de parámetros
+            $dataParametros = $this->buildParametrosIntereses(
+                $request->periodicidad,
                 $parametros,
                 $empresaId,
                 $usuarioId,
                 $tipoCredito->id
             );
 
-            ParametrosInterese::create($data);
+            ParametrosInterese::updateOrCreate(
+                ['lineas_credito_id' => $tipoCredito->id],
+                $dataParametros
+            );
 
             return response()->json([
-                'message' => 'Línea de crédito creada exitosamente.'
-            ], 201);
+                'message' => $esEdicion ? 'Línea actualizada exitosamente.' : 'Línea creada exitosamente.',
+                'data' => $tipoCredito
+            ], $esEdicion ? 200 : 201);
         });
-    }
-
-    private function buildParametrosIntereses($p, $empresaId, $usuarioId, $lineaId)
-    {
-        return [
-            'lineas_credito_id' => $lineaId,
-            'empresa_id' => $empresaId,
-            'user_id' => $usuarioId,
-
-            // Periodicidad
-            'periodicidad' => $p['periodicidad'] ?? 6,
-
-            // Firma electrónica
-            'firma_elec_porcentual' => $p['firma_electronica_enabled'] ? ($p['porcentaje_firma_electronica'] ?? 0) : 0,
-            'firma_elec_iva' => $p['firma_electronica_enabled'] ? ($p['iva_firma_electronica'] ?? 0) : 0,
-            'firma_elec' => $p['firma_electronica_enabled'] ? ($p['firma_electronica'] ?? 0) : 0,
-
-            // Intereses
-            'interes_mode' => ($p['intereses_enabled'] ?? false)
-                ? (($p['tipo_interes'] ?? '') === 'individual' ? 'ind' : 'gen')
-                : 'gen',
-            'interes_ea' => ($p['intereses_enabled'] ?? false) ? ($p['ea_intereses'] ?? 0) : 0,
-            'interes_nm' => ($p['intereses_enabled'] ?? false) ? ($p['nm_intereses'] ?? 0) : 0,
-
-            // Otros intereses
-            'otro_por_observacion' => $p['otros_intereses_enabled'] ? ($p['otros_intereses_concepto'] ?? null) : null,
-            'otro_por_ea' => $p['otros_intereses_enabled'] ? ($p['ea_otros_intereses'] ?? 0) : 0,
-            'otro_por_nm' => $p['otros_intereses_enabled'] ? ($p['nm_otros_intereses'] ?? 0) : 0,
-
-            // Aval
-            'aval_porcentual' => $p['aval_enabled'] ? ($p['porcentaje_aval'] ?? 0) : 0,
-            'aval_nominal' => $p['aval_enabled'] ? ($p['aval'] ?? 0) : 0,
-            'aval_iva' => $p['aval_enabled'] ? ($p['iva_aval'] ?? 0) : 0,
-            'aval_columnas' => $p['aval_enabled'] ? ($p['mostrar_aval_columnas'] ?? 0) : 0,
-            'restar_aval' => $p['aval_enabled'] ? ($p['restar_aval'] ?? 0) : 0,
-            'empresa_avalista' => $p['aval_enabled'] ? 1 : 0,
-
-            // Otros
-            'otros_observacion' => $p['otros_enabled'] ? ($p['otros_concepto'] ?? 'Otros') : 'Otros',
-            'otros_porcentual' => $p['otros_enabled'] ? ($p['porcentaje_otros'] ?? 0) : 0,
-            'otros_nominal' => $p['otros_enabled'] ? ($p['otros'] ?? 0) : 0,
-        ];
     }
 
     public function deleteParametros(Request $request)
@@ -161,5 +159,58 @@ class CuentaFacturacionController extends Controller
         return response()->json([
             'message' => 'Línea de crédito eliminada correctamente.'
         ], 204);
+    }
+
+    private function buildParametrosIntereses($periodicidad, $p, $empresaId, $usuarioId, $lineaId)
+    {
+        // Lógica de control checks activos
+        $otrosIntActivos = $p['otros_intereses_enabled'] ?? false;
+        $firmaActiva = $p['firma_electronica_enabled'] ?? false;
+        $intHabilitados = $p['intereses_enabled'] ?? false;
+        $otrosActivos = $p['otros_enabled'] ?? false;
+        $avalActivo = $p['aval_enabled'] ?? false;
+
+        // Aplicar valores numéricos intereses si esta habilitado el check y modo es individual
+        $esIndividual = ($p['tipo_interes'] ?? '') === 'individual';
+        $aplicaValorInt = $intHabilitados && !$esIndividual;
+
+        return [
+            'lineas_credito_id' => $lineaId,
+            'empresa_id' => $empresaId,
+            'user_id' => $usuarioId,
+
+            // Periodicidad
+            'periodicidad' => $periodicidad ?? 6,
+
+            // Firma electrónica
+            'firma_elec_porcentual' => $firmaActiva ? ($p['porcentaje_firma_electronica'] ?? 0) : 0,
+            'firma_elec_iva' => $firmaActiva ? ($p['iva_firma_electronica'] ?? 0) : 0,
+            'firma_elec' => $firmaActiva ? ($p['firma_electronica'] ?? 0) : 0,
+
+            // Intereses
+            'interes_mode' => $intHabilitados ? ($esIndividual ? 'ind' : 'gen') : 'gen',
+            'interes_ea' => $aplicaValorInt ? ($p['ea_intereses'] ?? 0) : 0,
+            'interes_nm' => $aplicaValorInt ? ($p['nm_intereses'] ?? 0) : 0,
+
+            // Otros intereses
+            'otro_por_observacion' => $otrosIntActivos ? ($p['otros_intereses_concepto'] ?? null) : null,
+            'otro_por_ea' => $otrosIntActivos ? ($p['ea_otros_intereses'] ?? 0) : 0,
+            'otro_por_nm' => $otrosIntActivos ? ($p['nm_otros_intereses'] ?? 0) : 0,
+
+            // Aval
+            'aval_porcentual' => $avalActivo ? ($p['porcentaje_aval'] ?? 0) : 0,
+            'aval_nominal' => $avalActivo ? ($p['aval'] ?? 0) : 0,
+            'aval_iva' => $avalActivo ? ($p['iva_aval'] ?? 0) : 0,
+            'empresa_avalista' => $avalActivo ? 1 : 0,
+
+            // Checkbox aval
+            'aval_columnas' => $avalActivo ? ($p['mostrar_aval_columnas'] ?? 0) : 0,
+            'restar_aval' => $avalActivo ? ($p['restar_aval'] ?? 0) : 0,
+
+            // Otros
+            'otros_observacion' => $otrosActivos ? ($p['otros_concepto'] ?? 'Otros') : 'Otros',
+            'otros_porcentual' => $otrosActivos ? ($p['porcentaje_otros'] ?? 0) : 0,
+            'otros_nominal' => $otrosActivos ? ($p['otros'] ?? 0) : 0,
+        ];
     }
 }

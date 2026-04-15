@@ -6,7 +6,9 @@
             >
                 <fieldset
                     :disabled="!formularioHabilitado"
-                    :class="{ 'opacity-60': !formularioHabilitado }"
+                    :class="{
+                        'opacity-70 pointer-events-none': !formularioHabilitado,
+                    }"
                     class="space-y-8 max-w-full transition-opacity duration-300"
                 >
                     <div class="border-b border-gray-100 mb-6 pb-4">
@@ -90,7 +92,10 @@
                                         :options="tipoIntereses"
                                         :vertical="false"
                                     />
-                                    <div class="grid grid-cols-2 gap-3">
+                                    <div
+                                        class="grid grid-cols-2 gap-3"
+                                        v-if="form.tipo_interes === 'general'"
+                                    >
                                         <FormInput
                                             label="% E.A."
                                             type="number"
@@ -103,13 +108,15 @@
                                             v-model="form.nm_intereses"
                                             placeholder="2.00%"
                                         />
+                                        <div>
+                                            <FormCheckbox
+                                                v-model="
+                                                    form.interes_automatico_enabled
+                                                "
+                                                label="Cálculo Automático"
+                                            />
+                                        </div>
                                     </div>
-                                    <FormCheckbox
-                                        v-model="
-                                            form.interes_automatico_enabled
-                                        "
-                                        label="Cálculo Automático"
-                                    />
                                 </div>
                             </div>
                         </div>
@@ -444,6 +451,7 @@ import { confirmAlert } from '@/utils/alert'
 import api from '@/services/api'
 
 const getDefaultForm = () => ({
+    id: null,
     nombreLinea: '',
 
     // Firma electrónica
@@ -547,39 +555,114 @@ const adicionalesDestinosOpts = [
 const lineasCredito = ref([])
 
 // -- Backend ------------------------------------------------
-async function fetchAccountInfo(nuevaLinea = false) {
+async function fetchAccountInfo(targetId = null, force = false) {
     try {
         const { data } = await api.get('/api/cuentaFacturacion/getParametros')
-
         const lineas = (data?.lineasCredito || []).map(mapLineaCredito)
         lineasCredito.value = lineas
 
         if (!lineas.length) return
 
-        const lineaSeleccionada = nuevaLinea ? lineas.at(-1) : lineas[0]
-        showParametros(lineaSeleccionada)
+        let lineaSeleccionada
+
+        if (targetId === 'last') {
+            // Nueva línea
+            lineaSeleccionada = lineas.at(-1)
+        } else if (targetId) {
+            // Edición línea
+            lineaSeleccionada = lineas.find(l => l.id === targetId) || lineas[0]
+        } else {
+            lineaSeleccionada = lineas[0]
+        }
+
+        showParametros(lineaSeleccionada, force)
     } catch (err) {
         console.error(err)
     }
 }
 
 async function guardarLinea() {
-    if (!nuevaLinea.value.nombre || !nuevaLinea.value.periodicidad) return
+    if (!nuevaLinea.value.nombre || !nuevaLinea.value.periodicidad) {
+        return
+    }
+
+    // Reglas de validación parámetros intereses
+    const reglas = [
+        {
+            check: form.firma_electronica_enabled,
+            validateSome: [
+                form.firma_electronica,
+                form.porcentaje_firma_electronica,
+            ],
+        },
+        {
+            check: form.intereses_enabled,
+            validateSome: [form.ea_intereses, form.nm_intereses],
+        },
+        {
+            check: form.otros_intereses_enabled,
+            validateSome: [form.ea_otros_intereses, form.nm_otros_intereses],
+            validateObliga: [form.otros_intereses_concepto],
+        },
+        {
+            check: form.aval_enabled,
+            validateSome: [form.aval, form.porcentaje_aval],
+            validateObliga: [form.empresa_avalista, form.empresa_avalista_nit],
+        },
+        {
+            check: form.otros_enabled,
+            validateSome: [form.otros, form.porcentaje_otros],
+            validateObliga: [form.otros_concepto],
+        },
+    ]
+
+    const errorValidacion = reglas.some(regla => {
+        if (!regla.check) return false
+
+        const validateSome = regla.validateSome
+            ? regla.validateSome.every(campo => !campo)
+            : false
+
+        const validateObliga = regla.validateObliga
+            ? regla.validateObliga.some(campo => !campo)
+            : false
+
+        return validateSome || validateObliga
+    })
+
+    if (errorValidacion) {
+        return
+    }
 
     try {
         start()
 
+        const idLinea = form.id || nuevaLinea.value.id
+
+        const esEdicion = !!idLinea
+
         const payload = {
             ...nuevaLinea.value,
             parametros: { ...form },
+            id: esEdicion ? idLinea : null,
         }
 
-        await api.post('/api/cuentaFacturacion/saveParametros', payload)
+        const url = esEdicion
+            ? `/api/cuentaFacturacion/updateParametros`
+            : '/api/cuentaFacturacion/saveParametros'
+
+        const metodo = esEdicion ? 'put' : 'post'
+
+        const { data: responseData } = await api[metodo](url, payload)
+
+        const idParaSeleccionar = editandoLinea.value
+            ? responseData.data.id
+            : 'last'
 
         creandoNuevaLinea.value = false
+        editandoLinea.value = false
 
-        // Actualizar tabla líneas de crédito
-        await fetchAccountInfo(true)
+        await fetchAccountInfo(idParaSeleccionar, true)
     } catch (err) {
         console.error('Error al guardar:', err)
     } finally {
@@ -657,11 +740,18 @@ function showParametros(data, force = false) {
     // Intereses
     // ========================
     if (parametros.interes_mode === 'gen') {
-        form.intereses_enabled = true
-        form.ea_intereses = toNumber(parametros.interes_ea)
-        form.nm_intereses = toNumber(parametros.interes_nm)
-        form.tipo_interes = 'general'
+        const interesEa = toNumber(parametros.interes_ea)
+        const interesNm = toNumber(parametros.interes_nm)
+
+        if (interesEa || interesNm) {
+            form.ea_intereses = interesEa
+            form.nm_intereses = interesNm
+
+            form.intereses_enabled = true
+            form.tipo_interes = 'general'
+        }
     } else {
+        form.intereses_enabled = true
         form.tipo_interes = 'individual'
     }
 
