@@ -30,7 +30,7 @@
             <button class="btn btn-main w-min" @click="save">Agregar</button>
         </div>
 
-        <TableGrid :items="[]" :columns="cols">
+        <TableGrid :items="registros" :columns="cols">
             <template #cell(acciones)="{ item }">
                 <div class="flex justify-center">
                     <button class="btn btn-danger">
@@ -43,11 +43,18 @@
 </template>
 
 <script setup>
-import { reactive, ref } from 'vue'
+import { reactive, ref, onMounted } from 'vue'
 
 // -- Componentes -----------------------------------------------
 import FormInput from '@/components/form/FormInput.vue'
 import TableGrid from '@/components/TableGrid.vue'
+
+// -- Loader ---------------------------------------------------
+import { useLoader } from '@/composables/useLoader'
+const { start, stop } = useLoader()
+
+// -- API -------------------------------------------------------
+import api from '@/services/api'
 
 const form = reactive({
     nombre: '',
@@ -55,17 +62,17 @@ const form = reactive({
     token: '',
 })
 
-const registros = ref([
-    {
-        nombre: 'Ziur Software',
-        enlace: 'http://platinumserver.ziursoftware.com/FUSION_CORP_SAS/basedatos_02/ZiurServiceRest.svc/api/',
-    },
-])
+const registros = ref([])
 
 const cols = [
-    { key: 'nombre', label: 'Nombre' },
-    { key: 'enlace', label: 'Enlace' },
-    { key: 'acciones', label: 'Acciones' },
+    { key: 'nombre', label: 'Nombre', width: '100px' },
+    { key: 'enlace', label: 'Enlace', width: '1.5fr' },
+    {
+        key: 'acciones',
+        label: 'Acciones',
+        width: '100px',
+        headerClass: 'text-center',
+    },
 ]
 
 const save = () => {
@@ -82,4 +89,28 @@ const remove = index => {
         registros.value.splice(index, 1)
     }
 }
+
+// -- Backend ----------------------------------------------
+async function fetchServiciosFE() {
+    try {
+        const { data } = await api.get('/api/cuentaFacturacion/getServiciosFE')
+
+        registros.value = data.configuracion.map(c => ({
+            nombre: c.nombre,
+            enlace: c.url,
+        }))
+    } catch (err) {
+        console.error(err)
+    }
+}
+
+onMounted(async () => {
+    start()
+
+    try {
+        await fetchServiciosFE()
+    } finally {
+        stop()
+    }
+})
 </script>

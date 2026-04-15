@@ -127,5 +127,11 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
         // Pasarelas
         Route::get('/getPasarelas', [CuentaFacturacionController::class, 'getPasarelas']);
         Route::get('/getPasarelasConfig', [CuentaFacturacionController::class, 'getPasarelasConfig']);
+
+        // Facturación electrónica
+        Route::get('/getServiciosFE', [CuentaFacturacionController::class, 'getServiciosFE']);
+
+        // Panel de funciones
+        Route::get('/getFunciones', [CuentaFacturacionController::class, 'getFunciones']);
     });
 });

@@ -60,8 +60,8 @@ import { computed } from 'vue'
 
 const props = defineProps({
     title: String,
-    minWidth: 'min-w-150',
     items: { type: Array, default: () => [] },
+    minWidth: { type: String, default: 'min-w-150' },
     columns: { type: Array, required: true }, // [{ key, label, width }]
     emptyText: { type: String, default: 'No hay registros disponibles' },
 })

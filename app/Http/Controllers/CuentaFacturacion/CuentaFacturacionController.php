@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Banco;
 use App\Models\Empresa;
 use App\Models\EmpresasAvalistas;
+use App\Models\EstadoFunciones;
+use App\Models\FacturacionElectronica;
 use App\Models\LineasCredito;
 use App\Models\ParametrosInterese;
 use App\Models\Pasarela;
@@ -270,6 +272,30 @@ class CuentaFacturacionController extends Controller
 
         return response()->json([
             'pasarelasEmpresa' => $pasarelasEmpresa
+        ]);
+    }
+
+    public function getServiciosFE()
+    {
+        $empresaId = auth()->user()->empresa_id;
+
+        $configuracion = FacturacionElectronica::where('empresa_id', $empresaId)
+            ->select('id', 'nombre', 'url')
+            ->get();
+
+        return response()->json([
+            'configuracion' => $configuracion->isNotEmpty() ? $configuracion : []
+        ]);
+    }
+
+    public function getFunciones()
+    {
+        $funciones = EstadoFunciones::where('estado', 1)
+            ->where('nombre_funcion', '!=', 'Tabla casa cobranza')
+            ->get();
+
+        return response()->json([
+            'funciones' => $funciones
         ]);
     }
 }
