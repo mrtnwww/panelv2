@@ -114,9 +114,14 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
 
     // Cuenta y Facturación
     Route::prefix('cuentaFacturacion')->group(function () {
+        // Parametros intereses
         Route::get('/getParametros', [CuentaFacturacionController::class, 'getParametros']);
         Route::post('/saveParametros', [CuentaFacturacionController::class, 'saveParametros']);
         Route::put('/updateParametros', [CuentaFacturacionController::class, 'updateParametros']);
         Route::delete('/deleteParametros', [CuentaFacturacionController::class, 'deleteParametros']);
+
+        // Suscripcion y transacciones
+        Route::get('/getModulos', [CuentaFacturacionController::class, 'getModulos']);
+        Route::put('/updateModulos', [CuentaFacturacionController::class, 'updateModulos']);
     });
 });

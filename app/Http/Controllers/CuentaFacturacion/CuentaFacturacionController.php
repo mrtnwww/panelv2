@@ -213,4 +213,31 @@ class CuentaFacturacionController extends Controller
             'otros_nominal' => $otrosActivos ? ($p['otros'] ?? 0) : 0,
         ];
     }
+
+    public function getModulos()
+    {
+        $empresaId = auth()->user()->empresa_id;
+
+        $empresa = Empresa::select('id', 'credivehiculo', 'credihipoteca', 'libranza', 'sedeAliado')->find($empresaId);
+
+        return response()->json([
+            'empresa' => $empresa
+        ]);
+    }
+
+    public function updateModulos(Request $request)
+    {
+        $empresaId = auth()->user()->empresa_id;
+
+        $campo = $request->modulo;
+
+        $empresa = Empresa::find($empresaId);
+
+        $empresa->$campo = $empresa->$campo ? 0 : 1;
+        $empresa->save();
+
+        return response()->json([
+            'message' => 'Módulo actualizado correctamente'
+        ]);
+    }
 }

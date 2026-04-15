@@ -107,7 +107,7 @@
         </div>
 
         <div class="mt-6">
-            <button @click="saveConfig" class="btn btn-main">
+            <button @click="saveConfig" class="btn btn-main" disabled="true">
                 Actualizar parámetros
             </button>
         </div>
@@ -133,9 +133,7 @@ const form = reactive({
 
 async function saveConfig() {
     try {
-        // Aquí iría tu llamada a la API
-        // await api.post('/api/config-centrales', form)
-        alert('Configuración actualizada correctamente')
+        // TODO
     } catch (err) {
         console.error(err)
     }
