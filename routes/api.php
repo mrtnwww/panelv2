@@ -11,6 +11,7 @@ use App\Http\Controllers\Creditos\CreditoController;
 use App\Http\Controllers\CuentaFacturacion\CuentaFacturacionController;
 use App\Http\Controllers\Destinos\DestinoController;
 use App\Http\Controllers\Empresas\EmpresaController;
+use App\Http\Controllers\Notificaciones\NotificacionController;
 use App\Http\Controllers\Productos\ProductoController;
 use App\Http\Controllers\ReporteCentralesTipo\ReporteCentralesTipoController;
 use App\Http\Controllers\Tareas\TareaController;
@@ -110,6 +111,12 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     // Tipos pago
     Route::prefix('tipoPago')->group(function () {
         Route::get('/', [TipoPagoController::class, 'listTiposPago']);
+    });
+
+    // Notificaciones
+    Route::prefix('notificaciones')->group(function () {
+        Route::get('/getNotificaciones', [NotificacionController::class, 'getNotificaciones']);
+        Route::get('/visualizeNotificaciones', [NotificacionController::class, 'visualizeNotificaciones']);
     });
 
     // Cuenta y Facturación

@@ -29,7 +29,7 @@
         <!-- Fórmularios -->
         <div class="relative" ref="formulariosRef">
             <button
-                @click="formulariosMenuOpen = !formulariosMenuOpen"
+                @click="toggleMenu('forms')"
                 class="hidden md:flex items-center gap-1.5 text-sm text-gray-500 hover:text-[#1a5c2a] transition-colors"
             >
                 <i class="fa-regular fa-file-lines"></i>
@@ -68,22 +68,137 @@
         </div>
 
         <!-- Notificaciones -->
-        <button
-            class="relative text-gray-400 hover:text-gray-600 transition-colors"
-        >
-            <i class="fa-regular fa-bell"></i>
-            <span
-                v-if="notifications > 0"
-                class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center"
+        <div class="relative" ref="notificationsRef">
+            <button
+                @click="toggleMenu('notis')"
+                class="relative text-gray-400 hover:text-gray-600 transition-colors"
             >
-                {{ notifications > 9 ? '9+' : notifications }}
-            </span>
-        </button>
+                <i class="fa-regular fa-bell"></i>
+                <span
+                    v-if="notifications > 0"
+                    class="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white text-[12px] font-bold rounded-full flex items-center justify-center border-2 border-white"
+                >
+                    {{ notifications > 9 ? '9+' : notifications }}
+                </span>
+            </button>
+
+            <transition name="dropdown">
+                <div
+                    v-if="notificationsMenuOpen"
+                    class="fixed inset-x-4 top-16 mx-auto w-auto max-w-[calc(100vw-2rem)] md:absolute md:inset-auto md:right-0 md:top-full md:mt-2 md:w-80 bg-white border border-gray-100 rounded-xl shadow-lg z-50 overflow-hidden"
+                >
+                    <div
+                        class="px-4 py-3 border-b border-gray-50 flex justify-between items-center bg-gray-50/50"
+                    >
+                        <span class="text-xs font-bold text-gray-500 uppercase"
+                            >Notificaciones</span
+                        >
+                        <button
+                            @click="handleMarkAllAsRead"
+                            v-if="
+                                notificationStore.unreadCount > 0 &&
+                                !notificationStore.loading
+                            "
+                            class="text-xs text-emerald-500 hover:text-emerald-600 hover:underline font-medium"
+                        >
+                            Marcar todo como leído
+                        </button>
+                    </div>
+
+                    <div class="max-h-75 min-h-37.5 overflow-y-auto relative">
+                        <div
+                            v-if="notificationStore.loading"
+                            class="absolute inset-0 bg-white/60 backdrop-blur-[1px] z-10 flex items-center justify-center"
+                        >
+                            <div class="flex flex-col items-center gap-2">
+                                <div
+                                    class="w-8 h-8 border-2 border-gray-200 border-t-emerald-500 rounded-full animate-spin"
+                                ></div>
+                                <span class="text-sm text-gray-400 font-medium"
+                                    >Cargando...</span
+                                >
+                            </div>
+                        </div>
+
+                        <div
+                            v-if="
+                                !itemsNotifications.length &&
+                                !notificationStore.loading
+                            "
+                            class="p-8 text-center"
+                        >
+                            <i
+                                class="fa-regular fa-bell-slash text-gray-200 text-3xl mb-2 block"
+                            ></i>
+                            <p class="text-xs text-gray-400">
+                                No tienes notificaciones pendientes
+                            </p>
+                        </div>
+
+                        <div v-if="!notificationStore.loading">
+                            <div
+                                v-for="noti in itemsNotifications"
+                                :key="noti.id"
+                                class="relative px-4 py-3 transition-all border-b border-gray-50 last:border-0 cursor-pointer"
+                                :class="
+                                    !noti.visualized_at
+                                        ? 'bg-emerald-50/50 hover:bg-emerald-50 border-l-4 border-l-emerald-500'
+                                        : 'hover:bg-gray-50 border-l-4 border-l-transparent'
+                                "
+                            >
+                                <div
+                                    class="flex items-start justify-between gap-2"
+                                >
+                                    <div class="flex-1 min-w-0">
+                                        <p
+                                            class="text-sm font-semibold mb-1 truncate"
+                                            :class="
+                                                !noti.visualized_at
+                                                    ? 'text-gray-900'
+                                                    : 'text-gray-500'
+                                            "
+                                        >
+                                            {{ noti.title }}
+                                        </p>
+                                        <p
+                                            class="text-xs mb-1 line-clamp-2"
+                                            :class="
+                                                !noti.visualized_at
+                                                    ? 'text-gray-700'
+                                                    : 'text-gray-400'
+                                            "
+                                        >
+                                            {{ noti.content }}
+                                        </p>
+                                        <p
+                                            class="text-xs text-emerald-500 font-medium italic"
+                                        >
+                                            {{
+                                                formatDateNotifications(
+                                                    noti.created_at
+                                                )
+                                            }}
+                                        </p>
+                                    </div>
+
+                                    <span
+                                        v-if="!noti.visualized_at"
+                                        class="shrink-0 text-[9px] font-bold uppercase tracking-wide text-emerald-600 bg-emerald-100 px-1.5 py-0.5 rounded-md mt-0.5"
+                                    >
+                                        Nueva
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </transition>
+        </div>
 
         <!-- Accesos rápidos -->
         <div class="relative" ref="quickMenuRef">
             <button
-                @click="quickMenuOpen = !quickMenuOpen"
+                @click="toggleMenu('quick')"
                 :class="[
                     'w-8 h-8 rounded-lg flex items-center justify-center transition-all',
                     quickMenuOpen
@@ -131,7 +246,7 @@
         <!-- Avatar + usuario -->
         <div class="relative" ref="userMenuRef">
             <button
-                @click="userMenuOpen = !userMenuOpen"
+                @click="toggleMenu('user')"
                 class="flex items-center gap-2.5 hover:bg-gray-50 rounded-lg px-2 py-1.5 transition-colors"
             >
                 <div
@@ -194,7 +309,7 @@
                     </button>
                     <button
                         class="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
-                        @click="goTo('/dashboard/tutoriales')"
+                        @click="openTutorials"
                     >
                         <i class="fa-solid fa-video"></i>
                         Tutoriales
@@ -243,8 +358,15 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 
+// -- Store -------------------------------------------------
+import { useNotificationStore } from '@/stores/notifications'
 import { useAuthStore } from '@/stores/auth'
+
+// -- Router -----------------------------------------------
 import { useRouter } from 'vue-router'
+
+// -- Utils ------------------------------------------------
+import { formatDateNotifications } from '@/utils/format'
 
 const props = defineProps({
     sidebarWidth: {
@@ -259,6 +381,10 @@ const props = defineProps({
         type: Number,
         default: 0,
     },
+    itemsNotifications: {
+        type: Array,
+        default: () => [],
+    },
     creditosDelMes: {
         type: Number,
         default: 0,
@@ -267,13 +393,20 @@ const props = defineProps({
 
 defineEmits(['toggle-sidebar'])
 
-const router = useRouter()
+const notificationStore = useNotificationStore()
 const auth = useAuthStore()
 
+const router = useRouter()
+
 const userMenuRef = ref(null)
+const quickMenuRef = ref(null)
+const formulariosRef = ref(null)
+const notificationsRef = ref(null)
+
 const userMenuOpen = ref(false)
 const quickMenuOpen = ref(false)
 const formulariosMenuOpen = ref(false)
+const notificationsMenuOpen = ref(false)
 
 const quickActions = [
     {
@@ -335,19 +468,59 @@ function goTo(path) {
     router.push(path)
 }
 
+function openTutorials() {
+    window.open(
+        'https://www.youtube.com/playlist?list=PLpgxgJMebF-3qrxBqaS9O356BHs74mARb',
+        '_blank'
+    )
+}
+
 async function handleLogout() {
     await auth.logout()
     router.push('/login')
 }
 
+// Marcar notificaciones como leídas
+const handleMarkAllAsRead = async () => {
+    await notificationStore.visualizeNotifications()
+}
+
 // Cerrar dropdown al hacer clic fuera
 function handleClickOutside(e) {
-    if (userMenuRef.value && !userMenuRef.value.contains(e.target)) {
+    const isInsideMenu =
+        userMenuRef.value?.contains(e.target) ||
+        quickMenuRef.value?.contains(e.target) ||
+        formulariosRef.value?.contains(e.target) ||
+        notificationsRef.value?.contains(e.target)
+
+    if (!isInsideMenu) {
         userMenuOpen.value = false
+        quickMenuOpen.value = false
+        formulariosMenuOpen.value = false
+        notificationsMenuOpen.value = false
     }
 }
 
-onMounted(() => document.addEventListener('mousedown', handleClickOutside))
+function toggleMenu(menu) {
+    closeAllMenusExcept(menu)
+
+    if (menu === 'user') userMenuOpen.value = !userMenuOpen.value
+    if (menu === 'quick') quickMenuOpen.value = !quickMenuOpen.value
+    if (menu === 'forms') formulariosMenuOpen.value = !formulariosMenuOpen.value
+    if (menu === 'notis')
+        notificationsMenuOpen.value = !notificationsMenuOpen.value
+}
+
+function closeAllMenusExcept(menuRef) {
+    if (menuRef !== 'user') userMenuOpen.value = false
+    if (menuRef !== 'quick') quickMenuOpen.value = false
+    if (menuRef !== 'forms') formulariosMenuOpen.value = false
+    if (menuRef !== 'notis') notificationsMenuOpen.value = false
+}
+
+onMounted(async () =>
+    document.addEventListener('mousedown', handleClickOutside)
+)
 onUnmounted(() => document.removeEventListener('mousedown', handleClickOutside))
 </script>
 

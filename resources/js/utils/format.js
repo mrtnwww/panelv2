@@ -1,4 +1,5 @@
 import dayjs from 'dayjs'
+import 'dayjs/locale/es'
 
 export const toNumber = val => {
     const num = Number(val)
@@ -27,4 +28,8 @@ export function formatDateYmd(date) {
 
 export function formatDateYmdHms(date) {
     return dayjs(date).format('YYYY-MM-DD HH:mm:ss')
+}
+
+export function formatDateNotifications(date) {
+    return dayjs(date).locale('es').format('DD MMM. YYYY, hh:mm A')
 }

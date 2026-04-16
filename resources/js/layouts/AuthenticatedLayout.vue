@@ -11,7 +11,8 @@
         <AppNavbar
             :sidebar-width="navbarLeft"
             :user="currentUser"
-            :notifications="7"
+            :notifications="notificationStore.unreadCount"
+            :items-notifications="notificationStore.items"
             :creditos-del-mes="0"
             @toggle-sidebar="toggleSidebar"
         />
@@ -33,6 +34,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import AppSidebar from '@/components/AppSideBar.vue'
 import AppNavbar from '@/components/AppNavbar.vue'
 
+import { useNotificationStore } from '@/stores/notifications'
 import { useAuthStore } from '@/stores/auth'
 
 // -- Estado del sidebar ----------------------------------------------------------
@@ -41,7 +43,9 @@ const BREAKPOINT = 1024 // lg
 const SIDEBAR_W = 224 // w-56 = 224px
 const SIDEBAR_COL = 64 // w-16  = 64px (colapsado)
 
+const notificationStore = useNotificationStore()
 const auth = useAuthStore()
+
 const isMobile = ref(false)
 const sidebarOpen = ref(true)
 const currentUser = ref(null)
@@ -63,6 +67,8 @@ onMounted(async () => {
 
     // Usuario actual
     currentUser.value = await auth.fetchUser()
+    // Notificaciones
+    await notificationStore.fetchNotifications()
 })
 onUnmounted(() => window.removeEventListener('resize', checkMobile))
 
