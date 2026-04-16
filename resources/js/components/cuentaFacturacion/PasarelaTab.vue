@@ -104,7 +104,12 @@ const pasarelasConfiguradas = ref([])
 
 const cols = [
     { key: 'pasarela', label: 'Pasarela', width: '100px' },
-    { key: 'enlace', label: 'Enlace', width: 'minmax(250px, 2fr)' },
+    {
+        key: 'enlace',
+        label: 'Enlace',
+        width: 'minmax(250px, 2fr)',
+        cellClass: 'text-sky-500',
+    },
     {
         key: 'llave_publica',
         label: 'Llave pública',

@@ -66,7 +66,12 @@ const registros = ref([])
 
 const cols = [
     { key: 'nombre', label: 'Nombre', width: '100px' },
-    { key: 'enlace', label: 'Enlace', width: '1.5fr' },
+    {
+        key: 'enlace',
+        label: 'Enlace',
+        width: '1.5fr',
+        cellClass: 'text-sky-500',
+    },
     {
         key: 'acciones',
         label: 'Acciones',

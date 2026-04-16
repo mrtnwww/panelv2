@@ -9,6 +9,7 @@ use App\Models\EmpresasAvalistas;
 use App\Models\EstadoFunciones;
 use App\Models\FacturacionElectronica;
 use App\Models\LineasCredito;
+use App\Models\ParametrosEstadoFunciones;
 use App\Models\ParametrosInterese;
 use App\Models\Pasarela;
 use Illuminate\Http\Request;
@@ -290,12 +291,54 @@ class CuentaFacturacionController extends Controller
 
     public function getFunciones()
     {
+        $empresaId = auth()->user()->empresa_id;
+
         $funciones = EstadoFunciones::where('estado', 1)
             ->where('nombre_funcion', '!=', 'Tabla casa cobranza')
             ->get();
 
+        $funcionesActivas = ParametrosEstadoFunciones::where('empresa_id', $empresaId)
+            ->pluck('estado_funcion_id')
+            ->toArray();
+
+        $funciones = $funciones->map(function ($funcion) use ($funcionesActivas) {
+            $funcion->funcionActiva = in_array($funcion->id, $funcionesActivas);
+            return $funcion;
+        });
+
         return response()->json([
             'funciones' => $funciones
+        ]);
+    }
+
+    public function updateFunciones(Request $request)
+    {
+        $empresaId = auth()->user()->empresa_id;
+        $id = $request->id;
+
+        if (!$id) {
+            return response()->json([
+                'message' => 'ID de función no proporcionado'
+            ], 400);
+        }
+
+        $parametro = ParametrosEstadoFunciones::where('estado_funcion_id', $id)
+            ->where('empresa_id', $empresaId)
+            ->first();
+
+        if ($parametro) {
+            $parametro->delete();
+            $accion = 'desactivada';
+        } else {
+            ParametrosEstadoFunciones::create([
+                'empresa_id' => $empresaId,
+                'estado_funcion_id' => $id,
+            ]);
+            $accion = 'activada';
+        }
+
+        return response()->json([
+            'message' => "Función {$accion} correctamente"
         ]);
     }
 }

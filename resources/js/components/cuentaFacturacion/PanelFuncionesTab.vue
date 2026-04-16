@@ -14,7 +14,10 @@
 
         <TableGrid :items="filteredFunciones" :columns="cols">
             <template #cell(activar)="{ item }">
-                <FormToggle v-model="item.activa" />
+                <FormToggle
+                    v-model="item.activa"
+                    @change="handleFuncion(item)"
+                />
             </template>
 
             <template #cell(acciones)="{ item }">
@@ -83,11 +86,25 @@ async function fetchFunciones() {
         funciones.value = data.funciones.map(f => ({
             id: f.id,
             nombre: f.nombre_funcion,
-            activa: f.activa || false,
+            activa: f.funcionActiva || false,
             descripcion: f.descripcion || '',
         }))
     } catch (err) {
         console.error(err)
+    }
+}
+
+async function handleFuncion(item) {
+    start()
+
+    try {
+        await api.put('/api/cuentaFacturacion/updateFunciones', {
+            id: item.id,
+        })
+    } catch (err) {
+        console.error(err)
+    } finally {
+        stop()
     }
 }
 
