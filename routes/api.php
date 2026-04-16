@@ -134,5 +134,9 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
         // Panel de funciones
         Route::get('/getFunciones', [CuentaFacturacionController::class, 'getFunciones']);
         Route::put('/updateFunciones', [CuentaFacturacionController::class, 'updateFunciones']);
+
+        // Documentos
+        Route::get('/getDocumentos', [CuentaFacturacionController::class, 'getDocumentos']);
+        Route::put('/updateDocumentos', [CuentaFacturacionController::class, 'updateDocumentos']);
     });
 });

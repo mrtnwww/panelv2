@@ -1,55 +1,39 @@
 <template>
     <div class="p-6">
         <div class="mb-8">
-            <h2 class="text-sm font-semibold text-gray-700 mb-4">
-                Documentos del sistema
-            </h2>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div
                     v-for="doc in docsSistema"
                     :key="doc.label"
                     class="flex items-center justify-between border border-[#1a5c2a] rounded-lg px-4 py-2 bg-white hover:bg-gray-50 transition-colors"
                 >
-                    <span class="text-xs text-gray-700 font-medium">{{
+                    <span class="text-sm text-gray-700 font-medium">{{
                         doc.label
                     }}</span>
-                    <input
-                        type="checkbox"
+                    <FormCheckbox
                         v-model="doc.active"
-                        class="rounded text-[#1a5c2a] focus:ring-[#1a5c2a]"
+                        @update:model-value="handleDocumentos(doc, $event)"
                     />
                 </div>
             </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-            <div class="space-y-4">
-                <div
-                    v-for="info in [
-                        'Información recibo de caja',
-                        'Información notificación e-mail',
-                    ]"
-                    :key="info"
-                    class="flex items-center justify-between border border-[#1a5c2a] rounded-lg px-4 py-2 bg-white"
-                >
-                    <span class="text-xs text-gray-700">{{ info }}</span>
-                    <button class="text-gray-400 hover:text-gray-600">
-                        <i class="fa-solid fa-pen text-xs"></i>
-                    </button>
-                </div>
-            </div>
-            <div class="flex items-start">
-                <div
-                    class="w-full flex items-center justify-between border border-[#1a5c2a] rounded-lg px-4 py-2 bg-white"
-                >
-                    <span class="text-xs text-gray-700"
-                        >Información de extracto</span
-                    >
-                    <button class="text-gray-400 hover:text-gray-600">
-                        <i class="fa-solid fa-pen text-xs"></i>
-                    </button>
-                </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            <div
+                v-for="info in [
+                    'Información recibo de caja',
+                    'Información notificación e-mail',
+                    'Información de extracto',
+                ]"
+                :key="info"
+                class="flex items-center justify-between border border-[#1a5c2a] rounded-lg px-4 py-2 bg-white"
+            >
+                <span class="text-sm text-gray-700 font-medium">{{
+                    info
+                }}</span>
+                <button class="text-gray-400 hover:text-gray-600">
+                    <i class="fa-solid fa-pencil"></i>
+                </button>
             </div>
         </div>
 
@@ -60,91 +44,78 @@
 
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <div class="space-y-4">
-                    <input
-                        type="text"
+                    <FormInput
                         v-model="newDoc.nombre"
                         placeholder="Nombre del documento"
-                        class="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm outline-none focus:border-[#1a5c2a]"
                     />
 
-                    <select
+                    <FormInput
+                        type="select"
                         v-model="newDoc.tipo"
-                        class="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm text-gray-500 outline-none focus:border-[#1a5c2a]"
-                    >
-                        <option value="" disabled>
-                            Seleccione un tipo de documento
-                        </option>
-                        <option value="legal">Legal</option>
-                        <option value="informativo">Informativo</option>
-                    </select>
+                        :options="tiposDocumentosOpts"
+                        placeholder="Seleccione un tipo de documento"
+                    />
 
                     <div class="flex items-center gap-4">
-                        <button
-                            class="bg-[#007bff] hover:bg-[#0069d9] text-white px-4 py-2 rounded-lg text-sm flex items-center gap-2 transition-colors"
-                        >
+                        <button class="btn btn-info">
                             <i class="fa-solid fa-paperclip"></i> Adjuntar
                             documento
                         </button>
                         <label
                             class="flex items-center gap-2 text-xs text-gray-600"
                         >
-                            <input
-                                type="checkbox"
-                                v-model="newDoc.activo"
-                                class="rounded"
-                            />
+                            <FormCheckbox v-model="newDoc.activo" />
                             Activo
                         </label>
                     </div>
 
-                    <button
-                        @click="saveOtherDoc"
-                        class="bg-[#48bb78] hover:bg-[#38a169] text-white px-10 py-2 rounded-lg font-bold text-sm transition-all mt-4"
-                    >
+                    <button @click="saveOtherDoc" class="btn btn-main">
                         Aceptar
                     </button>
                 </div>
 
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-[11px]">
-                        <thead class="text-gray-500 border-b">
-                            <tr>
-                                <th class="pb-2">Nombre</th>
-                                <th class="pb-2">Tipo de documento</th>
-                                <th class="pb-2 text-center">Archivo</th>
-                                <th class="pb-2 text-center">Estado</th>
-                            </tr>
-                        </thead>
-                        <tbody class="text-gray-400">
-                            <tr v-if="otrosDocs.length === 0">
-                                <td
-                                    colspan="4"
-                                    class="py-8 text-center italic text-gray-300"
-                                >
-                                    No hay documentos adicionales cargados
-                                </td>
-                            </tr>
-                            <tr v-for="(doc, i) in otrosDocs" :key="i"></tr>
-                        </tbody>
-                    </table>
-                </div>
+                <TableGrid :items="otrosDocs" :columns="cols" />
             </div>
         </div>
     </div>
 </template>
 
 <script setup>
-import { reactive, ref } from 'vue'
+import { onMounted, reactive, ref } from 'vue'
 
-const docsSistema = ref([
-    { label: 'Contrato Credigital', active: true },
-    { label: 'Términos & Condiciones', active: true },
-    { label: 'Autorización tratamiento de datos personales', active: true },
-    { label: 'Autorización centrales de riesgo', active: true },
-    { label: 'Firma electrónica', active: false },
-    { label: 'Aval', active: true },
-    { label: 'Uso de datos biométricos', active: false },
-])
+// -- Componentes -----------------------------------------------
+import FormCheckbox from '@/components/form/FormCheckbox.vue'
+import FormInput from '@/components/form/FormInput.vue'
+import TableGrid from '@/components/TableGrid.vue'
+
+// -- Loader ---------------------------------------------------
+import { useLoader } from '@/composables/useLoader'
+const { start, stop } = useLoader()
+
+// -- API -------------------------------------------------------
+import api from '@/services/api'
+
+const cols = [
+    { key: 'nombre', label: 'Nombre' },
+    {
+        key: 'tipo_documento',
+        label: 'Tipo de documento',
+    },
+    {
+        key: 'archivo',
+        label: 'Archivo',
+        width: '100px',
+        headerClass: 'text-center',
+    },
+    {
+        key: 'estado',
+        label: 'Estado',
+        width: '100px',
+        headerClass: 'text-center',
+    },
+]
+
+const docsSistema = ref([])
 
 const newDoc = reactive({
     nombre: '',
@@ -153,8 +124,54 @@ const newDoc = reactive({
 })
 
 const otrosDocs = ref([])
+const tiposDocumentosOpts = ref([])
+
+// -- Backend -------------------------------------------------
+async function fetchDocumentos() {
+    try {
+        const { data } = await api.get('/api/cuentaFacturacion/getDocumentos')
+
+        tiposDocumentosOpts.value = data.tiposDocumentos.map(d => ({
+            value: d.id,
+            label: d.nombre,
+        }))
+
+        docsSistema.value = data.documentos.map(d => ({
+            id: d.id,
+            label: d.nombre,
+            active: d.active_to_current_company,
+        }))
+    } catch (err) {
+        console.error(err)
+    }
+}
+
+async function handleDocumentos(doc, checked) {
+    start()
+
+    try {
+        await api.put('/api/cuentaFacturacion/updateDocumentos', {
+            id: doc.id,
+            estado: checked,
+        })
+    } catch (err) {
+        console.error(err)
+    } finally {
+        stop()
+    }
+}
 
 const saveOtherDoc = () => {
-    console.log('Guardando documento...', newDoc)
+    // TODO
 }
+
+onMounted(async () => {
+    start()
+
+    try {
+        await fetchDocumentos()
+    } finally {
+        stop()
+    }
+})
 </script>

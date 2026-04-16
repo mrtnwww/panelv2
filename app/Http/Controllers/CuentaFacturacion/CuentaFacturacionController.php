@@ -4,14 +4,17 @@ namespace App\Http\Controllers\CuentaFacturacion;
 
 use App\Http\Controllers\Controller;
 use App\Models\Banco;
+use App\Models\Documento;
 use App\Models\Empresa;
 use App\Models\EmpresasAvalistas;
 use App\Models\EstadoFunciones;
 use App\Models\FacturacionElectronica;
 use App\Models\LineasCredito;
+use App\Models\ParametrosDocumento;
 use App\Models\ParametrosEstadoFunciones;
 use App\Models\ParametrosInterese;
 use App\Models\Pasarela;
+use App\Models\TipoDocumento;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -339,6 +342,72 @@ class CuentaFacturacionController extends Controller
 
         return response()->json([
             'message' => "Función {$accion} correctamente"
+        ]);
+    }
+
+    public function getDocumentos()
+    {
+        $empresa = auth()->user()->empresa;
+
+        $aliadoId = $empresa->aliado;
+        $idsInteres = array_filter([$empresa->id, $aliadoId]);
+
+        $tiposDocumento = TipoDocumento::all();
+
+        $documentos = Documento::with('empresas')
+            ->where('deleted', false)
+            ->where(function ($query) use ($idsInteres) {
+                $query->whereIn('empresa_id', $idsInteres)
+                    ->orWhereNull('empresa_id');
+            })
+            ->get();
+
+        $documentos->map(function ($doc) use ($idsInteres) {
+            $perteneceAEmpresa = in_array($doc->empresa_id, $idsInteres);
+
+            $estaEnPivot = $doc->empresas->some(fn($p) => in_array($p->empresa_id, $idsInteres));
+
+            $doc->active_to_current_company = $estaEnPivot || ($perteneceAEmpresa && $doc->estado);
+
+            return $doc;
+        })
+            ->filter(function ($doc) {
+                return request()->has('with_not_active') || $doc->active_to_current_company;
+            })
+            ->values();
+
+        return response()->json([
+            'tiposDocumentos' => $tiposDocumento,
+            'documentos' => $documentos
+        ]);
+    }
+
+    public function updateDocumentos(Request $request)
+    {
+        $request->validate([
+            'id' => 'required|exists:documentos,id',
+            'estado' => 'required|boolean'
+        ]);
+
+        $empresaId = auth()->user()->empresa->id;
+        $documentoId = $request->id;
+
+        if ($request->boolean('estado')) {
+            ParametrosDocumento::updateOrCreate([
+                'empresa_id' => $empresaId,
+                'documento_id' => $documentoId,
+            ]);
+            $message = 'Documento activado';
+        } else {
+            ParametrosDocumento::where('empresa_id', $empresaId)
+                ->where('documento_id', $documentoId)
+                ->delete();
+            $message = 'Documento desactivado';
+        }
+
+        return response()->json([
+            'message' => $message,
+            'status' => 'success'
         ]);
     }
 }
