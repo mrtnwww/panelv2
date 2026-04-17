@@ -212,7 +212,7 @@ const props = defineProps({
     label: { type: String, default: '' },
     placeholder: { type: String, default: 'Haz clic o arrastra un archivo' },
     accept: { type: String, default: 'image/*,application/pdf' },
-    acceptLabel: { type: String, default: 'PNG, JPG o PDF — máx. 5MB' },
+    acceptLabel: { type: String, default: 'PNG, JPG o PDF — máx. 1MB' },
     withCamera: { type: Boolean, default: false },
     modelValue: { default: null },
 })

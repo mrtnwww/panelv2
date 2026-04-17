@@ -4,20 +4,32 @@ namespace App\Http\Controllers\Clientes;
 
 use App\Http\Controllers\Abonos\AbonoController;
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\FirmaCliente\FirmaClienteController;
+use App\Http\Controllers\Notificaciones\NotificacionController;
+use App\Mail\ConsultaAprobada;
 use App\Models\Abono;
 use App\Models\Cliente;
 use App\Models\CodeudorCliente;
 use App\Models\Credito;
 use App\Models\Empresa;
 use App\Models\LineasCredito;
+use App\Models\Notification;
 use App\Models\NuevaAutorizacionConsulta;
+use App\Models\PagoConsultaInfo;
 use App\Models\ParametrosEstadoFunciones;
+use App\Models\ParametrosInterese;
+use App\Models\Persona;
 use App\Models\Producto;
 use App\Models\ProductoCliente;
 use App\Models\ReferenciaCliente;
+use App\Models\Usuario;
 use App\Models\UsuarioTipoUsuario;
+use App\Models\ValidacionCuentaBancaria;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 
 class ClienteController extends Controller
@@ -54,10 +66,12 @@ class ClienteController extends Controller
         // validar si la empresa es aliada de CREDITRANSITO
         $empresaUsuario = Empresa::find($empresaId);
         $aliadoImpulsa = false;
-        if ($empresaUsuario && in_array(46, [
-            $empresaUsuario->aliado,
-            $empresaUsuario->sede
-        ])) {
+        if (
+            $empresaUsuario && in_array(46, [
+                $empresaUsuario->aliado,
+                $empresaUsuario->sede
+            ])
+        ) {
             $empresasAliadas->push(46);
             $aliadoImpulsa = true;
         }
@@ -74,7 +88,8 @@ class ClienteController extends Controller
             ->applyResultado($resultado)
             ->applyRegistroClientes($fechaInicial, $fechaFinal);
 
-        if ($tipoCliente == 'cliente_libranza' && $empresasAliadas->isEmpty()) $clientQuery->where('cliente_libranza', 1);
+        if ($tipoCliente == 'cliente_libranza' && $empresasAliadas->isEmpty())
+            $clientQuery->where('cliente_libranza', 1);
 
         // Aplicar ordenamiento a los registros obtenidos de la base de datos
         $clientQuery = $sortField === 'cliente.cedula'
@@ -145,8 +160,8 @@ class ClienteController extends Controller
                 $encryptedEmail = $usuario[0] . str_repeat('*', 6) . substr($usuario, -1) . '@' . $dominio;
 
                 $item->telefono = '************';
-                $item->nombre   = '************';
-                $item->email    = $encryptedEmail;
+                $item->nombre = '************';
+                $item->email = $encryptedEmail;
             }
 
             // adjunto aval
@@ -165,7 +180,7 @@ class ClienteController extends Controller
         });
 
         // validar si el usuario logueado es administrador
-        $permisos =  UsuarioTipoUsuario::where('id_usuario', $usuarioId)
+        $permisos = UsuarioTipoUsuario::where('id_usuario', $usuarioId)
             ->join('subtipousuario', 'subtipousuario.id', '=', 'usuario_tipo_usuario.id_tipo_usuario')
             ->select('subtipousuario.id', 'subtipousuario.nombre')
             ->get();
@@ -175,7 +190,7 @@ class ClienteController extends Controller
         $validaciones = []; // se recolectan las validaciones que el usuario podra realizar
 
         $validacionParametros = ParametrosEstadoFunciones::where('empresa_id', $empresaCliente->id)
-            ->whereHas('estado_funcion', function($query) {
+            ->whereHas('estado_funcion', function ($query) {
                 $query->where('nombre_funcion', 'Validación cliente');
             })
             ->exists();
@@ -217,7 +232,7 @@ class ClienteController extends Controller
 
         // verificar si esta habilitada la funcion que permite que un cliente pueda tener mas de un credito a la vez
         $creditosSimultaneos = ParametrosEstadoFunciones::where('empresa_id', $empresaPrincipal->id)
-            ->whereHas('estado_funcion', function($query) {
+            ->whereHas('estado_funcion', function ($query) {
                 $query->where('nombre_funcion', 'Restringir créditos simultáneos');
             })
             ->exists();
@@ -252,19 +267,21 @@ class ClienteController extends Controller
 
         // Obtener los id de las empresas aliadas/sedes
         $empresas = Empresa::where(function ($query) use ($empresaId) {
-                $query->where('aliado', $empresaId)
-                    ->orWhere('sede', $empresaId);
-            })
+            $query->where('aliado', $empresaId)
+                ->orWhere('sede', $empresaId);
+        })
             ->pluck('id')
             ->push($empresaId);
 
         // validar si la empresa es aliada de CREDITRANSITO
         $empresaUsuario = Empresa::find($empresaId);
         $aliadoImpulsa = false;
-        if ($empresaUsuario && in_array(46, [
-            $empresaUsuario->aliado,
-            $empresaUsuario->sede
-        ])) {
+        if (
+            $empresaUsuario && in_array(46, [
+                $empresaUsuario->aliado,
+                $empresaUsuario->sede
+            ])
+        ) {
             $empresas->push(46);
             $aliadoImpulsa = true;
         }
@@ -304,15 +321,17 @@ class ClienteController extends Controller
         $clienteId = $request['cliente_id'];
 
         $data = Cliente::where('id', $clienteId)
-        ->with([
-            'firma_cliente' => function ($query) {
-                $query->with([
-                    'documentos' => function ($subquery) {
-                        $subquery->with('adjunto');
-                    }
-                ]);
-            }
-        ])->first();
+            ->with([
+                'firma_cliente' => function ($query) {
+                    $query->with([
+                        'documentos' => function ($subquery) {
+                            $subquery->with('adjunto');
+                        }
+                    ]);
+                },
+                'ciudad'
+            ])
+            ->first();
 
         $resultado = array(
             'cliente' => null,
@@ -349,7 +368,7 @@ class ClienteController extends Controller
                 ->first();
             $aliado = (is_null($empresaLogin->sede) && is_null($empresaLogin->aliado)) ? false : true;
 
-            $permisos =  UsuarioTipoUsuario::where('id_usuario', $usuarioId)
+            $permisos = UsuarioTipoUsuario::where('id_usuario', $usuarioId)
                 ->join('subtipousuario', 'subtipousuario.id', '=', 'usuario_tipo_usuario.id_tipo_usuario')
                 ->select('subtipousuario.id', 'subtipousuario.nombre')
                 ->get();
@@ -365,7 +384,7 @@ class ClienteController extends Controller
                 ->get();
 
             if (!empty($historicoAutorizaciones)) {
-                foreach($historicoAutorizaciones as $autorizacion) {
+                foreach ($historicoAutorizaciones as $autorizacion) {
                     $url = $autorizacion->url_archivo_autorizacion;
                     $fechaAutorizacion = Carbon::parse($autorizacion->created_at)->format('d/m/Y');
 
@@ -394,7 +413,7 @@ class ClienteController extends Controller
             $validaciones = []; // se recolectan las validaciones que el usuario podra realizar
 
             $validacionParametros = ParametrosEstadoFunciones::where('empresa_id', $empresaCliente->id)
-                ->whereHas('estado_funcion', function($query) {
+                ->whereHas('estado_funcion', function ($query) {
                     $query->where('nombre_funcion', 'Validación cliente');
                 })
                 ->exists();
@@ -458,9 +477,17 @@ class ClienteController extends Controller
                     : $empresaCredito;
 
                 $notificacionAprobacion['nombreEmpresa'] = $empresaCredito->razon_social;
-                $notificacionAprobacion['correo']        = $empresaCreditoPrincipal->correo;
-                $notificacionAprobacion['telefono']      = $empresaCreditoPrincipal->telefonoComercial;
+                $notificacionAprobacion['correo'] = $empresaCreditoPrincipal->correo;
+                $notificacionAprobacion['telefono'] = $empresaCreditoPrincipal->telefonoComercial;
             }
+
+            // Departamento-Ciudad
+            $ciudad = $data->ciudad()->first();
+            $departamento = $ciudad?->departamento;
+
+            $ciudad = ($ciudad && $departamento)
+                ? "{$departamento->nombre}-{$ciudad->nombre}"
+                : null;
 
             $resultado = array(
                 'cliente' => $data,
@@ -475,7 +502,8 @@ class ClienteController extends Controller
                 'validacionParametros' => $validacionParametros,
                 'validaciones' => $validaciones,
                 'empresaUsuario' => Empresa::select('id', 'inactivar_validacion')->find($empresaId) ?? [],
-                'notificacionAprobacion' => $notificacionAprobacion
+                'notificacionAprobacion' => $notificacionAprobacion,
+                'ciudad' => $ciudad
             );
         }
 
@@ -511,13 +539,13 @@ class ClienteController extends Controller
                         'credito.valor_credito',
                         'credito.consecutivo',
                     ])
-                    ->whereIn('empresa_id', $empresas);
+                        ->whereIn('empresa_id', $empresas);
                 }
             ])
             ->when($search, function ($q) use ($search) {
                 $q->where(function ($q) use ($search) {
                     $q->where('cliente.nombre', 'like', "%{$search}%")
-                    ->orWhere('cliente.cedula', 'like', "%{$search}%");
+                        ->orWhere('cliente.cedula', 'like', "%{$search}%");
                 });
             })
             ->orderBy('cliente.nombre')
@@ -526,7 +554,8 @@ class ClienteController extends Controller
         return response()->json(compact('clientes'));
     }
 
-    public function generarArchivoAutorizacion($clienteData, $regenerarAutorizacion = false, $texto = '') {
+    public function generarArchivoAutorizacion($clienteData, $regenerarAutorizacion = false, $texto = '')
+    {
         $empresa = Empresa::find($clienteData->empresa_id);
         $cliente = Cliente::find($clienteData->id);
 
@@ -563,5 +592,418 @@ class ClienteController extends Controller
                 $cliente->update();
             }
         }
+    }
+
+    public function updateCliente(Request $request)
+    {
+        return $this->saveCliente($request);
+    }
+
+    private function saveCliente(Request $request)
+    {
+        $empresaId = auth()->user()->empresa_id;
+        $usuarioId = auth()->user()->id;
+
+        $response = DB::transaction(function () use ($request, $empresaId, $usuarioId) {
+            $id = $request->input('id', null);
+
+            $documentosEnviar = null;
+            $miEmpresa = $empresaId;
+            $clientExists = false;
+
+            if ($id) {
+                // Buscar cliente
+                $cliente = Cliente::findOrFail($id);
+                $empresa = $cliente->empresa_id;
+                $clientExists = true;
+            }
+
+            if (!$clientExists) {
+                // Instanciar cliente
+                $cliente = new Cliente();
+
+                $cliente->token = uniqid();
+                $cliente->empresa_id = $miEmpresa;
+
+                // Generar OTP único solo para nuevos
+                do {
+                    $otp = rand(100000, 999999);
+                } while (Cliente::where('otp_creacion_cliente', $otp)->exists());
+                $cliente->otp_creacion_cliente = $otp;
+
+                // Documentos para firmar
+                $documentosEnviar = $request['documentosEnviar'];
+            }
+
+            // 3. Asignación de datos comunes (Update y Create)
+            $cliente->fill([
+                'cedula' => $request['cedula'],
+                'nombre' => $request['nombre'],
+                'telefono' => $request['telefono'],
+                'email' => $request['correo'],
+                'fecha_nacimiento' => $request['fechaNacimiento'],
+                'direccion' => $request['direccion'],
+                'barrio' => $request['barrio'],
+                'ciudad' => $request['ciudad'],
+                'salario' => $request['salario'] ?? 0,
+                'empresa_labora' => $request['nombreEmpleador'],
+                'telEmpresa' => $request['telefonoEmpleador'],
+                'direccionEmpresa' => $request['direccionEmpleador'],
+                'cupo' => $request['cupo'],
+                'iscontinue' => $request['continuarproceso'] ?? false,
+                'user_id' => $usuarioId,
+                'obs_validacion' => $request['obs_validacion'],
+                'foto_frontal_validada' => $request['validar_cedula_frontal'],
+                'foto_posterior_validada' => $request['validar_cedula_posterior'],
+                'foto_tarjeta_validada' => $request['validar_tarjeta_frontal'],
+                'num_cuenta_bancaria_validada' => $request['validar_num_cuenta_bancaria'],
+                'foto_tarjeta_posterior_validada' => $request['validar_tarjeta_posterior'],
+                'telefono_validado' => $request['telefono_validado'],
+                'tipo_cuenta_bancaria' => $request['tipo_cuenta_bancaria'],
+                'nombre_banco' => $request['nombre_banco'],
+                'tipo_empleado' => 'empleado',
+            ]);
+
+            if ($request['continuarproceso'] != 0)
+                $cliente->obsproceso = $request['obsproceso'];
+
+            // Cuenta bancaria y aval
+            if (isset($request['num_cuenta_bancaria']) && preg_match('/^[0-9]+$/', $request['num_cuenta_bancaria'])) {
+                $cliente->num_cuenta_bancaria = encrypt($request['num_cuenta_bancaria']);
+            }
+
+            if ($request['estadoAval'] || $request->hasFile('adjuntoAval')) {
+                $cliente->no_aval = $request['numAval'];
+                $cliente->nota = $request['notaAval'];
+                $cliente->estado_aval = $request['estadoAval'];
+                $cliente->notificarAval = $request['estadoAval'] ? 1 : 0;
+
+                if ($request->hasFile('adjuntoAval')) {
+                    $path = $cliente->cedula . "/aval/";
+                    $cliente->adjuntar_aval = $this->procesarGuardarArchivo($request->file('adjuntoAval'), $path);
+                }
+
+                if ($cliente->estado_aval == 1) {
+
+                    /**
+                     * Si el aval del cliente (análisis de consulta en centrales) es 1
+                     * se creará una nueva notificación para los usuarios ASESOR (3)
+                     * informando que el cliente cuenta con análisis de consulta y fue
+                     * aprobado para crédito.
+                     */
+
+                    (new NotificacionController)->newNotification([
+                        'client_id' => $cliente->id,
+                        'empresa_id' => $empresaId,
+                        'user_id' => $usuarioId,
+                        'title' => 'NUEVO CLIENTE CON ANÁLISIS DE EN CENTRALES DE RIESGO',
+                        'content' => 'Se ha efectuado el ánalisis en centrales de riesgo de ' . $cliente->nombre . ' y ha sido aprobado.',
+                        'url' => '/clients/details/' . base64_encode($cliente->cedula . ';;' . $cliente->id),
+                        'type' => 'CLIENT_ANALIZED'
+                    ], 3);
+                }
+            }
+
+            // Guardar archivos (cédula, tarjeta propiedad, certificación bancaria, debito autmático, foto cliente)
+            $archivos = [
+                'fotoValidar' => 'comprobar_cliente',
+                'frontal' => 'foto_frontal',
+                'posterior' => 'foto_posterior',
+                'tarjeta' => 'foto_tarjeta',
+                'tarjetaPosterior' => 'foto_tarjeta_posterior',
+                'debitoAutomatico' => 'debitoAutomatico',
+                'certificacionBancaria' => 'certificacionBancaria',
+            ];
+
+            foreach ($archivos as $archivo => $column) {
+                if ($request->hasFile($archivo)) {
+                    $cliente[$column] = $this->procesarGuardarArchivo($request->file($archivo)) ?? null;
+                }
+            }
+
+            // 4. Crear nuevo cliente
+            if (!$clientExists) {
+                $this->preSaveCliente($cliente, $empresa, $request);
+            }
+
+            // Guardar o actualizar cliente
+            $cliente->save();
+
+            // 5. Acciones post nuevo cliente
+            if (!$clientExists) {
+                $this->postSaveCliente($cliente, $request, $empresa, $documentosEnviar, $empresaId, $usuarioId);
+            }
+
+            // Validación cuenta bancaria
+            if (
+                $request['validar_num_cuenta_bancaria'] == 1 &&
+                !empty($cliente->num_cuenta_bancaria)
+            ) {
+                $cuentaCliente = decrypt($cliente->num_cuenta_bancaria);
+
+                $validacion = ValidacionCuentaBancaria::where('cliente_id', $cliente->id)
+                    ->latest()
+                    ->first();
+
+                $requiereValidacion = !$validacion
+                    || decrypt($validacion->num_cuenta) != $cuentaCliente;
+
+                if ($requiereValidacion) {
+                    ValidacionCuentaBancaria::create([
+                        'estado' => 'validado',
+                        'cliente_id' => $cliente->id,
+                        'num_cuenta' => $cliente->num_cuenta_bancaria,
+                        'usuario_id' => $usuarioId
+                    ]);
+                }
+            }
+
+            // Referencias
+            $referencia = ReferenciaCliente::firstOrNew(['cliente_id' => $cliente->id]);
+
+            $referencia->fill([
+                // referencia personal 1
+                'ref_comecial_1' => $request['refpersonal1'] ?? null,
+                'res_ref_comecial_1' => $request['resrefpersonal1'] ?? null,
+                'tel_1' => $request['telrefpersonal1'] ?? null,
+                'com_1' => $request['comresrefpersonal1'] ?? null,
+
+                // referencia personal 2
+                'ref_comecial_2' => $request['refpersonal2'] ?? null,
+                'res_ref_comecial_2' => $request['resrefpersonal2'] ?? null,
+                'tel_2' => $request['telrefpersonal2'] ?? null,
+                'com_2' => $request['comrefpersonal2'] ?? null,
+
+                // referencia familiar 1
+                'ref_familiar_1' => $request['reffamiliar1'] ?? null,
+                'res_ref_familiar_1' => $request['resreffamiliar1'] ?? null,
+                'tel_3' => $request['telreffamiliar1'] ?? null,
+                'com_3' => $request['comreffamiliar1'] ?? null,
+
+                // referencia familiar 2
+                'ref_familiar_2' => $request['reffamiliar2'] ?? null,
+                'res_ref_familiar_2' => $request['resreffamiliar2'] ?? null,
+                'tel_4' => $request['telreffamiliar2'] ?? null,
+                'com_4' => $request['comreffamiliar2'] ?? null,
+            ]);
+
+            // Guardar o actualizar referencias
+            $referencia->save();
+
+            // Si el cliente no ha sido validado, se procede a la validacion
+            if ($cliente->cliente_validado == 0)
+                $this->validarCliente($cliente, $referencia);
+
+            // Si el cliente se encuentra recientemente validado, se muestra la notificacion
+            if ($cliente->cliente_validado == 1) {
+                (new NotificacionController)->newNotification([
+                    'client_id' => $cliente->id,
+                    'empresa_id' => $empresaId,
+                    'user_id' => $usuarioId,
+                    'title' => 'NUEVO CLIENTE VALIDADO',
+                    'content' => $cliente->nombre . ' ha sido validado y requiere análisis en centrales de riesgo.',
+                    'url' => '/clients/details/' . base64_encode($cliente->cedula . ';;' . $cliente->id),
+                    'type' => 'CLIENT_VALIDATED'
+                ], 5);
+            }
+        });
+
+        return response()->json([
+            'response' => $response
+        ]);
+    }
+
+    private function preSaveCliente(&$cliente, $empresa, $request)
+    {
+        // Lógica de líneas de crédito, pago consulta, etc.
+        $empresaPrincipal = ($empresa->aliado || $empresa->sede)
+            ? Empresa::find($empresa->aliado ?? $empresa->sede)
+            : $empresa;
+
+        $ocultarOrdinario = ParametrosEstadoFunciones::where('empresa_id', $empresaPrincipal->id)
+            ->whereHas('estado_funcion', fn($q) => $q->where('nombre_funcion', 'Ocultar línea de crédito ordinario'))
+            ->exists();
+
+        $lineaId = 1;
+        if ($ocultarOrdinario) {
+            $linea = LineasCredito::where('empresa_id', $empresaPrincipal->id)->orderBy('id')->first();
+            $lineaId = $linea->id ?? 1;
+        }
+
+        $cliente->lineas_credito_id = $lineaId;
+
+        $paramInt = ParametrosInterese::where('empresa_id', $empresa->id)
+            ->where('lineas_credito_id', $lineaId)->first();
+
+        $infoPago = new PagoConsultaInfo(['valor_pagar' => $paramInt->valor_consulta ?? 0]);
+        $infoPago->save();
+        $cliente->pago_consulta_info_id = $infoPago->id;
+
+        // Fecha de visualización formulario
+        $cliente->fecha_visualizacion_formulario = $request['fechaVisualizacionFormulario'] ?
+            Carbon::parse($request['fechaVisualizacionFormulario']) :
+            null;
+    }
+
+    private function postSaveCliente($cliente, $request, $empresa, $documentosEnviar, $empresaId, $usuarioId)
+    {
+        $persona = Persona::create([
+            'nombre' => $request['nombre'],
+            'direccion' => $request['direccion'],
+            'contacto' => $request['telefono'],
+            'ciudad_id' => $request['ciudad']
+        ]);
+
+        Usuario::create([
+            'correo' => $request['cedula'],
+            'password' => Hash::make($request['cedula']),
+            'subtipousuario_id' => 7,
+            'persona_id' => $persona->id,
+            'empresa_id' => $empresa->id,
+            'client_id' => $cliente->id
+        ]);
+
+        // Notificación Nuevo Cliente
+        (new NotificacionController)->newNotification([
+            'client_id' => $cliente->id,
+            'empresa_id' => $empresaId,
+            'user_id' => $usuarioId,
+            'title' => 'NUEVO CLIENTE CREADO',
+            'content' => $cliente->nombre . ' ha sido creado.',
+            'type' => 'CLIENT_CREATED'
+        ], ['whereType' => [3, 4], 'whereId' => []]);
+
+        // Enviar documentos a firmar
+        if (!empty($documentosEnviar)) {
+            FirmaClienteController::crear($cliente->id, $empresaId, $documentosEnviar);
+        }
+    }
+
+    public function envioComunicacionConsultaAprobada($cliente, $empresa = null)
+    {
+        if (!$empresa)
+            $empresa = Empresa::find($cliente->empresa_id);
+        $empresaPrincipal = Empresa::find($empresa->aliado ?? $empresa->sede ?? $empresa->id);
+
+        if ($empresaPrincipal->id == 46 || $empresaPrincipal->id == 118) {
+            $datos = [
+                'telefonoComercial' => $empresaPrincipal->telefonoComercial,
+                'correoComercial' => $empresaPrincipal->correo_comercial,
+                'empresaPrincipal' => $empresaPrincipal->razon_social,
+                'empresa' => $empresa->razon_social,
+                'cliente' => $cliente->nombre,
+            ];
+
+            if ($cliente->email) {
+                try {
+                    Mail::to($cliente->email)->send(new ConsultaAprobada($datos));
+                } catch (\Throwable $mailException) {
+                    \Log::error('Error enviando correo aprobación consulta', [
+                        'email' => $cliente->email,
+                        'error' => $mailException->getMessage()
+                    ]);
+                }
+            }
+        }
+    }
+
+    private function procesarGuardarArchivo($archivo, $path = 'public/')
+    {
+        try {
+            $mime = $archivo->getClientMimeType();
+
+            // optimizar imagen
+            if (in_array($mime, ['image/jpeg', 'image/png'])) {
+                $optimizerChain = OptimizerChainFactory::create();
+
+                if ($mime === 'image/jpeg') {
+                    $optimizerChain->addOptimizer(new Jpegoptim([
+                        '-m85',
+                        '--strip-all',
+                        '--all-progressive',
+                    ]));
+                } else if ($mime === 'image/png') {
+                    $optimizerChain->addOptimizer(new Pngquant([
+                        '--quality=80-100',
+                        '--speed=1',
+                    ]));
+                    $optimizerChain->addOptimizer(new Optipng([
+                        '-i0',
+                        '-o2',
+                        '-quiet',
+                    ]));
+                }
+
+                $optimizerChain->optimize($archivo->getRealPath());
+            }
+
+            $nombreLimpio = str_replace(' ', '_', $archivo->getClientOriginalName());
+            $nombreArchivo = uniqid() . $nombreLimpio;
+
+            return Storage::disk('s3')->putFile($path . $nombreArchivo, $archivo);
+        } catch (\Exception $ex) {
+            \Log::error($ex->getMessage());
+            return false;
+        }
+    }
+
+    public function validarCliente($cliente, $referencia)
+    {
+        $empresaId = auth()->user()->empresa_id;
+        $empresaPrincipal = Empresa::find($empresaId);
+
+        $validacionParametros = ParametrosEstadoFunciones::where('empresa_id', $empresaPrincipal->id)
+            ->whereHas('estado_funcion', function ($query) {
+                $query->where('nombre_funcion', 'Validación cliente');
+            })
+            ->exists();
+
+        $validacionCedula = $validacionParametros ? $empresaPrincipal->validacion_cedula : 0;
+        $validacionTelefono = $validacionParametros ? $empresaPrincipal->validacion_telefono : 0;
+        $validacionReferencias = $validacionParametros ? $empresaPrincipal->validacion_referencias : 0;
+        $validacionTarjeta = $validacionParametros ? $empresaPrincipal->validacion_tarjeta_propiedad : 0;
+
+        $parametrosCheckeados = $validacionCedula == 1
+            || $validacionTarjeta == 1
+            || $validacionTelefono == 1
+            || $validacionReferencias == 1;
+
+        $telefonoValido = ($cliente->telefono_validado == 1);
+        $cedulaValida = ($cliente->foto_frontal_validada == 1 && $cliente->foto_posterior_validada == 1);
+        $tarjetaValida = ($cliente->foto_tarjeta_validada == 1 && $cliente->foto_tarjeta_posterior_validada == 1);
+        $referenciasValidas = $referencia->res_ref_comecial_1 == 1 ||
+            $referencia->res_ref_comecial_2 == 1 ||
+            $referencia->res_ref_familiar_1 == 1 ||
+            $referencia->res_ref_familiar_2 == 1;
+
+        // flag para determinar si el cliente se encuentra correctamente validado
+        $clienteValidado = true;
+
+        if ($validacionCedula == 1 && !$cedulaValida)
+            $clienteValidado = false;
+        if ($validacionTarjeta == 1 && !$tarjetaValida)
+            $clienteValidado = false;
+        if ($validacionTelefono == 1 && !$telefonoValido)
+            $clienteValidado = false;
+        if ($validacionReferencias == 1 && !$referenciasValidas)
+            $clienteValidado = false;
+
+        // si la funcion esta activa y si al menos uno de los parametros de validacion esta checkeado
+        if ($validacionParametros && $parametrosCheckeados) {
+            $valor = $clienteValidado ? 1 : 0; // comprobar que el cliente este validado
+        } else {
+            $valor = $referenciasValidas ? 1 : 0; // si no solo comprobar que se hayan validado las referencias
+        }
+
+        $notification = Notification::where('client_id', $cliente->id) // busqueda por cliente
+            ->where('type', 'CLIENT_VALIDATED')
+            ->orderBy('id', 'desc')
+            ->first();
+
+        if ($notification && $valor == 0) {
+            $notification->delete();
+        }
+
+        $cliente->update(['cliente_validado' => $valor]);
     }
 }

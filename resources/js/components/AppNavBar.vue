@@ -76,7 +76,7 @@
                 <i class="fa-regular fa-bell"></i>
                 <span
                     v-if="notifications > 0"
-                    class="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white text-[12px] font-bold rounded-full flex items-center justify-center border-2 border-white"
+                    class="absolute -top-2 -right-2 w-5.5 h-5.5 bg-red-500 text-white text-[12px] font-bold rounded-full flex items-center justify-center border-2 border-white"
                 >
                     {{ notifications > 9 ? '9+' : notifications }}
                 </span>

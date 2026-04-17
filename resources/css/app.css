@@ -101,3 +101,49 @@ input[type='number'] {
 .btn-danger {
     @apply bg-red-500 hover:bg-red-600 text-white;
 }
+
+/* Toast */
+.toast-content {
+    display: flex;
+    flex-direction: column;
+    justify-content: center; /* Centra el texto verticalmente */
+    gap: 2px; /* Espacio mínimo entre líneas */
+    padding-left: 8px; /* Un poco de aire después del icono */
+}
+
+.toast-title,
+.toast-description {
+    font-family: var(--font-sans);
+}
+
+/* 2. Título de alto contraste y resaltado */
+.toast-title {
+    font-weight: 900; /* Super negrita para máximo resalte */
+    font-size: 16px;
+    color: #1a1a1a; /* Negro muy oscuro (no puro) */
+    margin: 0;
+    line-height: 1.2;
+}
+
+/* 3. Descripción con buen contraste */
+.toast-description {
+    font-weight: 500; /* Peso medio */
+    font-size: 14px;
+    color: #555555; /* Gris oscuro legible */
+    margin: 0;
+    line-height: 1.4;
+}
+
+/* --- Ajustes específicos para Vue3-Toastify --- */
+
+/* 4. Forzar alineación central del icono con el cuerpo del mensaje */
+.Toastify__toast-body {
+    align-items: center !important; /* Centra icono y texto en el eje Y */
+    padding: 12px 10px !important;
+}
+
+/* Opcional: Si quieres iconos un poco más grandes */
+.Toastify__toast-icon {
+    width: 24px !important;
+    height: 24px !important;
+}

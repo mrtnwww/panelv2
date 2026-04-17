@@ -1,15 +1,5 @@
 <template>
     <div class="flex flex-col gap-4 w-full">
-        <!-- Alerta error -->
-        <transition name="fade">
-            <div
-                v-if="errorMessage"
-                class="px-4 py-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm"
-            >
-                {{ errorMessage }}
-            </div>
-        </transition>
-
         <!-- 1. Crear cliente -------------------------------------------------------------------- -->
         <CollapsibleCard
             :title="isEditing ? 'Editar cliente' : 'Nuevo cliente'"
@@ -20,8 +10,9 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <FormInput
                     label="Cédula"
+                    type="number"
                     v-model="form.cedula"
-                    placeholder="1.234.567.890"
+                    placeholder="1234567890"
                     required
                     :error="errors.cedula"
                 />
@@ -29,8 +20,10 @@
                     label="Cupo"
                     type="number"
                     v-model="form.cupo"
-                    placeholder="0"
+                    placeholder="$0"
                     hint="Valor en pesos colombianos"
+                    required
+                    :error="errors.cupo"
                 />
 
                 <!-- Lista de productos -->
@@ -90,7 +83,7 @@
                         v-model="form.fotoCliente"
                         placeholder="Sube o captura la foto del cliente"
                         accept="image/*"
-                        accept-label="JPG o PNG — máx. 5MB"
+                        accept-label="JPG o PNG — máx. 1MB"
                         :with-camera="true"
                     />
                 </div>
@@ -109,6 +102,7 @@
                     v-model="form.nombre"
                     placeholder="Maria Perez"
                     required
+                    :error="errors.nombre"
                 />
                 <FormInput
                     label="Fecha de nacimiento"
@@ -121,12 +115,15 @@
                     v-model="form.telefono"
                     placeholder="300 123 4567"
                     required
+                    :error="errors.telefono"
                 />
                 <FormInput
                     label="Correo electrónico"
                     type="email"
                     v-model="form.correo"
                     placeholder="cliente@email.com"
+                    required
+                    :error="errors.correo"
                 />
                 <FormInput
                     label="Dirección"
@@ -138,13 +135,12 @@
                     v-model="form.barrio"
                     placeholder="El Centro"
                 />
-                <FormInput
+                <FormSelectAsync
                     label="Ciudad"
-                    type="select"
                     v-model="form.ciudad"
-                    :options="ciudadesOpts"
-                    placeholder="Seleccione una ciudad"
-                    :searchable="true"
+                    :fetch-options="opcionesStore.fetchCiudades"
+                    :initial-option="ciudadInicial"
+                    placeholder="Selecciona la ciudad"
                 />
             </div>
         </CollapsibleCard>
@@ -207,14 +203,14 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <FileUpload
                     label="Cédula — frontal"
-                    v-model="form.cedulaFrontal"
+                    v-model="form.cedulaFront"
                     accept="image/*"
                     accept-label="JPG o PNG"
                     :with-camera="true"
                 />
                 <FileUpload
                     label="Cédula — posterior"
-                    v-model="form.cedulaPosterior"
+                    v-model="form.cedulaBack"
                     accept="image/*"
                     accept-label="JPG o PNG"
                     :with-camera="true"
@@ -276,7 +272,7 @@
                     label="Documento de autorización"
                     v-model="form.autorizacionCentralesDoc"
                     accept="image/*,application/pdf"
-                    accept-label="JPG, PNG o PDF — máx. 5MB"
+                    accept-label="JPG, PNG o PDF — máx. 1MB"
                 />
 
                 <div class="flex items-center gap-3 pt-1">
@@ -324,7 +320,7 @@
                     label="Documento de autorización"
                     v-model="form.autorizacionDebitoDoc"
                     accept="image/*,application/pdf"
-                    accept-label="JPG, PNG o PDF — máx. 5MB"
+                    accept-label="JPG, PNG o PDF — máx. 1MB"
                 />
             </div>
         </CollapsibleCard>
@@ -364,7 +360,7 @@
                         label="Documento de consulta"
                         v-model="form.analisisDoc"
                         accept="image/*,application/pdf"
-                        accept-label="JPG, PNG o PDF — máx. 5MB"
+                        accept-label="JPG, PNG o PDF — máx. 1MB"
                     />
                 </div>
             </div>
@@ -472,7 +468,7 @@
             </button>
             <button
                 type="button"
-                @click="handleSubmit"
+                @click="guardarCliente"
                 :disabled="loading"
                 class="btn btn-main"
             >
@@ -503,39 +499,39 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-
-import { formatDateYmd } from '@/utils/format'
-
-const route = useRoute()
-
-// -- Detectar el modo --------------------------------------------
-const isEditing = computed(() => !!route.params.cliente_id)
-const clienteId = computed(() => route.params.cliente_id)
 
 // -- Componentes -------------------------------------------------
 import CollapsibleCard from '@/components/cards/CollapsibleCard.vue'
+import FormSelectAsync from '@/components/form/FormSelectAsync.vue'
 import ReferenciaCard from '@/components/form/ReferenciaCard.vue'
 import FileUpload from '@/components/form/FileUpload.vue'
 import FormInput from '@/components/form/FormInput.vue'
 
+// -- Toaster -----------------------------------------------------
+import { notify } from '@/composables/useNotify'
+
+// -- Utils -------------------------------------------------------
+import { formatDateYmd, toNumber } from '@/utils/format'
+
+// -- Loader -------------------------------------------------------
 import { useLoader } from '@/composables/useLoader'
 const { start, stop } = useLoader()
 
+// -- API ----------------------------------------------------------
 import api from '@/services/api'
-import axios from 'axios'
+
+// -- Store --------------------------------------------------------
+import { useOpcionesStore } from '@/stores/opciones'
 
 const router = useRouter()
+const route = useRoute()
 
-// -- Estado global ----------------------------------------------------------
-const loading = ref(false)
-const errorMessage = ref('')
-const loadingReenvio = ref(null)
-const errors = reactive({})
+const opcionesStore = useOpcionesStore()
 
-// -- Formulario ----------------------------------------------------------
-const form = reactive({
+// -- Formulario ---------------------------------------------------
+const getDefaultForm = () => ({
     // 1. Crear cliente
     cedula: '',
     cupo: '',
@@ -561,8 +557,8 @@ const form = reactive({
     banco: '',
 
     // 4. Documentos
-    cedulaFrontal: null,
-    cedulaPosterior: null,
+    cedulaFront: null,
+    cedulaBack: null,
     tarjetaPropiedadFront: null,
     tarjetaPropiedadBack: null,
     certBancaria: null,
@@ -591,12 +587,26 @@ const form = reactive({
     documentosFirma: [],
 })
 
+const form = reactive(getDefaultForm())
+const loadingReenvio = ref(null)
+const ciudadInicial = ref(null)
+const errors = reactive({})
+const loading = ref(false)
+
+// -- Detectar el modo --------------------------------------------
+const isEditing = computed(() => !!route.params.cliente_id)
+const clienteId = computed(() => route.params.cliente_id)
+
 // -- Secciones completadas ----------------------------------------------------------
 const completado = computed(() => ({
-    cliente: !!form.cedula,
-    personal: !!form.nombre && !!form.telefono,
-    laboral: !!form.salario || !!form.nombreEmpleador,
-    documentos: !!(form.cedulaFrontal && form.cedulaPosterior),
+    cliente: !!form.cedula && !!form.cupo,
+    personal: !!form.nombre && !!form.telefono && !!form.correo,
+    laboral:
+        !!form.salario ||
+        (!!form.nombreEmpleador &&
+            !!form.telefonoEmpleador &&
+            !!form.direccionEmpleador),
+    documentos: !!(form.cedulaFront && form.cedulaBack),
     referencias: form.referencias.every(r => r.nombre && r.telefono),
     autorizacionCentrales: !!form.autorizacionCentralesDoc,
     autorizacionDebito: !!form.autorizacionDebitoDoc,
@@ -606,7 +616,6 @@ const completado = computed(() => ({
 
 // -- Opciones ----------------------------------------------------------
 const productosOpts = ref([])
-const ciudadesOpts = ref([])
 
 const tipoCuentaOpts = [
     { value: 'ahorros', label: 'Ahorros' },
@@ -638,19 +647,36 @@ async function reenviarAutorizacion(tipo) {
     }
 }
 
-async function handleSubmit() {
-    errorMessage.value = ''
+async function guardarCliente() {
     Object.keys(errors).forEach(k => delete errors[k])
 
-    if (!form.cedula) {
-        errors.cedula = 'La cédula es requerida.'
-        return
+    const requiredFields = {
+        cedula: 'La cédula es requerida.',
+        cupo: 'El cupo es requerido.',
+        nombre: 'El nombre es requerido.',
+        telefono: 'El teléfono es requerido.',
+        correo: 'El correo es requerido.',
     }
 
-    loading.value = true
+    for (const field in requiredFields) {
+        if (!form[field]) {
+            errors[field] = requiredFields[field]
+
+            notify.error(
+                'Por favor completa los campos requeridos.',
+                'Revisa el formulario e intentalo nuevamente.'
+            )
+            return
+        }
+    }
+
+    start()
 
     try {
         const payload = new FormData()
+
+        // ID cliente
+        payload.append('id', clienteId.value)
 
         // Campos de texto
         const textFields = [
@@ -688,8 +714,8 @@ async function handleSubmit() {
         // Archivos
         const fileFields = [
             'fotoCliente',
-            'cedulaFrontal',
-            'cedulaPosterior',
+            'cedulaFront',
+            'cedulaBack',
             'tarjetaPropiedadFront',
             'tarjetaPropiedadBack',
             'certBancaria',
@@ -701,38 +727,32 @@ async function handleSubmit() {
             if (form[k]) payload.append(k, form[k])
         })
 
-        const response = await fetch('/api/clientes', {
-            method: 'POST',
-            headers: {
-                Accept: 'application/json',
-                Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
-            },
-            body: payload,
-        })
+        const url = isEditing
+            ? `/api/clientes/updateCliente`
+            : '/api/clientes/saveCliente'
 
-        const data = await response.json()
+        if (isEditing) payload.append('_method', 'PUT')
 
-        if (response.status === 422 && data.errors) {
-            Object.entries(data.errors).forEach(([k, v]) => (errors[k] = v[0]))
-            return
-        }
+        await api.post(url, payload)
 
-        if (!response.ok) {
-            errorMessage.value = data.message || 'No se pudo crear el cliente.'
-            return
-        }
+        router.push({ name: 'clientes' })
 
-        router.push({ name: 'clientes.lista' })
-    } catch {
-        errorMessage.value = 'Error de conexión. Intenta nuevamente.'
+        notify.success(
+            `Cliente ${isEditing ? 'actualizado' : 'creado'} correctamente.`
+        )
+    } catch (err) {
+        console.error(err)
+        notify.error(
+            err.response?.data?.message ||
+                'Ocurrió un error al guardar el cliente, intentalo nuevamente. Si el problema persiste consulta con el administrador del sistema'
+        )
     } finally {
-        loading.value = false
+        stop()
     }
 }
 
 async function fetchCliente() {
     if (!isEditing.value) return
-    loading.value = true
 
     try {
         const { data } = await api.get(`/api/clientes/${clienteId.value}`)
@@ -741,13 +761,18 @@ async function fetchCliente() {
         const cliente = data.resultado.cliente
         const referencia = data.resultado.referencia
 
+        // Ciudad formateada
+        ciudadInicial.value = data.resultado.ciudad ?? null
+
         Object.assign(form, {
             cedula: cliente.cedula ?? '',
             cupo: cliente.cupo ?? '',
 
             // 1. Datos personales
             nombre: cliente.nombre ?? '',
-            fechaNacimiento: formatDateYmd(cliente.fecha_nacimiento),
+            fechaNacimiento: formatDateYmd(
+                cliente.fecha_nacimiento.split('/').reverse().join('-')
+            ),
             telefono: cliente.telefono ?? '',
             correo: cliente.email ?? '',
             direccion: cliente.direccion ?? '',
@@ -755,7 +780,7 @@ async function fetchCliente() {
             ciudad: cliente.ciudad ?? '',
 
             // 2. Información laboral
-            salario: cliente.salario ?? '',
+            salario: toNumber(cliente.salario) || '',
             nombreEmpleador: cliente.empresa_labora ?? '',
             telefonoEmpleador: cliente.telEmpresa ?? '',
             direccionEmpleador: cliente.direccionEmpresa ?? '',
@@ -798,33 +823,22 @@ async function fetchCliente() {
         })
     } catch (e) {
         router.back()
-    } finally {
-        loading.value = false
     }
 }
 
-async function fetchCiudades() {
-    const ciudades = localStorage.getItem('ciudades')
-
-    if (ciudades) {
-        ciudadesOpts.value = JSON.parse(ciudades)
-        return
-    }
-
-    try {
-        const { data } = await axios.get('/api/ciudades')
-
-        localStorage.setItem('ciudades', JSON.stringify(data.ciudades))
-    } catch (err) {
-        console.error(err)
-    }
-}
+watch(
+    () => route.params.cliente_id,
+    clienteId => {
+        if (!clienteId) Object.assign(form, getDefaultForm())
+    },
+    { immediate: true }
+)
 
 onMounted(async () => {
     start()
 
     try {
-        await Promise.all([fetchCliente(), fetchCiudades()])
+        await fetchCliente()
     } finally {
         stop()
     }

@@ -29,7 +29,7 @@ export const useNotificationStore = defineStore('notifications', {
             this.loading = true
 
             try {
-                await api.get('/api/notificaciones/visualizeNotifications')
+                await api.post('/api/notificaciones/visualizeNotificaciones')
 
                 this.items.forEach(noti => {
                     if (!noti.visualized_at) {

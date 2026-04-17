@@ -27,7 +27,6 @@
                 label="Nombre completo"
                 :model-value="modelValue.nombre"
                 placeholder="Nombre de la referencia"
-                required
                 @update:model-value="update('nombre', $event)"
             />
             <FormInput
@@ -35,7 +34,6 @@
                 type="tel"
                 :model-value="modelValue.telefono"
                 placeholder="300 123 4567"
-                required
                 @update:model-value="update('telefono', $event)"
             />
         </div>

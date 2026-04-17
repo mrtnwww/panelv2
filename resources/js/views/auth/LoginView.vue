@@ -87,15 +87,6 @@
                             </button>
                         </template>
                     </FormInput>
-
-                    <div class="flex justify-end">
-                        <router-link
-                            to="/forgot-password"
-                            class="text-xs text-emerald-600 hover:text-emerald-700 font-medium transition-colors"
-                        >
-                            ¿Olvidaste tu contraseña?
-                        </router-link>
-                    </div>
                 </div>
 
                 <!-- Botón principal -->

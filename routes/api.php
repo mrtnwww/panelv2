@@ -40,6 +40,8 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     // Clientes
     Route::prefix('clientes')->group(function () {
         Route::get('/', [ClienteController::class, 'listMyClients']);
+        Route::post('/saveCliente', [ClienteController::class, 'saveCliente']);
+        Route::put('/updateCliente', [ClienteController::class, 'updateCliente']);
         Route::get('/listClientsCredits', [ClienteController::class, 'listClientsCredits']);
         Route::get('/listMyClientsValidated', [ClienteController::class, 'listMyClientsValidated']);
         Route::get('/{cliente_id}/{empresa_id?}/{parametrosValidacion?}', [ClienteController::class, 'listMyClient']);
@@ -116,7 +118,7 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     // Notificaciones
     Route::prefix('notificaciones')->group(function () {
         Route::get('/getNotificaciones', [NotificacionController::class, 'getNotificaciones']);
-        Route::get('/visualizeNotificaciones', [NotificacionController::class, 'visualizeNotificaciones']);
+        Route::post('/visualizeNotificaciones', [NotificacionController::class, 'visualizeNotificaciones']);
     });
 
     // Cuenta y Facturación
