@@ -303,7 +303,7 @@ const columns = [
         type: 'boolean',
         align: 'center',
     },
-    { key: 'valorCredito', label: 'Valor ult. crédito', sortable: false },
+    { key: 'valorCredito', label: 'Valor ult. crédito', sortable: false, align: 'right' },
     { key: 'acciones', label: 'Acciones', sortable: false, align: 'center' },
 ]
 

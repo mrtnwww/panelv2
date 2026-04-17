@@ -26,56 +26,6 @@
                     :error="errors.cupo"
                 />
 
-                <!-- Lista de productos -->
-                <div class="sm:col-span-2 flex flex-col gap-1.5">
-                    <label
-                        class="text-xs font-medium text-gray-500 uppercase tracking-wide"
-                    >
-                        Productos o servicios
-                    </label>
-                    <div class="flex flex-col gap-2">
-                        <label
-                            v-for="prod in productosOpts"
-                            :key="prod.value"
-                            class="flex items-center gap-2.5 cursor-pointer group"
-                        >
-                            <div class="relative shrink-0">
-                                <input
-                                    v-model="form.productos"
-                                    type="checkbox"
-                                    :value="prod.value"
-                                    class="peer sr-only"
-                                />
-                                <div
-                                    class="w-4 h-4 rounded border-2 border-gray-200 bg-gray-50 peer-checked:bg-[#1a5c2a] peer-checked:border-[#1a5c2a] transition-all flex items-center justify-center"
-                                >
-                                    <svg
-                                        v-if="
-                                            form.productos.includes(prod.value)
-                                        "
-                                        width="8"
-                                        height="8"
-                                        viewBox="0 0 8 8"
-                                        fill="none"
-                                    >
-                                        <path
-                                            d="M1 4L3 6.5L7 1.5"
-                                            stroke="white"
-                                            stroke-width="1.5"
-                                            stroke-linecap="round"
-                                            stroke-linejoin="round"
-                                        />
-                                    </svg>
-                                </div>
-                            </div>
-                            <span
-                                class="text-sm text-gray-600 group-hover:text-gray-800 transition-colors"
-                                >{{ prod.label }}</span
-                            >
-                        </label>
-                    </div>
-                </div>
-
                 <!-- Foto del cliente -->
                 <div class="sm:col-span-2">
                     <FileUpload
@@ -85,6 +35,12 @@
                         accept="image/*"
                         accept-label="JPG o PNG — máx. 1MB"
                         :with-camera="true"
+                    />
+
+                    <FilePreview
+                        :source="form.fotoCliente"
+                        label="Foto principal"
+                        @remove="form.fotoCliente = null"
                     />
                 </div>
             </div>
@@ -206,42 +162,75 @@
             :step="4"
             :completed="completado.documentos"
         >
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                <FileUpload
-                    label="Cédula — frontal"
-                    v-model="form.cedulaFront"
-                    accept="image/*"
-                    accept-label="JPG o PNG"
-                    :with-camera="true"
-                />
-                <FileUpload
-                    label="Cédula — posterior"
-                    v-model="form.cedulaBack"
-                    accept="image/*"
-                    accept-label="JPG o PNG"
-                    :with-camera="true"
-                />
-                <FileUpload
-                    label="Tarjeta de propiedad — frontal"
-                    v-model="form.tarjetaPropiedadFront"
-                    accept="image/*"
-                    accept-label="JPG o PNG"
-                    :with-camera="true"
-                />
-                <FileUpload
-                    label="Tarjeta de propiedad — posterior"
-                    v-model="form.tarjetaPropiedadBack"
-                    accept="image/*"
-                    accept-label="JPG o PNG"
-                    :with-camera="true"
-                />
-                <FileUpload
-                    label="Certificación bancaria"
-                    v-model="form.certBancaria"
-                    accept="image/*,application/pdf"
-                    accept-label="JPG, PNG o PDF"
-                    class="sm:col-span-2"
-                />
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-8">
+                <div class="flex flex-col">
+                    <FileUpload
+                        label="Cédula — frontal"
+                        v-model="form.cedulaFront"
+                        accept="image/*"
+                        accept-label="JPG o PNG"
+                        :with-camera="true"
+                    />
+                    <FilePreview
+                        v-if="typeof form.cedulaFront === 'string'"
+                        :source="form.cedulaFront"
+                    />
+                </div>
+
+                <div class="flex flex-col">
+                    <FileUpload
+                        label="Cédula — posterior"
+                        v-model="form.cedulaBack"
+                        accept="image/*"
+                        accept-label="JPG o PNG"
+                        :with-camera="true"
+                    />
+                    <FilePreview
+                        v-if="typeof form.cedulaBack === 'string'"
+                        :source="form.cedulaBack"
+                    />
+                </div>
+
+                <div class="flex flex-col">
+                    <FileUpload
+                        label="Tarjeta de propiedad — frontal"
+                        v-model="form.tarjetaPropiedadFront"
+                        accept="image/*"
+                        accept-label="JPG o PNG"
+                        :with-camera="true"
+                    />
+                    <FilePreview
+                        v-if="typeof form.tarjetaPropiedadFront === 'string'"
+                        :source="form.tarjetaPropiedadFront"
+                    />
+                </div>
+
+                <div class="flex flex-col">
+                    <FileUpload
+                        label="Tarjeta de propiedad — posterior"
+                        v-model="form.tarjetaPropiedadBack"
+                        accept="image/*"
+                        accept-label="JPG o PNG"
+                        :with-camera="true"
+                    />
+                    <FilePreview
+                        v-if="typeof form.tarjetaPropiedadBack === 'string'"
+                        :source="form.tarjetaPropiedadBack"
+                    />
+                </div>
+
+                <div class="sm:col-span-2 flex flex-col">
+                    <FileUpload
+                        label="Certificación bancaria"
+                        v-model="form.certBancaria"
+                        accept="image/*,application/pdf"
+                        accept-label="JPG, PNG o PDF"
+                    />
+                    <FilePreview
+                        v-if="typeof form.certBancaria === 'string'"
+                        :source="form.certBancaria"
+                    />
+                </div>
             </div>
         </CollapsibleCard>
 
@@ -279,6 +268,11 @@
                     v-model="form.autorizacionCentralesDoc"
                     accept="image/*,application/pdf"
                     accept-label="JPG, PNG o PDF — máx. 1MB"
+                />
+
+                <FilePreview
+                    v-if="typeof form.autorizacionCentralesDoc === 'string'"
+                    :source="form.autorizacionCentralesDoc"
                 />
 
                 <div class="flex items-center gap-3 pt-1">
@@ -327,6 +321,10 @@
                     v-model="form.autorizacionDebitoDoc"
                     accept="image/*,application/pdf"
                     accept-label="JPG, PNG o PDF — máx. 1MB"
+                />
+                <FilePreview
+                    v-if="typeof form.autorizacionDebitoDoc === 'string'"
+                    :source="form.autorizacionDebitoDoc"
                 />
             </div>
         </CollapsibleCard>
@@ -514,6 +512,7 @@ import FormSelectAsync from '@/components/form/FormSelectAsync.vue'
 import ReferenciaCard from '@/components/form/ReferenciaCard.vue'
 import FileUpload from '@/components/form/FileUpload.vue'
 import FormInput from '@/components/form/FormInput.vue'
+import FilePreview from '@/components/FilePreview.vue'
 
 // -- Toaster -----------------------------------------------------
 import { notify } from '@/composables/useNotify'
@@ -542,7 +541,6 @@ const getDefaultForm = () => ({
     // 1. Crear cliente
     cedula: '',
     cupo: '',
-    productos: [],
     fotoCliente: null,
 
     // 2. Datos personales
@@ -622,8 +620,6 @@ const completado = computed(() => ({
 }))
 
 // -- Opciones ----------------------------------------------------------
-const productosOpts = ref([])
-
 const tipoCuentaOpts = [
     { value: 'ahorros', label: 'Ahorros' },
     { value: 'corriente', label: 'Corriente' },
@@ -723,7 +719,6 @@ async function guardarCliente() {
         textFields.forEach(k => payload.append(k, form[k] ?? ''))
 
         // Arrays
-        form.productos.forEach(v => payload.append('productos[]', v))
         form.referencias.forEach((r, i) => {
             payload.append(`referencias[${i}][type]`, r.type)
             payload.append(`referencias[${i}][nombre]`, r.nombre)
@@ -764,7 +759,8 @@ async function guardarCliente() {
         console.error(err)
         notify.error(
             err.response?.data?.message ||
-                'Ocurrió un error al guardar el cliente, intentalo nuevamente. Si el problema persiste consulta con el administrador del sistema'
+                'Ocurrió un error al guardar el cliente, intentalo nuevamente.',
+            'Si el problema persiste consulta con el administrador del sistema'
         )
     } finally {
         stop()
@@ -788,6 +784,7 @@ async function fetchCliente() {
         Object.assign(form, {
             cedula: cliente.cedula ?? '',
             cupo: cliente.cupo ?? '',
+            fotoCliente: cliente.comprobar_cliente ?? null,
 
             // 1. Datos personales
             nombre: cliente.nombre ?? '',
@@ -813,6 +810,13 @@ async function fetchCliente() {
             analisisNota: cliente.nota ?? '',
             analisisEstado: cliente.estado_aval ?? 0,
             analisisNumeroConsulta: cliente.no_aval ?? '',
+
+            // 4. Documentos
+            cedulaFront: cliente.foto_frontal ?? '',
+            cedulaBack: cliente.foto_posterior ?? '',
+            tarjetaPropiedadFront: cliente.foto_tarjeta ?? '',
+            tarjetaPropiedadBack: cliente.foto_tarjeta_posterior ?? '',
+            certBancaria: cliente.certificacionBancaria ?? '',
 
             // 5. Referencias
             referencias: [
@@ -841,6 +845,12 @@ async function fetchCliente() {
                     nota: referencia.com_4 ?? '',
                 },
             ],
+
+            // 5. Autorización consulta en centrales
+            autorizacionCentralesDoc: cliente.url_archivo_autorizacion,
+
+            // 7. Débito automático
+            autorizacionDebitoDoc: cliente.debitoAutomatico
         })
     } catch (e) {
         router.back()

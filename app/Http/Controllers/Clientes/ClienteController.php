@@ -31,6 +31,10 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
+use Spatie\ImageOptimizer\OptimizerChainFactory;
+use Spatie\ImageOptimizer\Optimizers\Jpegoptim;
+use Spatie\ImageOptimizer\Optimizers\Optipng;
+use Spatie\ImageOptimizer\Optimizers\Pngquant;
 
 class ClienteController extends Controller
 {
@@ -342,19 +346,17 @@ class ClienteController extends Controller
         if ($data) {
             $expiracion = \Carbon\Carbon::now()->addMinutes(30); // Establecer la expiración en 5 minutos
 
-            // $data->foto_frontal = ($data->foto_frontal) ? Storage::disk('s3')->temporaryUrl($data->foto_frontal, $expiracion) : null;
-            // $data->foto_posterior = ($data->foto_posterior) ? Storage::disk('s3')->temporaryUrl($data->foto_posterior, $expiracion) : null;
-            // $data->foto_tarjeta = ($data->foto_tarjeta) ? Storage::disk('s3')->temporaryUrl($data->foto_tarjeta, $expiracion) : null;
-            // $data->foto_tarjeta_posterior = ($data->foto_tarjeta_posterior) ? Storage::disk('s3')->temporaryUrl($data->foto_tarjeta_posterior, $expiracion) : null;
-            // $data->adjuntar_aval = ($data->adjuntar_aval) ? Storage::disk('s3')->temporaryUrl($data->adjuntar_aval, $expiracion) : null;
-            // $data->certificacionBancaria = ($data->certificacionBancaria) ? Storage::disk('s3')->temporaryUrl($data->certificacionBancaria, $expiracion) : null;
-            // $data->debitoAutomatico = ($data->debitoAutomatico) ? Storage::disk('s3')->temporaryUrl($data->debitoAutomatico, $expiracion) : null;
+            $data->foto_frontal = ($data->foto_frontal) ? Storage::disk('s3')->temporaryUrl($data->foto_frontal, $expiracion) : null;
+            $data->foto_posterior = ($data->foto_posterior) ? Storage::disk('s3')->temporaryUrl($data->foto_posterior, $expiracion) : null;
+            $data->foto_tarjeta = ($data->foto_tarjeta) ? Storage::disk('s3')->temporaryUrl($data->foto_tarjeta, $expiracion) : null;
+            $data->foto_tarjeta_posterior = ($data->foto_tarjeta_posterior) ? Storage::disk('s3')->temporaryUrl($data->foto_tarjeta_posterior, $expiracion) : null;
+            $data->adjuntar_aval = ($data->adjuntar_aval) ? Storage::disk('s3')->temporaryUrl($data->adjuntar_aval, $expiracion) : null;
+            $data->certificacionBancaria = ($data->certificacionBancaria) ? Storage::disk('s3')->temporaryUrl($data->certificacionBancaria, $expiracion) : null;
+            $data->debitoAutomatico = ($data->debitoAutomatico) ? Storage::disk('s3')->temporaryUrl($data->debitoAutomatico, $expiracion) : null;
             // $data->selfie = ($data->selfie) ? Storage::disk('s3')->temporaryUrl($data->selfie, $expiracion) : null;
             // $data->comprobar_cliente_externo = ($data->comprobar_cliente_externo) ? Storage::disk('s3')->temporaryUrl($data->comprobar_cliente_externo, $expiracion) : null;
-            // $data->comprobar_cliente = ($data->comprobar_cliente) ? Storage::disk('s3')->temporaryUrl($data->comprobar_cliente, $expiracion) : null;
-            // if ($data->url_archivo_autorizacion) {
-            //     $data->url_archivo_autorizacion = ($data->url_archivo_autorizacion) ? Storage::disk('s3')->temporaryUrl($data->url_archivo_autorizacion, $expiracion) : null;
-            // }
+            $data->comprobar_cliente = ($data->comprobar_cliente) ? Storage::disk('s3')->temporaryUrl($data->comprobar_cliente, $expiracion) : null;
+            $data->url_archivo_autorizacion = ($data->url_archivo_autorizacion) ? Storage::disk('s3')->temporaryUrl($data->url_archivo_autorizacion, $expiracion) : null;
 
             $productoCliente = ProductoCliente::where('id_cliente', $data->id)->get();
             $listaProductos = array();
@@ -712,13 +714,14 @@ class ClienteController extends Controller
 
             // Guardar archivos (cédula, tarjeta propiedad, certificación bancaria, debito autmático, foto cliente)
             $archivos = [
-                'fotoValidar' => 'comprobar_cliente',
-                'frontal' => 'foto_frontal',
-                'posterior' => 'foto_posterior',
-                'tarjeta' => 'foto_tarjeta',
-                'tarjetaPosterior' => 'foto_tarjeta_posterior',
-                'debitoAutomatico' => 'debitoAutomatico',
-                'certificacionBancaria' => 'certificacionBancaria',
+                'fotoCliente' => 'comprobar_cliente',
+                'cedulaFront' => 'foto_frontal',
+                'cedulaBack' => 'foto_posterior',
+                'tarjetaPropiedadFront' => 'foto_tarjeta',
+                'tarjetaPropiedadBack' => 'foto_tarjeta_posterior',
+                'autorizacionDebitoDoc' => 'debitoAutomatico',
+                'certBancaria' => 'certificacionBancaria',
+                'autorizacionCentralesDoc' => 'url_archivo_autorizacion'
             ];
 
             foreach ($archivos as $archivo => $column) {
@@ -948,7 +951,6 @@ class ClienteController extends Controller
 
             return Storage::disk('s3')->putFile($path . $nombreArchivo, $archivo);
         } catch (\Exception $ex) {
-            \Log::error($ex->getMessage());
             return false;
         }
     }

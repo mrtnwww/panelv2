@@ -7,10 +7,13 @@
     "license": "MIT",
     "require": {
         "php": "^8.2",
+        "aws/aws-sdk-php": "3.228",
         "laravel/framework": "^12.0",
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.10.1",
-        "maatwebsite/excel": "*"
+        "league/flysystem-aws-s3-v3": "^3.8",
+        "maatwebsite/excel": "*",
+        "spatie/image-optimizer": "^1.8"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",
