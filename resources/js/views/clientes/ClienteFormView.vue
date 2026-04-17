@@ -108,6 +108,8 @@
                     label="Fecha de nacimiento"
                     type="date"
                     v-model="form.fechaNacimiento"
+                    required
+                    :error="errors.fechaNacimiento"
                 />
                 <FormInput
                     label="Teléfono"
@@ -156,12 +158,16 @@
                     label="Salario mensual"
                     type="number"
                     v-model="form.salario"
-                    placeholder="0"
+                    placeholder="$0"
+                    required
+                    :error="errors.salario"
                 />
                 <FormInput
                     label="Nombre del empleador"
                     v-model="form.nombreEmpleador"
                     placeholder="Empresa S.A.S"
+                    required
+                    :error="errors.nombreEmpleador"
                 />
                 <FormInput
                     label="Teléfono del empleador"
@@ -514,6 +520,7 @@ import { notify } from '@/composables/useNotify'
 
 // -- Utils -------------------------------------------------------
 import { formatDateYmd, toNumber } from '@/utils/format'
+import { isValidEmail } from '@/utils/validators'
 
 // -- Loader -------------------------------------------------------
 import { useLoader } from '@/composables/useLoader'
@@ -650,12 +657,16 @@ async function reenviarAutorizacion(tipo) {
 async function guardarCliente() {
     Object.keys(errors).forEach(k => delete errors[k])
 
+    // Campos ordenados de acuerdo a la disposición del formulario en la vista
     const requiredFields = {
         cedula: 'La cédula es requerida.',
         cupo: 'El cupo es requerido.',
         nombre: 'El nombre es requerido.',
+        fechaNacimiento: 'La fecha de nacimiento es requerida',
         telefono: 'El teléfono es requerido.',
         correo: 'El correo es requerido.',
+        salario: 'El salario es requerido',
+        nombreEmpleador: 'El nombre del empleador es requerido',
     }
 
     for (const field in requiredFields) {
@@ -670,13 +681,22 @@ async function guardarCliente() {
         }
     }
 
+    // Validar formato de correo
+    if (!isValidEmail(form.correo)) {
+        const errorCorreo = 'El formato del correo electrónico no es válido'
+        errors['correo'] = errorCorreo
+
+        notify.error('Por favor compruebe los datos ingresados.', errorCorreo)
+        return
+    }
+
     start()
 
     try {
         const payload = new FormData()
 
         // ID cliente
-        payload.append('id', clienteId.value)
+        payload.append('id', clienteId.value ?? '')
 
         // Campos de texto
         const textFields = [
@@ -727,18 +747,18 @@ async function guardarCliente() {
             if (form[k]) payload.append(k, form[k])
         })
 
-        const url = isEditing
+        const url = isEditing.value
             ? `/api/clientes/updateCliente`
-            : '/api/clientes/saveCliente'
+            : '/api/clientes/createCliente'
 
-        if (isEditing) payload.append('_method', 'PUT')
+        if (isEditing.value) payload.append('_method', 'PUT')
 
         await api.post(url, payload)
 
         router.push({ name: 'clientes' })
 
         notify.success(
-            `Cliente ${isEditing ? 'actualizado' : 'creado'} correctamente.`
+            `Cliente ${isEditing.value ? 'actualizado' : 'creado'} correctamente.`
         )
     } catch (err) {
         console.error(err)
@@ -752,6 +772,7 @@ async function guardarCliente() {
 }
 
 async function fetchCliente() {
+    // Consulta datos del cliente (solo en modo edición)
     if (!isEditing.value) return
 
     try {
@@ -799,25 +820,25 @@ async function fetchCliente() {
                     type: 'personal',
                     nombre: referencia.ref_comecial_1 ?? '',
                     telefono: referencia.tel_1 ?? '',
-                    nota: referencia.res_ref_comecial_1 ?? '',
+                    nota: referencia.com_1 ?? '',
                 },
                 {
                     type: 'personal',
                     nombre: referencia.ref_comecial_2 ?? '',
                     telefono: referencia.tel_2 ?? '',
-                    nota: referencia.res_ref_comecial_2 ?? '',
+                    nota: referencia.com_2 ?? '',
                 },
                 {
                     type: 'familiar',
                     nombre: referencia.ref_familiar_1 ?? '',
                     telefono: referencia.tel_3 ?? '',
-                    nota: referencia.res_ref_familiar_1 ?? '',
+                    nota: referencia.com_3 ?? '',
                 },
                 {
                     type: 'familiar',
                     nombre: referencia.ref_familiar_2 ?? '',
                     telefono: referencia.tel_4 ?? '',
-                    nota: referencia.res_ref_familiar_2 ?? '',
+                    nota: referencia.com_4 ?? '',
                 },
             ],
         })

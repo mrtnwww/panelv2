@@ -599,6 +599,11 @@ class ClienteController extends Controller
         return $this->saveCliente($request);
     }
 
+    public function createCliente(Request $request)
+    {
+        return $this->saveCliente($request);
+    }
+
     private function saveCliente(Request $request)
     {
         $empresaId = auth()->user()->empresa_id;
@@ -607,14 +612,15 @@ class ClienteController extends Controller
         $response = DB::transaction(function () use ($request, $empresaId, $usuarioId) {
             $id = $request->input('id', null);
 
+            $empresa = Empresa::find($empresaId);
+
             $documentosEnviar = null;
-            $miEmpresa = $empresaId;
             $clientExists = false;
 
             if ($id) {
                 // Buscar cliente
                 $cliente = Cliente::findOrFail($id);
-                $empresa = $cliente->empresa_id;
+                $empresa = Empresa::findOrFail($cliente->empresa_id);
                 $clientExists = true;
             }
 
@@ -623,7 +629,7 @@ class ClienteController extends Controller
                 $cliente = new Cliente();
 
                 $cliente->token = uniqid();
-                $cliente->empresa_id = $miEmpresa;
+                $cliente->empresa_id = $empresa->id;
 
                 // Generar OTP único solo para nuevos
                 do {
@@ -759,36 +765,33 @@ class ClienteController extends Controller
             }
 
             // Referencias
-            $referencia = ReferenciaCliente::firstOrNew(['cliente_id' => $cliente->id]);
+            $referencia = null;
+            if (!empty($request['referencias'])) {
+                $referencias = collect($request['referencias']);
 
-            $referencia->fill([
-                // referencia personal 1
-                'ref_comecial_1' => $request['refpersonal1'] ?? null,
-                'res_ref_comecial_1' => $request['resrefpersonal1'] ?? null,
-                'tel_1' => $request['telrefpersonal1'] ?? null,
-                'com_1' => $request['comresrefpersonal1'] ?? null,
+                // Definimos el mapa de cómo se distribuyen los índices a las columnas
+                $mapa = [
+                    0 => ['ref' => 'ref_comecial_1', 'res' => 'res_ref_comecial_1', 'tel' => 'tel_1', 'com' => 'com_1'],
+                    1 => ['ref' => 'ref_comecial_2', 'res' => 'res_ref_comecial_2', 'tel' => 'tel_2', 'com' => 'com_2'],
+                    2 => ['ref' => 'ref_familiar_1', 'res' => 'res_ref_familiar_1', 'tel' => 'tel_3', 'com' => 'com_3'],
+                    3 => ['ref' => 'ref_familiar_2', 'res' => 'res_ref_familiar_2', 'tel' => 'tel_4', 'com' => 'com_4'],
+                ];
 
-                // referencia personal 2
-                'ref_comecial_2' => $request['refpersonal2'] ?? null,
-                'res_ref_comecial_2' => $request['resrefpersonal2'] ?? null,
-                'tel_2' => $request['telrefpersonal2'] ?? null,
-                'com_2' => $request['comrefpersonal2'] ?? null,
+                $data = [];
+                foreach ($mapa as $index => $columnas) {
+                    $refData = $referencias->get($index);
 
-                // referencia familiar 1
-                'ref_familiar_1' => $request['reffamiliar1'] ?? null,
-                'res_ref_familiar_1' => $request['resreffamiliar1'] ?? null,
-                'tel_3' => $request['telreffamiliar1'] ?? null,
-                'com_3' => $request['comreffamiliar1'] ?? null,
+                    $data[$columnas['ref']] = $refData['nombre'] ?? null;
+                    $data[$columnas['res']] = null;
+                    $data[$columnas['tel']] = $refData['telefono'] ?? null;
+                    $data[$columnas['com']] = $refData['nota'] ?? null;
+                }
 
-                // referencia familiar 2
-                'ref_familiar_2' => $request['reffamiliar2'] ?? null,
-                'res_ref_familiar_2' => $request['resreffamiliar2'] ?? null,
-                'tel_4' => $request['telreffamiliar2'] ?? null,
-                'com_4' => $request['comreffamiliar2'] ?? null,
-            ]);
-
-            // Guardar o actualizar referencias
-            $referencia->save();
+                $referencia = ReferenciaCliente::updateOrCreate(
+                    ['cliente_id' => $cliente->id],
+                    $data
+                );
+            }
 
             // Si el cliente no ha sido validado, se procede a la validacion
             if ($cliente->cliente_validado == 0)
@@ -806,11 +809,14 @@ class ClienteController extends Controller
                     'type' => 'CLIENT_VALIDATED'
                 ], 5);
             }
+
+            return response()->json([
+                'message' => $clientExists ? 'Cliente actualizado exitosamente' : 'Cliente creado exitosamente',
+                'cliente_id' => $cliente->id
+            ]);
         });
 
-        return response()->json([
-            'response' => $response
-        ]);
+        return $response;
     }
 
     private function preSaveCliente(&$cliente, $empresa, $request)
@@ -947,7 +953,7 @@ class ClienteController extends Controller
         }
     }
 
-    public function validarCliente($cliente, $referencia)
+    public function validarCliente($cliente, $referencias)
     {
         $empresaId = auth()->user()->empresa_id;
         $empresaPrincipal = Empresa::find($empresaId);
@@ -971,10 +977,14 @@ class ClienteController extends Controller
         $telefonoValido = ($cliente->telefono_validado == 1);
         $cedulaValida = ($cliente->foto_frontal_validada == 1 && $cliente->foto_posterior_validada == 1);
         $tarjetaValida = ($cliente->foto_tarjeta_validada == 1 && $cliente->foto_tarjeta_posterior_validada == 1);
-        $referenciasValidas = $referencia->res_ref_comecial_1 == 1 ||
-            $referencia->res_ref_comecial_2 == 1 ||
-            $referencia->res_ref_familiar_1 == 1 ||
-            $referencia->res_ref_familiar_2 == 1;
+        $referenciasValidas = false;
+
+        if ($referencias) {
+            $referenciasValidas = $referencias->res_ref_comecial_1 == 1 ||
+                $referencias->res_ref_comecial_2 == 1 ||
+                $referencias->res_ref_familiar_1 == 1 ||
+                $referencias->res_ref_familiar_2 == 1;
+        }
 
         // flag para determinar si el cliente se encuentra correctamente validado
         $clienteValidado = true;
