@@ -344,19 +344,42 @@ class ClienteController extends Controller
         );
 
         if ($data) {
-            $expiracion = \Carbon\Carbon::now()->addMinutes(30); // Establecer la expiración en 5 minutos
+            $camposArchivos = [
+                'foto_frontal',
+                'foto_posterior',
+                'foto_tarjeta',
+                'foto_tarjeta_posterior',
+                'adjuntar_aval',
+                'certificacionBancaria',
+                'debitoAutomatico',
+                'selfie',
+                'comprobar_cliente_externo',
+                'comprobar_cliente',
+                'url_archivo_autorizacion',
+            ];
 
-            $data->foto_frontal = ($data->foto_frontal) ? Storage::disk('s3')->temporaryUrl($data->foto_frontal, $expiracion) : null;
-            $data->foto_posterior = ($data->foto_posterior) ? Storage::disk('s3')->temporaryUrl($data->foto_posterior, $expiracion) : null;
-            $data->foto_tarjeta = ($data->foto_tarjeta) ? Storage::disk('s3')->temporaryUrl($data->foto_tarjeta, $expiracion) : null;
-            $data->foto_tarjeta_posterior = ($data->foto_tarjeta_posterior) ? Storage::disk('s3')->temporaryUrl($data->foto_tarjeta_posterior, $expiracion) : null;
-            $data->adjuntar_aval = ($data->adjuntar_aval) ? Storage::disk('s3')->temporaryUrl($data->adjuntar_aval, $expiracion) : null;
-            $data->certificacionBancaria = ($data->certificacionBancaria) ? Storage::disk('s3')->temporaryUrl($data->certificacionBancaria, $expiracion) : null;
-            $data->debitoAutomatico = ($data->debitoAutomatico) ? Storage::disk('s3')->temporaryUrl($data->debitoAutomatico, $expiracion) : null;
-            // $data->selfie = ($data->selfie) ? Storage::disk('s3')->temporaryUrl($data->selfie, $expiracion) : null;
-            // $data->comprobar_cliente_externo = ($data->comprobar_cliente_externo) ? Storage::disk('s3')->temporaryUrl($data->comprobar_cliente_externo, $expiracion) : null;
-            $data->comprobar_cliente = ($data->comprobar_cliente) ? Storage::disk('s3')->temporaryUrl($data->comprobar_cliente, $expiracion) : null;
-            $data->url_archivo_autorizacion = ($data->url_archivo_autorizacion) ? Storage::disk('s3')->temporaryUrl($data->url_archivo_autorizacion, $expiracion) : null;
+            /**
+             * Indica si el valor del campo corresponde a un archivo real.
+             */
+            $tieneArchivo = fn($path): bool => !in_array((string) $path, ['0', 'x', '', null], strict: true);
+
+            $expiracion = now()->addMinutes(30);
+            $disk = Storage::disk('s3');
+
+            foreach ($camposArchivos as $campo) {
+                $path = $data->{$campo} ?? null;
+
+                if ($tieneArchivo($path)) {
+                    try {
+                        $data->{$campo} = $disk->temporaryUrl($path, $expiracion);
+                    } catch (\Exception $ex) {
+                        // El archivo existe en BD pero no en storage (inconsistencia)
+                        $data->{$campo} = null;
+                    }
+                } else {
+                    $data->{$campo} = null;
+                }
+            }
 
             $productoCliente = ProductoCliente::where('id_cliente', $data->id)->get();
             $listaProductos = array();
@@ -680,19 +703,18 @@ class ClienteController extends Controller
                 $cliente->num_cuenta_bancaria = encrypt($request['num_cuenta_bancaria']);
             }
 
-            if ($request['estadoAval'] || $request->hasFile('adjuntoAval')) {
-                $cliente->no_aval = $request['numAval'];
-                $cliente->nota = $request['notaAval'];
-                $cliente->estado_aval = $request['estadoAval'];
-                $cliente->notificarAval = $request['estadoAval'] ? 1 : 0;
+            if ($request['analisisEstado'] || $request->hasFile('analisisDoc')) {
+                $cliente->no_aval = $request['analisisNumeroConsulta'];
+                $cliente->nota = $request['analisisNota'];
+                $cliente->estado_aval = $request['analisisEstado'];
+                $cliente->notificarAval = $request['analisisEstado'] ? 1 : 0;
 
-                if ($request->hasFile('adjuntoAval')) {
+                if ($request->hasFile('analisisDoc')) {
                     $path = $cliente->cedula . "/aval/";
-                    $cliente->adjuntar_aval = $this->procesarGuardarArchivo($request->file('adjuntoAval'), $path);
+                    $cliente->adjuntar_aval = $this->procesarGuardarArchivo($request->file('analisisDoc'), $path);
                 }
 
                 if ($cliente->estado_aval == 1) {
-
                     /**
                      * Si el aval del cliente (análisis de consulta en centrales) es 1
                      * se creará una nueva notificación para los usuarios ASESOR (3)
@@ -712,7 +734,7 @@ class ClienteController extends Controller
                 }
             }
 
-            // Guardar archivos (cédula, tarjeta propiedad, certificación bancaria, debito autmático, foto cliente)
+            // Guardar archivos (cédula, tarjeta propiedad, certificación bancaria, debito automático, foto cliente)
             $archivos = [
                 'fotoCliente' => 'comprobar_cliente',
                 'cedulaFront' => 'foto_frontal',
@@ -720,8 +742,7 @@ class ClienteController extends Controller
                 'tarjetaPropiedadFront' => 'foto_tarjeta',
                 'tarjetaPropiedadBack' => 'foto_tarjeta_posterior',
                 'autorizacionDebitoDoc' => 'debitoAutomatico',
-                'certBancaria' => 'certificacionBancaria',
-                'autorizacionCentralesDoc' => 'url_archivo_autorizacion'
+                'certBancaria' => 'certificacionBancaria'
             ];
 
             foreach ($archivos as $archivo => $column) {
@@ -763,6 +784,35 @@ class ClienteController extends Controller
                         'cliente_id' => $cliente->id,
                         'num_cuenta' => $cliente->num_cuenta_bancaria,
                         'usuario_id' => $usuarioId
+                    ]);
+                }
+            }
+
+            // Archivo autorización consulta
+            if ($request->hasFile('autorizacionCentralesDoc')) {
+                $urlArchivoAutorizacion = $this->procesarGuardarArchivo($request->file('autorizacionCentralesDoc')) ?? null;
+
+                if ($cliente->nueva_autorizacion_consulta == 0) {
+                    $cliente->update([
+                        'url_archivo_autorizacion' => $urlArchivoAutorizacion,
+                        'aprobar_autorizacion' => 1,
+                        'autorizacion' => 1,
+                        'firmado' => Carbon::now(),
+                        'token' => null,
+                    ]);
+                } else {
+                    // guardar autorizacion en tabla intermedia (unicamente para clientes antiguos a los cuales se les realiza reconsulta en centrales)
+                    NuevaAutorizacionConsulta::create([
+                        'url_archivo_autorizacion' => $urlArchivoAutorizacion,
+                        'cliente_id' => $cliente->id
+                    ]);
+
+                    // confirmar que la nueva autorizacion ya se ha generado y guardado en la tabla intermedia
+                    $cliente->update([
+                        'nueva_autorizacion_consulta' => 0,
+                        'aprobar_autorizacion' => 1,
+                        'autorizacion' => 1,
+                        'token' => null,
                     ]);
                 }
             }

@@ -174,7 +174,7 @@
                                             class="text-xs text-emerald-500 font-medium italic"
                                         >
                                             {{
-                                                formatDateNotifications(
+                                                formatDate(
                                                     noti.created_at
                                                 )
                                             }}
@@ -256,7 +256,7 @@
                         v-if="user?.image"
                         :src="user.image"
                         :alt="user?.persona?.nombre"
-                        class="w-full h-full object-cover"
+                        class="w-full h-full object-contain"
                     />
                     <span v-else class="text-xs font-semibold text-gray-500">{{
                         userInitials
@@ -366,7 +366,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useRouter } from 'vue-router'
 
 // -- Utils ------------------------------------------------
-import { formatDateNotifications } from '@/utils/format'
+import { formatDate } from '@/utils/format'
 
 const props = defineProps({
     sidebarWidth: {

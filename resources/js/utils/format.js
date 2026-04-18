@@ -22,14 +22,14 @@ export function formatCurrency(value, options = {}) {
     }).format(value)
 }
 
+export function formatDate(date) {
+    return dayjs(date).locale('es').format('DD MMM. YYYY, hh:mm A')
+}
+
 export function formatDateYmd(date) {
     return dayjs(date).format('YYYY-MM-DD')
 }
 
 export function formatDateYmdHms(date) {
     return dayjs(date).format('YYYY-MM-DD HH:mm:ss')
-}
-
-export function formatDateNotifications(date) {
-    return dayjs(date).locale('es').format('DD MMM. YYYY, hh:mm A')
 }

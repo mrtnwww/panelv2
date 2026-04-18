@@ -5,16 +5,20 @@
             class="text-xs font-medium text-gray-500 uppercase tracking-wide"
         >
             {{ label }}
+            <span v-if="required" class="text-red-400 ml-0.5">*</span>
         </label>
 
         <!-- Zona de upload -->
         <div
             class="relative flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed transition-all cursor-pointer group"
             :class="[
-                preview
-                    ? 'border-emerald-300 bg-emerald-50/30 p-3'
-                    : 'border-gray-200 hover:border-emerald-400 hover:bg-emerald-50/20 p-5',
+                hasError
+                    ? 'border-red-300 bg-red-50/30'
+                    : preview
+                      ? 'border-emerald-300 bg-emerald-50/30 p-3'
+                      : 'border-gray-200 hover:border-emerald-400 hover:bg-emerald-50/20 p-5',
                 isDragging ? 'border-emerald-400 bg-emerald-50/30' : '',
+                preview ? 'p-3' : 'p-5',
             ]"
             @dragover.prevent="isDragging = true"
             @dragleave="isDragging = false"
@@ -30,8 +34,9 @@
                 />
                 <span
                     class="text-xs text-emerald-600 font-medium truncate max-w-full"
-                    >{{ fileName }}</span
                 >
+                    {{ fileName }}
+                </span>
             </template>
 
             <!-- Preview archivo (PDF u otro) -->
@@ -90,9 +95,21 @@
 
             <!-- Placeholder -->
             <template v-else>
-                <i class="fa-solid fa-arrow-up-from-bracket"></i>
+                <i
+                    class="fa-solid fa-arrow-up-from-bracket transition-colors"
+                    :class="
+                        hasError
+                            ? 'text-red-400'
+                            : 'text-gray-400 group-hover:text-emerald-500'
+                    "
+                ></i>
                 <span
-                    class="text-xs text-gray-400 group-hover:text-emerald-500 transition-colors text-center"
+                    class="text-xs transition-colors text-center"
+                    :class="
+                        hasError
+                            ? 'text-red-400'
+                            : 'text-gray-400 group-hover:text-emerald-500'
+                    "
                 >
                     {{ placeholder }}
                 </span>
@@ -111,7 +128,6 @@
 
         <!-- Acciones: cámara + limpiar -->
         <div v-if="preview || withCamera" class="flex items-center gap-2">
-            <!-- Botón cámara -->
             <button
                 v-if="withCamera"
                 type="button"
@@ -122,26 +138,29 @@
                 Usar cámara
             </button>
 
-            <!-- Botón limpiar -->
             <button
                 v-if="preview"
                 type="button"
                 @click="clearFile"
                 class="flex items-center gap-1.5 h-8 px-3 rounded-lg border border-gray-200 text-xs text-gray-400 hover:border-red-300 hover:text-red-500 transition-all"
             >
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                    <path
-                        d="M2 2L10 10M10 2L2 10"
-                        stroke="currentColor"
-                        stroke-width="1.3"
-                        stroke-linecap="round"
-                    />
-                </svg>
+                <i class="fa-solid fa-xmark"></i>
                 Quitar
             </button>
         </div>
 
-        <!-- Modal cámara -->
+        <!-- Mensaje de error -->
+        <Transition name="fade-down">
+            <p
+                v-if="hasError"
+                class="flex items-center gap-1.5 text-xs text-red-500"
+            >
+                <i class="fa-regular fa-circle-question"></i>
+                {{ errorMessage }}
+            </p>
+        </Transition>
+
+        <!-- Modal cámara (sin cambios) -->
         <div
             v-if="cameraOpen"
             class="fixed inset-0 z-50 flex items-center justify-center bg-black/70"
@@ -208,6 +227,9 @@
 <script setup>
 import { ref, computed } from 'vue'
 
+// -- Toaster -----------------------------------------------------
+import { notify } from '@/composables/useNotify'
+
 const props = defineProps({
     label: { type: String, default: '' },
     placeholder: { type: String, default: 'Haz clic o arrastra un archivo' },
@@ -215,10 +237,14 @@ const props = defineProps({
     acceptLabel: { type: String, default: 'PNG, JPG o PDF — máx. 1MB' },
     withCamera: { type: Boolean, default: false },
     modelValue: { default: null },
+    required: { type: Boolean, default: false },
+    maxSizeMb: { type: Number, default: 1 },
+    error: { type: String, default: '' }, // error externo (padre / validador de formulario)
 })
 
-const emit = defineEmits(['update:modelValue'])
+const emit = defineEmits(['update:modelValue', 'error'])
 
+// ── Refs ────────────────────────────────────────────────────────────────
 const inputRef = ref(null)
 const videoRef = ref(null)
 const canvasRef = ref(null)
@@ -226,14 +252,60 @@ const preview = ref(null)
 const fileName = ref('')
 const isDragging = ref(false)
 const cameraOpen = ref(false)
+const internalError = ref('') // error producido por validación interna
 let stream = null
 
+// ── Computed ─────────────────────────────────────────────────────────────
 const isImage = computed(
     () =>
         preview.value?.startsWith('data:image') ||
         preview.value?.startsWith('blob:')
 )
 
+// El error visible prioriza el externo; si no hay, muestra el interno
+const errorMessage = computed(() => props.error || internalError.value)
+const hasError = computed(() => !!errorMessage.value)
+
+// ── Validación ───────────────────────────────────────────────────────────
+const TIPOS_PERMITIDOS = computed(() =>
+    props.accept.split(',').map(t => t.trim())
+)
+
+function validarArchivo(file) {
+    // Requerido
+    if (props.required && !file) {
+        return 'Este campo es obligatorio.'
+    }
+
+    // Tamaño máximo
+    const maxBytes = props.maxSizeMb * 1024 * 1024
+    if (file.size > maxBytes) {
+        notify.error(
+            `El archivo supera el tamaño máximo de ${props.maxSizeMb}MB.`
+        )
+        return
+    }
+
+    // Tipo MIME permitido
+    const tipoValido = TIPOS_PERMITIDOS.value.some(tipo => {
+        if (tipo.endsWith('/*')) {
+            // ej: "image/*" → valida cualquier image/...
+            return file.type.startsWith(tipo.replace('/*', '/'))
+        }
+        return file.type === tipo
+    })
+
+    if (!tipoValido) {
+        notify.error(
+            `Tipo de archivo no permitido. Acepta: ${props.acceptLabel}`
+        )
+        return
+    }
+
+    return null
+}
+
+// ── Acciones ─────────────────────────────────────────────────────────────
 function triggerInput() {
     if (!cameraOpen.value) inputRef.value?.click()
 }
@@ -250,9 +322,21 @@ function onDrop(e) {
 }
 
 function setFile(file) {
+    const mensaje = validarArchivo(file)
+
+    if (mensaje) {
+        internalError.value = mensaje
+        emit('error', mensaje)
+        // Limpiamos cualquier valor previo para no dejar un estado inconsistente
+        clearFile()
+        return
+    }
+
+    internalError.value = ''
     fileName.value = file.name
     preview.value = URL.createObjectURL(file)
     emit('update:modelValue', file)
+    emit('error', null)
 }
 
 function clearFile() {
@@ -262,7 +346,7 @@ function clearFile() {
     emit('update:modelValue', null)
 }
 
-// ── Cámara ──────────────────────────────────────────────────────────────
+// ── Cámara ────────────────────────────────────────────────────────────────
 async function openCamera() {
     cameraOpen.value = true
     await new Promise(r => setTimeout(r, 100))

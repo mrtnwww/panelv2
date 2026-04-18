@@ -21,27 +21,71 @@
                     type="number"
                     v-model="form.cupo"
                     placeholder="$0"
-                    hint="Valor en pesos colombianos"
+                    hint="Valor en pesos colombianos (COP $)"
                     required
                     :error="errors.cupo"
                 />
 
                 <!-- Foto del cliente -->
-                <div class="sm:col-span-2">
-                    <FileUpload
-                        label="Foto del cliente"
-                        v-model="form.fotoCliente"
-                        placeholder="Sube o captura la foto del cliente"
-                        accept="image/*"
-                        accept-label="JPG o PNG — máx. 1MB"
-                        :with-camera="true"
-                    />
+                <div class="col-span-1">
+                    <div
+                        v-if="typeof form.fotoCliente === 'string'"
+                        class="space-y-3"
+                    >
+                        <label
+                            class="block text-xs font-bold uppercase tracking-wider text-gray-500"
+                        >
+                            Foto del cliente
+                        </label>
 
-                    <FilePreview
-                        :source="form.fotoCliente"
-                        label="Foto principal"
-                        @remove="form.fotoCliente = null"
-                    />
+                        <div
+                            class="flex items-center gap-5 p-4 rounded-2xl border border-gray-100 bg-gray-50/50 shadow-sm"
+                        >
+                            <!-- Miniatura -->
+                            <FilePreview :source="form.fotoCliente" />
+
+                            <div class="flex flex-col gap-1">
+                                <span
+                                    class="text-xs font-bold text-gray-700 uppercase tracking-tight sm:text-sm"
+                                >
+                                    Imagen de perfil establecida
+                                </span>
+                                <p
+                                    class="text-[11px] text-gray-500 mb-1 sm:text-xs"
+                                >
+                                    Foto actual registrada para el cliente.
+                                </p>
+                                <button
+                                    type="button"
+                                    @click="form.fotoCliente = null"
+                                    class="flex items-center gap-1.5 text-left text-xs font-bold text-emerald-500 hover:text-emerald-600 cursor-pointer transition-colors uppercase tracking-widest"
+                                >
+                                    <i class="fa-solid fa-camera-rotate"></i>
+                                    Subir nueva foto
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ESTADO: Carga de archivo (Solo se muestra si es null o un Objeto File nuevo) -->
+                    <template v-else>
+                        <FileUpload
+                            label="Foto del cliente"
+                            v-model="form.fotoCliente"
+                            placeholder="Sube o captura la foto del cliente"
+                            accept="image/*"
+                            accept-label="JPG o PNG — máx. 1MB"
+                            :with-camera="true"
+                            required
+                            :error="errors.fotoCliente"
+                        />
+
+                        <!-- Mostramos el preview solo si el usuario acaba de capturar/elegir una foto nueva -->
+                        <FilePreview
+                            v-if="typeof form.fotoCliente === 'string'"
+                            :source="form.fotoCliente"
+                        />
+                    </template>
                 </div>
             </div>
         </CollapsibleCard>
@@ -163,73 +207,72 @@
             :completed="completado.documentos"
         >
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-8">
-                <div class="flex flex-col">
-                    <FileUpload
-                        label="Cédula — frontal"
-                        v-model="form.cedulaFront"
-                        accept="image/*"
-                        accept-label="JPG o PNG"
-                        :with-camera="true"
-                    />
-                    <FilePreview
-                        v-if="typeof form.cedulaFront === 'string'"
-                        :source="form.cedulaFront"
-                    />
-                </div>
+                <div
+                    v-for="doc in documentosConfig"
+                    :key="doc.key"
+                    class="flex flex-col"
+                >
+                    <!-- Documento ya guardado en el servidor (URL String) -->
+                    <div
+                        v-if="typeof form[doc.key] === 'string'"
+                        class="space-y-2"
+                    >
+                        <label
+                            class="block text-xs font-bold uppercase tracking-wider text-gray-500"
+                        >
+                            {{ doc.label }}
+                        </label>
 
-                <div class="flex flex-col">
-                    <FileUpload
-                        label="Cédula — posterior"
-                        v-model="form.cedulaBack"
-                        accept="image/*"
-                        accept-label="JPG o PNG"
-                        :with-camera="true"
-                    />
-                    <FilePreview
-                        v-if="typeof form.cedulaBack === 'string'"
-                        :source="form.cedulaBack"
-                    />
-                </div>
+                        <div
+                            class="flex items-center justify-between p-3 rounded-xl border border-gray-100 bg-gray-50/50 group transition-all hover:bg-gray-50"
+                        >
+                            <div class="flex items-center gap-3">
+                                <!-- Miniatura -->
+                                <FilePreview :source="form[doc.key]" />
 
-                <div class="flex flex-col">
-                    <FileUpload
-                        label="Tarjeta de propiedad — frontal"
-                        v-model="form.tarjetaPropiedadFront"
-                        accept="image/*"
-                        accept-label="JPG o PNG"
-                        :with-camera="true"
-                    />
-                    <FilePreview
-                        v-if="typeof form.tarjetaPropiedadFront === 'string'"
-                        :source="form.tarjetaPropiedadFront"
-                    />
-                </div>
+                                <div class="flex flex-col">
+                                    <span
+                                        class="text-xs font-bold text-gray-700 uppercase leading-none mb-1 sm:text-sm"
+                                    >
+                                        Documento cargado
+                                    </span>
+                                    <button
+                                        type="button"
+                                        @click="form[doc.key] = null"
+                                        class="text-xs text-emerald-500 font-semibold hover:underline text-left leading-none cursor-pointer uppercase tracking-widest"
+                                    >
+                                        Reemplazar archivo
+                                    </button>
+                                </div>
+                            </div>
 
-                <div class="flex flex-col">
-                    <FileUpload
-                        label="Tarjeta de propiedad — posterior"
-                        v-model="form.tarjetaPropiedadBack"
-                        accept="image/*"
-                        accept-label="JPG o PNG"
-                        :with-camera="true"
-                    />
-                    <FilePreview
-                        v-if="typeof form.tarjetaPropiedadBack === 'string'"
-                        :source="form.tarjetaPropiedadBack"
-                    />
-                </div>
+                            <!-- Icono de estado validado -->
+                            <div class="pr-2">
+                                <i
+                                    class="fa-solid fa-circle-check text-green-500 text-xl"
+                                ></i>
+                            </div>
+                        </div>
+                    </div>
 
-                <div class="sm:col-span-2 flex flex-col">
-                    <FileUpload
-                        label="Certificación bancaria"
-                        v-model="form.certBancaria"
-                        accept="image/*,application/pdf"
-                        accept-label="JPG, PNG o PDF"
-                    />
-                    <FilePreview
-                        v-if="typeof form.certBancaria === 'string'"
-                        :source="form.certBancaria"
-                    />
+                    <!-- Subida de archivo nuevo -->
+                    <template v-else>
+                        <FileUpload
+                            :label="doc.label"
+                            v-model="form[doc.key]"
+                            :accept="doc.accept"
+                            accept-label="JPG, PNG o PDF"
+                            :with-camera="doc.camera"
+                            :required="
+                                ['cedulaFront', 'cedulaBack'].includes(doc.key)
+                            "
+                            :error="errors[doc.key] ?? ''"
+                        />
+                        <FilePreview
+                            v-if="typeof form[doc.key] === 'string'"
+                            :source="form[doc.key]"
+                        />
+                    </template>
                 </div>
             </div>
         </CollapsibleCard>
@@ -263,49 +306,78 @@
             :completed="completado.autorizacionCentrales"
         >
             <div class="flex flex-col gap-4">
-                <FileUpload
-                    label="Documento de autorización"
-                    v-model="form.autorizacionCentralesDoc"
-                    accept="image/*,application/pdf"
-                    accept-label="JPG, PNG o PDF — máx. 1MB"
-                />
-
-                <FilePreview
+                <div
                     v-if="typeof form.autorizacionCentralesDoc === 'string'"
-                    :source="form.autorizacionCentralesDoc"
-                />
-
-                <div class="flex items-center gap-3 pt-1">
-                    <button
-                        type="button"
-                        @click="reenviarAutorizacion('centrales')"
-                        :disabled="loadingReenvio === 'centrales'"
-                        class="btn btn-main"
+                    class="space-y-3"
+                >
+                    <label
+                        class="block text-xs font-bold uppercase tracking-wider text-gray-500"
                     >
-                        <svg
-                            v-if="loadingReenvio === 'centrales'"
-                            class="animate-spin w-3.5 h-3.5"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                        >
-                            <circle
-                                class="opacity-25"
-                                cx="12"
-                                cy="12"
-                                r="10"
-                                stroke="currentColor"
-                                stroke-width="4"
-                            />
-                            <path
-                                class="opacity-75"
-                                fill="currentColor"
-                                d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                            />
-                        </svg>
-                        <i v-else class="fa-regular fa-envelope"></i>
-                        Reenviar al correo del cliente
-                    </button>
+                        Documento de autorización
+                    </label>
+
+                    <div
+                        class="flex flex-col items-start gap-3 p-4 rounded-2xl border border-green-100 bg-green-50/30"
+                    >
+                        <div class="flex items-center gap-2 text-green-700">
+                            <i class="fa-solid fa-circle-check text-sm"></i>
+                            <span
+                                class="text-xs font-bold uppercase tracking-tight"
+                            >
+                                La consulta actual fue autorizada por el cliente
+                                el
+                                {{
+                                    fechaAutorizacion
+                                        ? formatDate(fechaAutorizacion)
+                                        : ''
+                                }}
+                            </span>
+                        </div>
+
+                        <FilePreview :source="form.autorizacionCentralesDoc" />
+                    </div>
                 </div>
+
+                <template v-else>
+                    <FileUpload
+                        label="Documento de autorización"
+                        v-model="form.autorizacionCentralesDoc"
+                        accept="image/*,application/pdf"
+                        accept-label="JPG, PNG o PDF — máx. 1MB"
+                    />
+
+                    <div class="flex items-center gap-3 pt-1">
+                        <button
+                            type="button"
+                            @click="reenviarAutorizacion('centrales')"
+                            :disabled="loadingReenvio === 'centrales'"
+                            class="btn btn-main"
+                        >
+                            <svg
+                                v-if="loadingReenvio === 'centrales'"
+                                class="animate-spin w-3.5 h-3.5"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                            >
+                                <circle
+                                    class="opacity-25"
+                                    cx="12"
+                                    cy="12"
+                                    r="10"
+                                    stroke="currentColor"
+                                    stroke-width="4"
+                                />
+                                <path
+                                    class="opacity-75"
+                                    fill="currentColor"
+                                    d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                                />
+                            </svg>
+                            <i v-else class="fa-regular fa-envelope"></i>
+                            Reenviar al correo del cliente
+                        </button>
+                    </div>
+                </template>
             </div>
         </CollapsibleCard>
 
@@ -518,7 +590,7 @@ import FilePreview from '@/components/FilePreview.vue'
 import { notify } from '@/composables/useNotify'
 
 // -- Utils -------------------------------------------------------
-import { formatDateYmd, toNumber } from '@/utils/format'
+import { formatDateYmd, formatDate, toNumber } from '@/utils/format'
 import { isValidEmail } from '@/utils/validators'
 
 // -- Loader -------------------------------------------------------
@@ -598,24 +670,26 @@ const ciudadInicial = ref(null)
 const errors = reactive({})
 const loading = ref(false)
 
+let fechaAutorizacion = null
+
 // -- Detectar el modo --------------------------------------------
 const isEditing = computed(() => !!route.params.cliente_id)
 const clienteId = computed(() => route.params.cliente_id)
 
 // -- Secciones completadas ----------------------------------------------------------
 const completado = computed(() => ({
-    cliente: !!form.cedula && !!form.cupo,
-    personal: !!form.nombre && !!form.telefono && !!form.correo,
-    laboral:
-        !!form.salario ||
-        (!!form.nombreEmpleador &&
-            !!form.telefonoEmpleador &&
-            !!form.direccionEmpleador),
-    documentos: !!(form.cedulaFront && form.cedulaBack),
+    cliente: !!form.cedula && !!form.cupo && !!form.fotoCliente,
+    personal:
+        !!form.nombre &&
+        !!form.fechaNacimiento &&
+        !!form.telefono &&
+        !!form.correo,
+    laboral: !!form.salario && !!form.nombreEmpleador,
+    documentos: !!form.cedulaFront && !!form.cedulaBack,
     referencias: form.referencias.every(r => r.nombre && r.telefono),
     autorizacionCentrales: !!form.autorizacionCentralesDoc,
     autorizacionDebito: !!form.autorizacionDebitoDoc,
-    analisis: !!form.analisisNumeroConsulta,
+    analisis: !!form.analisisNumeroConsulta && !!form.analisisEstado,
     firma: form.documentosFirma.length > 0,
 }))
 
@@ -628,6 +702,39 @@ const tipoCuentaOpts = [
 const estadoConsultaOpts = [
     { value: 1, label: 'Aprobado' },
     { value: 0, label: 'Rechazado' },
+]
+
+const documentosConfig = [
+    {
+        key: 'cedulaFront',
+        label: 'Cédula — frontal',
+        accept: 'image/*',
+        camera: true,
+    },
+    {
+        key: 'cedulaBack',
+        label: 'Cédula — posterior',
+        accept: 'image/*',
+        camera: true,
+    },
+    {
+        key: 'tarjetaPropiedadFront',
+        label: 'Tarjeta de propiedad — frontal',
+        accept: 'image/*',
+        camera: true,
+    },
+    {
+        key: 'tarjetaPropiedadBack',
+        label: 'Tarjeta de propiedad — posterior',
+        accept: 'image/*',
+        camera: true,
+    },
+    {
+        key: 'certBancaria',
+        label: 'Certificación bancaria',
+        accept: 'image/*,application/pdf',
+        camera: false,
+    },
 ]
 
 // -- Acciones ----------------------------------------------------------
@@ -657,12 +764,15 @@ async function guardarCliente() {
     const requiredFields = {
         cedula: 'La cédula es requerida.',
         cupo: 'El cupo es requerido.',
+        fotoCliente: 'La foto del cliente es requerida.',
         nombre: 'El nombre es requerido.',
         fechaNacimiento: 'La fecha de nacimiento es requerida',
         telefono: 'El teléfono es requerido.',
         correo: 'El correo es requerido.',
         salario: 'El salario es requerido',
         nombreEmpleador: 'El nombre del empleador es requerido',
+        cedulaFront: 'La foto frontal de la cédula es requerida',
+        cedulaBack: 'La foto posterior de la cédula es requerida',
     }
 
     for (const field in requiredFields) {
@@ -739,7 +849,7 @@ async function guardarCliente() {
             'analisisDoc',
         ]
         fileFields.forEach(k => {
-            if (form[k]) payload.append(k, form[k])
+            if (form[k] instanceof File) payload.append(k, form[k])
         })
 
         const url = isEditing.value
@@ -781,6 +891,9 @@ async function fetchCliente() {
         // Ciudad formateada
         ciudadInicial.value = data.resultado.ciudad ?? null
 
+        // Fecha autorización consulta
+        fechaAutorizacion = cliente.firmado
+
         Object.assign(form, {
             cedula: cliente.cedula ?? '',
             cupo: cliente.cupo ?? '',
@@ -795,10 +908,10 @@ async function fetchCliente() {
             correo: cliente.email ?? '',
             direccion: cliente.direccion ?? '',
             barrio: cliente.barrio ?? '',
-            ciudad: cliente.ciudad ?? '',
+            ciudad: cliente?.ciudad?.id ?? '',
 
             // 2. Información laboral
-            salario: toNumber(cliente.salario) || '',
+            salario: toNumber(cliente.salario) || '0',
             nombreEmpleador: cliente.empresa_labora ?? '',
             telefonoEmpleador: cliente.telEmpresa ?? '',
             direccionEmpleador: cliente.direccionEmpresa ?? '',
@@ -809,14 +922,15 @@ async function fetchCliente() {
             // 3. Análisis
             analisisNota: cliente.nota ?? '',
             analisisEstado: cliente.estado_aval ?? 0,
+            analisisDoc: cliente.adjuntar_aval ?? null,
             analisisNumeroConsulta: cliente.no_aval ?? '',
 
             // 4. Documentos
-            cedulaFront: cliente.foto_frontal ?? '',
-            cedulaBack: cliente.foto_posterior ?? '',
-            tarjetaPropiedadFront: cliente.foto_tarjeta ?? '',
-            tarjetaPropiedadBack: cliente.foto_tarjeta_posterior ?? '',
-            certBancaria: cliente.certificacionBancaria ?? '',
+            cedulaFront: cliente.foto_frontal ?? null,
+            cedulaBack: cliente.foto_posterior ?? null,
+            certBancaria: cliente.certificacionBancaria ?? null,
+            tarjetaPropiedadFront: cliente.foto_tarjeta ?? null,
+            tarjetaPropiedadBack: cliente.foto_tarjeta_posterior ?? null,
 
             // 5. Referencias
             referencias: [
@@ -847,12 +961,17 @@ async function fetchCliente() {
             ],
 
             // 5. Autorización consulta en centrales
-            autorizacionCentralesDoc: cliente.url_archivo_autorizacion,
+            autorizacionCentralesDoc: cliente.url_archivo_autorizacion ?? null,
 
             // 7. Débito automático
-            autorizacionDebitoDoc: cliente.debitoAutomatico
+            autorizacionDebitoDoc: cliente.debitoAutomatico,
         })
-    } catch (e) {
+    } catch (err) {
+        notify.error(
+            err.response?.data?.message ||
+                'Ocurrió un error inesperado, por favor consulte con el administrador del sistema.',
+            'Disculpe las molestias.'
+        )
         router.back()
     }
 }

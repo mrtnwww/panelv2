@@ -70,7 +70,7 @@
                     >
                         <img
                             :src="displayUrl"
-                            class="w-auto max-w-full rounded-lg shadow-2xl object-contain border border-white/10"
+                            class="max-h-screen w-auto max-w-full rounded-lg shadow-2xl object-contain border border-white/10"
                             @click.stop
                         />
                     </div>

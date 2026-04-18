@@ -70,6 +70,18 @@ input[type='number'] {
     transform: translateY(-4px);
 }
 
+.fade-down-enter-active,
+.fade-down-leave-active {
+    transition:
+        opacity 0.2s ease,
+        transform 0.2s ease;
+}
+.fade-down-enter-from,
+.fade-down-leave-to {
+    opacity: 0;
+    transform: translateY(-4px);
+}
+
 .btn {
     @apply inline-flex items-center justify-center gap-2 h-9 px-4 rounded-lg text-sm font-medium transition-all whitespace-nowrap border cursor-pointer disabled:bg-gray-300 disabled:pointer-events-none;
 }

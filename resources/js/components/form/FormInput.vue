@@ -330,7 +330,15 @@
             </div>
         </slot>
 
-        <p v-if="error" class="text-xs text-red-500">{{ error }}</p>
+        <Transition name="fade-down">
+            <p
+                v-if="error"
+                class="flex items-center gap-1.5 text-xs text-red-500"
+            >
+                <i class="fa-regular fa-circle-question"></i>
+                {{ error }}
+            </p>
+        </Transition>
         <p v-if="hint" class="text-xs text-gray-400">{{ hint }}</p>
     </div>
 </template>
