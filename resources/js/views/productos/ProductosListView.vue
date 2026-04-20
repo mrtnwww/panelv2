@@ -90,7 +90,7 @@
             :show-footer="true"
             :cancel-label="'Cancelar'"
             :confirm-label="
-                modal.mode === 'crear' ? 'Crear producto' : 'Guardar cambios'
+                modal.mode === 'crear' ? 'Crear producto' : 'Guardar'
             "
             :confirm-loading="modal.loading"
             :close-on-overlay="true"

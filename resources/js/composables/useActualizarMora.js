@@ -6,7 +6,7 @@ import api from '@/services/api'
 export function useActualizarMora() {
     const { start, stop } = useLoader()
 
-    const actualizarMora = async callback => {
+    async function actualizarMora(callback) {
         let moraActualizada = true
         let message = ''
 

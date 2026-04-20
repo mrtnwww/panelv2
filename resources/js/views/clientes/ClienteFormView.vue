@@ -339,7 +339,7 @@
                     <div class="flex items-center gap-3 pt-1">
                         <button
                             type="button"
-                            @click="reenviarAutorizacion('centrales')"
+                            @click="envioAutorizacion()"
                             class="btn btn-main"
                         >
                             <i class="fa-regular fa-envelope"></i>
@@ -642,11 +642,16 @@ import { isValidEmail } from '@/utils/validators'
 import { useLoader } from '@/composables/useLoader'
 const { start, stop } = useLoader()
 
+// Reenviar autorización -------------------------------------------
+import { useReenviarAutorizacion } from '@/composables/useReenviarAutorizacion'
+
 // -- API ----------------------------------------------------------
 import api from '@/services/api'
 
 // -- Store --------------------------------------------------------
 import { useOpcionesStore } from '@/stores/opciones'
+
+const { reenviarAutorizacion } = useReenviarAutorizacion()
 
 const router = useRouter()
 const route = useRoute()
@@ -781,48 +786,9 @@ const documentosConfig = [
     },
 ]
 
-// -- Acciones ----------------------------------------------------------
-async function reenviarAutorizacion(tipo) {
-    const validations = [
-        {
-            condition: !clienteId,
-            message: 'El cliente aún no se encuentra registrado.',
-        },
-        {
-            condition: !isValidEmail(form.correo),
-            message: 'El correo del cliente no es válido.',
-        },
-    ]
-
-    for (const validation of validations) {
-        if (validation.condition) {
-            notify.error(validation.message)
-            return
-        }
-    }
-
-    start()
-
-    try {
-        await api.post('/api/clientes/reenviarAutorizacion', {
-            id: clienteId.value,
-            correo: form.correo,
-        })
-
-        notify.success(
-            'La autorización ha sido enviada al correo del cliente.',
-            `${form.correo}`
-        )
-    } catch (err) {
-        console.error(err)
-        notify.error(
-            err.response?.data?.message ||
-                'Ocurrió un error al enviar la autorización al correo del cliente.',
-            'Si el problema persiste, contacte con el administrador del sistema.'
-        )
-    } finally {
-        stop()
-    }
+// -- BackEnd --------------------------------------------------------
+async function envioAutorizacion() {
+    await reenviarAutorizacion(clienteId, form.correo)
 }
 
 async function guardarCliente() {

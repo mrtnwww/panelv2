@@ -117,7 +117,7 @@
             :show-footer="true"
             :cancel-label="'Cancelar'"
             :confirm-label="
-                modal.mode === 'crear' ? 'Crear usuario' : 'Guardar cambios'
+                modal.mode === 'crear' ? 'Crear usuario' : 'Guardar'
             "
             :confirm-loading="modal.loading"
             :close-on-overlay="true"

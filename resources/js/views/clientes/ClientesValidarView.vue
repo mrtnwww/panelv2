@@ -40,14 +40,14 @@
                     </button>
                     <button
                         class="btn btn-default"
-                        @click.stop="editCliente(row)"
+                        @click.stop="abrirModal(row)"
                     >
                         Editar
                         <i class="fa-solid fa-pencil"></i>
                     </button>
                     <button
                         class="btn btn-default"
-                        @click.stop="sendAutorizacion(row)"
+                        @click.stop="envioAutorizacion(row)"
                     >
                         Reenviar autorización
                         <i class="fa-solid fa-envelope"></i>
@@ -55,24 +55,83 @@
                 </div>
             </template>
         </DataTable>
+
+        <AppModal
+            v-model="modal.open"
+            title="Editar cliente"
+            size="md"
+            :show-footer="true"
+            :cancel-label="'Cancelar'"
+            confirm-label="Guardar"
+            :confirm-loading="modal.loading"
+            :close-on-overlay="true"
+            @confirm="guardarCliente"
+            @update:modelValue="cerrarModal"
+        >
+            <div class="flex flex-col gap-4">
+                <FormInput
+                    label="Nombre"
+                    v-model="modal.form.nombre"
+                    placeholder="Maria Perez"
+                />
+
+                <FormInput
+                    label="Correo"
+                    v-model="modal.form.correo"
+                    placeholder="cliente@email.com"
+                />
+
+                <FormInput
+                    label="Teléfono"
+                    type="tel"
+                    v-model="modal.form.telefono"
+                    placeholder="300 123 4567"
+                />
+
+                <transition name="fade">
+                    <div
+                        v-if="modal.error"
+                        class="px-3 py-2.5 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm"
+                    >
+                        {{ modal.error }}
+                    </div>
+                </transition>
+            </div>
+        </AppModal>
     </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 
 // -- Componentes -------------------------------------------
 import DataTable from '@/components/table/DataTable.vue'
+import FormInput from '@/components/form/FormInput.vue'
+import AppModal from '@/components/AppModal.vue'
 
 // -- Loader ------------------------------------------------
 import { useLoader } from '@/composables/useLoader'
 const { start, stop } = useLoader()
 
+// -- Toaster -----------------------------------------------
+import { notify } from '@/composables/useNotify'
+
+// Reenviar autorización ------------------------------------
+import { useReenviarAutorizacion } from '@/composables/useReenviarAutorizacion'
+
 // -- DataTable ---------------------------------------------
 import { useDataTable } from '@/composables/useDataTable'
 
 import api from '@/services/api'
+
+const { reenviarAutorizacion } = useReenviarAutorizacion()
+
+const router = useRouter()
+
+// -- Datos y estado -------------------------------------------
+const clientes = ref([])
+const loading = ref(false)
 
 // -- Columnas ----------------------------------------------
 const columns = [
@@ -103,13 +162,19 @@ const columns = [
     { key: 'acciones', label: 'Acciones', sortable: false, align: 'center' },
 ]
 
-const router = useRouter()
-
-// -- Datos y estado -------------------------------------------
-const clientes = ref([])
-const loading = ref(false)
+// -- Modal crear / editar ------------------------------------------------
+const modal = reactive({
+    open: false,
+    loading: false,
+    error: '',
+    form: { id: null, nombre: '', correo: '', telefono: '' },
+})
 
 // -- BackEnd -------------------------------------------------
+async function envioAutorizacion(row) {
+    await reenviarAutorizacion(row.id, row.correo)
+}
+
 async function fetchClientes() {
     loading.value = true
 
@@ -155,8 +220,52 @@ function transformClientes(data) {
     }))
 }
 
+function abrirModal(row) {
+    modal.form = {
+        id: row.id,
+        nombre: row.nombre,
+        correo: row.correo,
+        telefono: row.telefono,
+    }
+    modal.error = ''
+    modal.open = true
+}
+
+async function guardarCliente() {
+    if (!modal.form.nombre || !modal.form.correo || !modal.form.telefono) {
+        notify.error('Los campos nombre, correo y teléfono son requeridos')
+        return
+    }
+
+    start()
+
+    try {
+        await api.put('/api/clientes/actualizarClienteValidar', {
+            cliente: modal.form,
+        })
+
+        modal.open = false
+
+        notify.success(`${modal.form.nombre} actualizado correctamente.`)
+
+        // Actualizar el listado de clientes
+        await fetchClientes()
+    } catch (err) {
+        notify.error(
+            err.response?.data?.message ||
+                'Ocurrió un error al guardar la información del cliente'
+        )
+    } finally {
+        stop()
+    }
+}
+
 function validateCliente(row) {
     router.push(`/clientes/${row.id}/editar`)
+}
+
+function cerrarModal() {
+    modal.open = false
 }
 
 const {

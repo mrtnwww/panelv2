@@ -1144,4 +1144,26 @@ class ClienteController extends Controller
             ], 404);
         }
     }
+
+    public function actualizarClienteValidar(Request $request)
+    {
+        $data = $request->validate([
+            'cliente.id' => 'required|exists:cliente,id',
+            'cliente.nombre'   => 'required|string|max:255',
+            'cliente.correo'   => 'required|email',
+            'cliente.telefono' => 'nullable|string|max:20',
+        ]);
+
+        $clienteData = $data['cliente'];
+
+        Cliente::where('id', $clienteData['id'])->update([
+            'email' => $clienteData['correo'],
+            'nombre' => $clienteData['nombre'],
+            'telefono' => $clienteData['telefono'] ?? '',
+        ]);
+
+        return response()->json([
+            'message' => 'Cliente actualizado correctamente'
+        ]);
+    }
 }
