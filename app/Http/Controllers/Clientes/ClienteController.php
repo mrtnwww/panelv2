@@ -6,10 +6,13 @@ use App\Http\Controllers\Abonos\AbonoController;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\FirmaCliente\FirmaClienteController;
 use App\Http\Controllers\Notificaciones\NotificacionController;
+use App\Mail\AutorizacionConsultaCentralesDeRiesgo;
 use App\Mail\ConsultaAprobada;
 use App\Models\Abono;
 use App\Models\Cliente;
 use App\Models\CodeudorCliente;
+use App\Models\ConvenioLibranza;
+use App\Models\CorreosPlantilla;
 use App\Models\Credito;
 use App\Models\Empresa;
 use App\Models\LineasCredito;
@@ -25,6 +28,7 @@ use App\Models\ReferenciaCliente;
 use App\Models\Usuario;
 use App\Models\UsuarioTipoUsuario;
 use App\Models\ValidacionCuentaBancaria;
+use App\Traits\ReemplazarVariablesPlantilla;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -38,6 +42,8 @@ use Spatie\ImageOptimizer\Optimizers\Pngquant;
 
 class ClienteController extends Controller
 {
+    use ReemplazarVariablesPlantilla;
+
     function listMyClients(Request $request)
     {
         $usuarioId = $request->user()?->id;
@@ -1067,5 +1073,75 @@ class ClienteController extends Controller
         }
 
         $cliente->update(['cliente_validado' => $valor]);
+    }
+
+    public function reenviarAutorizacion(Request $request)
+    {
+        $empresaid = auth()->user()->empresa_id;
+
+        $correo = $request->input('correo', '');
+        $idCliente = $request->input('id', null);
+
+        $cliente = Cliente::find($idCliente);
+
+        if ($cliente) {
+            // limpiar los campos vinculados a la autorizacion
+            $cliente->update([
+                'aprobar_autorizacion' => 0,
+                'autorizacion' => 0
+            ]);
+
+            // si aun no se ha aprobado la nueva consulta en centrales, las nuevas autorizaciones se guardaran en la tabla intermedia [nueva_autorizacion_consulta]
+            if ($cliente->nueva_consulta_centrales == 1)
+                $cliente->update(['nueva_autorizacion_consulta' => 1]);
+
+            $empresa = Empresa::where('id', $empresaid)->first();
+
+            // Validar si la empresa es un aliado o una sede
+            if ($empresa->aliado || $empresa->sede) {
+                $empresa = Empresa::where('id', $empresa->aliado ?? $empresa->sede)->first();
+            }
+
+            $empresa->logoEmpresa = ($empresa->logo) ? Storage::url($empresa->logo) : '';
+
+            $url = '';
+
+            $plantilla = CorreosPlantilla::where('empresa_id', $empresa->id)
+                ->where('nombre', 'Autorización de consulta y reporte en centrales')
+                ->first();
+
+            $texto = '';
+            $asunto = '';
+            if ($plantilla) {
+                $clienteLibranza = $cliente->clienteLibranza;
+
+                if ($clienteLibranza) {
+                    $convenio = ConvenioLibranza::find($clienteLibranza->convenio_empresa_id);
+
+                    if ($convenio) {
+                        $texto = $this->reemplazarVariablesPlantillaCorreo($plantilla->texto, $convenio, $empresa, $cliente);
+                        $asunto = $plantilla->asunto;
+                    }
+                }
+            }
+
+            if (isset($cliente->token)) {
+                $random = $cliente->token;
+                Cliente::where('id', $idCliente)->update(['email' => $correo]);
+                Mail::to($correo)->send(new AutorizacionConsultaCentralesDeRiesgo($random, $cliente, $empresa, $url, $texto, $asunto));
+            } else {
+                $random = md5(rand(1, 500000));
+                Cliente::where('id', $idCliente)->update(['email' => $correo, 'token' => $random]);
+                Mail::to($correo)->send(new AutorizacionConsultaCentralesDeRiesgo($random, $cliente, $empresa, $url, $texto, $asunto));
+            }
+
+            return response()->json([
+                'message' => 'Correo enviado correctamente.'
+            ]);
+        } else {
+            return response()->json([
+                'message' => 'El cliente no se encuentra aún registrado.'
+            ], 404);
+        }
     }
 }

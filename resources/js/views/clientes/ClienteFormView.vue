@@ -79,12 +79,6 @@
                             required
                             :error="errors.fotoCliente"
                         />
-
-                        <!-- Mostramos el preview solo si el usuario acaba de capturar/elegir una foto nueva -->
-                        <FilePreview
-                            v-if="typeof form.fotoCliente === 'string'"
-                            :source="form.fotoCliente"
-                        />
                     </template>
                 </div>
             </div>
@@ -268,10 +262,6 @@
                             "
                             :error="errors[doc.key] ?? ''"
                         />
-                        <FilePreview
-                            v-if="typeof form[doc.key] === 'string'"
-                            :source="form[doc.key]"
-                        />
                     </template>
                 </div>
             </div>
@@ -340,7 +330,7 @@
 
                 <template v-else>
                     <FileUpload
-                        label="Documento de autorización"
+                        label="Documento de autorización consulta en centrales de riesgo"
                         v-model="form.autorizacionCentralesDoc"
                         accept="image/*,application/pdf"
                         accept-label="JPG, PNG o PDF — máx. 1MB"
@@ -350,30 +340,9 @@
                         <button
                             type="button"
                             @click="reenviarAutorizacion('centrales')"
-                            :disabled="loadingReenvio === 'centrales'"
                             class="btn btn-main"
                         >
-                            <svg
-                                v-if="loadingReenvio === 'centrales'"
-                                class="animate-spin w-3.5 h-3.5"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                            >
-                                <circle
-                                    class="opacity-25"
-                                    cx="12"
-                                    cy="12"
-                                    r="10"
-                                    stroke="currentColor"
-                                    stroke-width="4"
-                                />
-                                <path
-                                    class="opacity-75"
-                                    fill="currentColor"
-                                    d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                                />
-                            </svg>
-                            <i v-else class="fa-regular fa-envelope"></i>
+                            <i class="fa-regular fa-envelope"></i>
                             Reenviar al correo del cliente
                         </button>
                     </div>
@@ -387,17 +356,53 @@
             :step="7"
             :completed="completado.autorizacionDebito"
         >
-            <div class="flex flex-col gap-4">
-                <FileUpload
-                    label="Documento de autorización"
-                    v-model="form.autorizacionDebitoDoc"
-                    accept="image/*,application/pdf"
-                    accept-label="JPG, PNG o PDF — máx. 1MB"
-                />
-                <FilePreview
+            <div class="flex flex-col">
+                <!-- Documento ya guardado en el servidor (URL String) -->
+                <div
                     v-if="typeof form.autorizacionDebitoDoc === 'string'"
-                    :source="form.autorizacionDebitoDoc"
-                />
+                    class="space-y-2"
+                >
+                    <div
+                        class="flex items-center justify-between p-3 rounded-xl border border-gray-100 bg-gray-50/50 group transition-all hover:bg-gray-50"
+                    >
+                        <div class="flex items-center gap-3">
+                            <!-- Miniatura -->
+                            <FilePreview :source="form.autorizacionDebitoDoc" />
+
+                            <div class="flex flex-col">
+                                <span
+                                    class="text-xs font-bold text-gray-700 uppercase leading-none mb-1 sm:text-sm"
+                                >
+                                    Documento cargado
+                                </span>
+                                <button
+                                    type="button"
+                                    @click="form.autorizacionDebitoDoc = null"
+                                    class="text-xs text-emerald-500 font-semibold hover:underline text-left leading-none cursor-pointer uppercase tracking-widest"
+                                >
+                                    Reemplazar archivo
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Icono de estado validado -->
+                        <div class="pr-2">
+                            <i
+                                class="fa-solid fa-circle-check text-green-500 text-xl"
+                            ></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Subida de archivo nuevo -->
+                <template v-else>
+                    <FileUpload
+                        label="Documento de débito automático"
+                        v-model="form.autorizacionDebitoDoc"
+                        accept="image/*,application/pdf"
+                        accept-label="JPG, PNG o PDF — máx. 1MB"
+                    />
+                </template>
             </div>
         </CollapsibleCard>
 
@@ -431,13 +436,53 @@
                     />
                 </div>
 
-                <div class="sm:col-span-2">
-                    <FileUpload
-                        label="Documento de consulta"
-                        v-model="form.analisisDoc"
-                        accept="image/*,application/pdf"
-                        accept-label="JPG, PNG o PDF — máx. 1MB"
-                    />
+                <div class="flex flex-col">
+                    <!-- Documento ya guardado en el servidor (URL String) -->
+                    <div
+                        v-if="typeof form.analisisDoc === 'string'"
+                        class="space-y-2"
+                    >
+                        <div
+                            class="flex items-center justify-between p-3 rounded-xl border border-gray-100 bg-gray-50/50 group transition-all hover:bg-gray-50"
+                        >
+                            <div class="flex items-center gap-3">
+                                <!-- Miniatura -->
+                                <FilePreview :source="form.analisisDoc" />
+
+                                <div class="flex flex-col">
+                                    <span
+                                        class="text-xs font-bold text-gray-700 uppercase leading-none mb-1 sm:text-sm"
+                                    >
+                                        Documento cargado
+                                    </span>
+                                    <button
+                                        type="button"
+                                        @click="form.analisisDoc = null"
+                                        class="text-xs text-emerald-500 font-semibold hover:underline text-left leading-none cursor-pointer uppercase tracking-widest"
+                                    >
+                                        Reemplazar archivo
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Icono de estado validado -->
+                            <div class="pr-2">
+                                <i
+                                    class="fa-solid fa-circle-check text-green-500 text-xl"
+                                ></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Subida de archivo nuevo -->
+                    <template v-else>
+                        <FileUpload
+                            label="Documento de consulta en centrales de riesgo"
+                            v-model="form.analisisDoc"
+                            accept="image/*,application/pdf"
+                            accept-label="JPG, PNG o PDF — máx. 1MB"
+                        />
+                    </template>
                 </div>
             </div>
         </CollapsibleCard>
@@ -665,7 +710,6 @@ const getDefaultForm = () => ({
 })
 
 const form = reactive(getDefaultForm())
-const loadingReenvio = ref(null)
 const ciudadInicial = ref(null)
 const errors = reactive({})
 const loading = ref(false)
@@ -739,21 +783,45 @@ const documentosConfig = [
 
 // -- Acciones ----------------------------------------------------------
 async function reenviarAutorizacion(tipo) {
-    loadingReenvio.value = tipo
+    const validations = [
+        {
+            condition: !clienteId,
+            message: 'El cliente aún no se encuentra registrado.',
+        },
+        {
+            condition: !isValidEmail(form.correo),
+            message: 'El correo del cliente no es válido.',
+        },
+    ]
+
+    for (const validation of validations) {
+        if (validation.condition) {
+            notify.error(validation.message)
+            return
+        }
+    }
+
+    start()
+
     try {
-        await fetch(`/api/clientes/reenviar-autorizacion`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                Accept: 'application/json',
-                Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
-            },
-            body: JSON.stringify({ tipo, correo: form.correo }),
+        await api.post('/api/clientes/reenviarAutorizacion', {
+            id: clienteId.value,
+            correo: form.correo,
         })
+
+        notify.success(
+            'La autorización ha sido enviada al correo del cliente.',
+            `${form.correo}`
+        )
     } catch (err) {
         console.error(err)
+        notify.error(
+            err.response?.data?.message ||
+                'Ocurrió un error al enviar la autorización al correo del cliente.',
+            'Si el problema persiste, contacte con el administrador del sistema.'
+        )
     } finally {
-        loadingReenvio.value = null
+        stop()
     }
 }
 

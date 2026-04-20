@@ -256,11 +256,22 @@ const internalError = ref('') // error producido por validación interna
 let stream = null
 
 // ── Computed ─────────────────────────────────────────────────────────────
-const isImage = computed(
-    () =>
-        preview.value?.startsWith('data:image') ||
-        preview.value?.startsWith('blob:')
-)
+const isImage = computed(() => {
+    if (typeof props.modelValue === 'string') {
+        const url = props.modelValue.toLowerCase()
+        return (
+            url.match(/\.(jpeg|jpg|gif|png|webp)/) !== null ||
+            url.includes('X-Amz-Algorithm')
+        )
+    }
+
+    // Si es un archivo recién cargado (Objeto File)
+    if (props.modelValue instanceof File) {
+        return props.modelValue.type.startsWith('image/')
+    }
+
+    return false
+})
 
 // El error visible prioriza el externo; si no hay, muestra el interno
 const errorMessage = computed(() => props.error || internalError.value)

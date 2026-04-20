@@ -43,6 +43,7 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
         Route::put('/updateCliente', [ClienteController::class, 'updateCliente']);
         Route::post('/createCliente', [ClienteController::class, 'createCliente']);
         Route::get('/listClientsCredits', [ClienteController::class, 'listClientsCredits']);
+        Route::post('/reenviarAutorizacion', [ClienteController::class, 'reenviarAutorizacion']);
         Route::get('/listMyClientsValidated', [ClienteController::class, 'listMyClientsValidated']);
         Route::get('/{cliente_id}/{empresa_id?}/{parametrosValidacion?}', [ClienteController::class, 'listMyClient']);
     });
