@@ -27,11 +27,7 @@
                     Crear producto
                 </button>
 
-                <button
-                    @click="descargarPlantilla"
-                    :disabled="loadingPlantilla"
-                    class="btn btn-primary"
-                >
+                <button @click="descargarPlantilla" class="btn btn-primary">
                     <i class="fa-solid fa-download"></i>
                     Descargar plantilla
                 </button>
@@ -145,6 +141,9 @@ import AppModal from '@/components/AppModal.vue'
 import { useLoader } from '@/composables/useLoader'
 const { start, stop } = useLoader()
 
+// -- Toaster ----------------------------------------------------------
+import { notify } from '@/composables/useNotify'
+
 // -- DataTable -------------------------------------------------------
 import { useDataTable } from '@/composables/useDataTable'
 
@@ -169,7 +168,6 @@ const columns = [
 ]
 
 // -- Estado --------------------------------------------------------------
-const loadingPlantilla = ref(false)
 const loading = ref(false)
 const productos = ref([])
 
@@ -250,10 +248,15 @@ async function guardarProducto() {
             },
         })
 
+        notify.success(`${modal.form.nombre} actualizado correctamente.`)
+
         cerrarModal()
-        fetchProductos()
+        await fetchProductos()
     } catch (err) {
-        console.error(err)
+        notify.error(
+            err.response?.data?.message ||
+                'Ocurrió un error al guardar el producto'
+        )
     } finally {
         modal.loading = false
     }
@@ -274,9 +277,14 @@ async function eliminarProducto(row) {
             data: { id: row.id },
         })
 
+        notify.success(`${row.nombre} eliminado correctamente.`)
+
         await fetchProductos()
     } catch (err) {
-        console.error(err)
+        notify.error(
+            err.response?.data?.message ||
+                'Ocurrió un error al eliminar el producto'
+        )
     } finally {
         stop()
     }
@@ -284,22 +292,41 @@ async function eliminarProducto(row) {
 
 // -- Plantilla ---------------------------------------------------------
 async function descargarPlantilla() {
-    loadingPlantilla.value = true
+    start()
+
     try {
-        const response = await fetch('/api/productos/plantilla', {
-            headers: authHeaders(),
+        const response = await api.get('/api/productos/plantilla/descargar', {
+            responseType: 'blob',
         })
-        if (!response.ok) throw new Error()
-        const blob = await response.blob()
-        const a = document.createElement('a')
-        a.href = URL.createObjectURL(blob)
-        a.download = 'plantilla_productos.xlsx'
-        a.click()
-        URL.revokeObjectURL(a.href)
+
+        if (response.data.type === 'application/json') {
+            const reader = new FileReader()
+            reader.onload = () => {
+                const errorData = JSON.parse(reader.result)
+                notify.error(errorData.message || 'Error en el servidor')
+            }
+            reader.readAsText(response.data)
+            return
+        }
+
+        const url = window.URL.createObjectURL(new Blob([response.data]))
+        const link = document.createElement('a')
+        link.href = url
+        link.setAttribute('download', 'plantilla_productos.xlsx')
+        document.body.appendChild(link)
+        link.click()
+
+        link.remove()
+        window.URL.revokeObjectURL(url)
+
+        notify.success('Plantilla descargada con éxito')
     } catch (err) {
-        console.error(err)
+        notify.error(
+            err.response?.data?.message ||
+                'Ocurrió un error al descargar la plantilla'
+        )
     } finally {
-        loadingPlantilla.value = false
+        stop()
     }
 }
 

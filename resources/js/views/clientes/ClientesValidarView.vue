@@ -244,11 +244,9 @@ async function guardarCliente() {
             cliente: modal.form,
         })
 
-        modal.open = false
-
         notify.success(`${modal.form.nombre} actualizado correctamente.`)
 
-        // Actualizar el listado de clientes
+        cerrarModal()
         await fetchClientes()
     } catch (err) {
         notify.error(
@@ -258,6 +256,10 @@ async function guardarCliente() {
     } finally {
         stop()
     }
+}
+
+function cerrarModal() {
+    modal.open = false
 }
 
 function validateCliente(row) {

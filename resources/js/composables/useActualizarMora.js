@@ -1,4 +1,7 @@
-// -- Loader ----------------------------------------------------------------
+// -- Toaster -----------------------------------------------------
+import { notify } from '@/composables/useNotify'
+
+// -- Loader ------------------------------------------------------
 import { useLoader } from '@/composables/useLoader'
 
 import api from '@/services/api'
@@ -32,6 +35,8 @@ export function useActualizarMora() {
                 if (callback) await callback()
             }
         }
+
+        notify.success('El estado de la mora se encuentra actualizado.')
         stop()
     }
 

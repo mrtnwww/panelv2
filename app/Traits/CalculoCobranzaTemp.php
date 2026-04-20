@@ -2,13 +2,13 @@
 
 namespace App\Traits;
 
-use DateTime;
-use Carbon\Carbon;
-use App\Models\Credito;
-use App\Models\TasaUsura;
+use App\Http\Controllers\Mobile\MobileController;
 use App\Models\Condonacion;
+use App\Models\Credito;
 use App\Models\TablasCobranza;
-use App\Http\Controllers\MobileController;
+use App\Models\TasaUsura;
+use Carbon\Carbon;
+use DateTime;
 
 trait CalculoCobranzaTemp
 {
@@ -74,7 +74,7 @@ trait CalculoCobranzaTemp
                     $cuotasSaldadas = $proyecciones->where('pagado', 1)->count();
 
                     //Calcular capital del credito
-                    $tabla = (new MobileController)->obtenerPlanDePagos($credito->id);
+                    $tabla = app(MobileController::class)->obtenerPlanDePagos($credito->id);
                     array_shift($tabla); //Eliminar el primer arreglo de $tabla el cual contiene valores en 0
 
                     foreach($tabla as $key => $tab){

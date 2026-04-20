@@ -2,14 +2,17 @@
 
 namespace App\Http\Controllers\Productos;
 
+use App\Exports\ProductsExport;
 use App\Http\Controllers\Controller;
 use App\Models\Producto;
 use App\Models\UsuarioTipoUsuario;
 use Illuminate\Http\Request;
+use Maatwebsite\Excel\Facades\Excel;
 
 class ProductoController extends Controller
 {
-    public function listProducts(Request $request) {
+    public function listProducts(Request $request)
+    {
         $user = $request->user();
 
         $usuarioId = $user?->id;
@@ -26,11 +29,12 @@ class ProductoController extends Controller
 
         // Obtener productos directamente sin traer usuarios completos
         $productos = Producto::whereIn('user_id', function ($q) use ($empresaId) {
-                $q->select('id')
+            $q->select('id')
                 ->from('usuario')
                 ->where('empresa_id', $empresaId);
-            })
+        })
             ->applySearch($search)
+            ->orderByDesc('id')
             ->paginate($perPage);
 
         $productos->getCollection()->transform(function ($item) use ($isAdmin) {
@@ -52,14 +56,15 @@ class ProductoController extends Controller
 
         $productos = $request->input('productos', []);
 
-        if (isset($productos['referencia'])) $productos = [$productos];
+        if (isset($productos['referencia']))
+            $productos = [$productos];
 
-        foreach($productos as $item) {
+        foreach ($productos as $item) {
             $producto = new Producto();
-            $producto->referencia   = $item['referencia'];
-            $producto->nombre       = $item['nombre'];
-            $producto->precio       = $item['precio'];
-            $producto->user_id      = $usuarioId;
+            $producto->referencia = $item['referencia'];
+            $producto->nombre = $item['nombre'];
+            $producto->precio = $item['precio'];
+            $producto->user_id = $usuarioId;
             $producto->save();
         }
 
@@ -72,17 +77,17 @@ class ProductoController extends Controller
     {
         $data = $request->validate([
             'productos.referencia' => 'required|string',
-            'productos.precio'     => 'required|numeric',
-            'productos.nombre'     => 'required|string',
-            'productos.id'         => 'required|numeric'
+            'productos.precio' => 'required|numeric',
+            'productos.nombre' => 'required|string',
+            'productos.id' => 'required|numeric'
         ]);
 
         $productoData = $data['productos'];
         $producto = Producto::findOrFail($productoData['id']);
 
         $producto->referencia = $productoData['referencia'];
-        $producto->nombre     = $productoData['nombre'];
-        $producto->precio     = $productoData['precio'];
+        $producto->nombre = $productoData['nombre'];
+        $producto->precio = $productoData['precio'];
 
         $producto->save();
 
@@ -102,5 +107,12 @@ class ProductoController extends Controller
         return response()->json([
             'message' => 'Producto eliminado correctamente'
         ]);
+    }
+
+    public function downloadPlantilla()
+    {
+        $data = [];
+
+        return Excel::download(new ProductsExport($data), 'listaProductos.xlsx');
     }
 }

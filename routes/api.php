@@ -74,11 +74,12 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     });
 
     // Productos
-    Route::prefix('productos')->group(function () {
-        Route::get('/', [ProductoController::class, 'listProducts']);
-        Route::put('/', [ProductoController::class, 'update']);
-        Route::post('/', [ProductoController::class, 'store']);
-        Route::delete('/', [ProductoController::class, 'destroy']);
+    Route::controller(ProductoController::class)->prefix('productos')->group(function () {
+        Route::get('/', 'listProducts');
+        Route::put('/', 'update');
+        Route::post('/', 'store');
+        Route::delete('/', 'destroy');
+        Route::get('/plantilla/descargar', 'downloadPlantilla');
     });
 
     // Tareas
