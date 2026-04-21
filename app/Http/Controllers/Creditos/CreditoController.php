@@ -78,12 +78,13 @@ class CreditoController extends Controller
         $anular = $isAdmin;
 
         // Se le restringe el acceso de anulacion de creditos al ing. Victor
-        if (in_array($usuarioId, [5859, 6163, 6309])) $anular = false;
+        if (in_array($usuarioId, [5859, 6163, 6309]))
+            $anular = false;
 
         // validar la funcion de generar extracto
         /** Enviar pagare de credito al correo del cliente */
         $generarExtracto = ParametrosEstadoFunciones::where('empresa_id', $empresaId)
-            ->whereHas('estado_funcion', function($query) {
+            ->whereHas('estado_funcion', function ($query) {
                 $query->where('nombre_funcion', 'Generar extracto');
             })
             ->exists();
@@ -95,22 +96,22 @@ class CreditoController extends Controller
 
         // $creditosQuery = Credito::withTrashed() // Se deja comentado ya que antes de la optimizacion no se estaban consultando los creditos eliminados (Pendiente de comentarlo con el Ing Andres para confirmar si tambien debe traer estos registros)
         $creditosQuery = Credito::where(function ($query) use ($empresaId, $listaSedesAliados, $conditions) {
-                if (!array_key_exists('soloAliados', $conditions) || !$conditions['soloAliados']) {
-                    $query->where('empresa_id', $empresaId);
-                }
-                $query->orWhereIn('empresa_id', $listaSedesAliados);
-            })
-                ->with([
-                    'proyecciones',
-                    'user.persona',
-                    'cliente:id,nombre',
-                    'empresa:id,razon_social,nit',
-                    'lineasCredito:id,tipo_credito',
-                    'abonos:credito_id,abono_gas_cobranza,abono_int_mora'
-                ])
-                ->applyConditions($conditions, $form)
-                ->applySearch($searchTerm, $form)
-                ->orderBy('id', 'desc');
+            if (!array_key_exists('soloAliados', $conditions) || !$conditions['soloAliados']) {
+                $query->where('empresa_id', $empresaId);
+            }
+            $query->orWhereIn('empresa_id', $listaSedesAliados);
+        })
+            ->with([
+                'proyecciones',
+                'user.persona',
+                'cliente:id,nombre',
+                'empresa:id,razon_social,nit',
+                'lineasCredito:id,tipo_credito',
+                'abonos:credito_id,abono_gas_cobranza,abono_int_mora'
+            ])
+            ->applyConditions($conditions, $form)
+            ->applySearch($searchTerm, $form)
+            ->orderBy('id', 'desc');
 
         // Se utiliza para obtener los totales y subtotales de los conceptos de int moratorios y gastos de cobranza
         $adicionales = clone $creditosQuery;
@@ -134,7 +135,7 @@ class CreditoController extends Controller
 
         // obtener proyecciones de los creditos en consulta
         $proyeccionesCreditos = CreditoProyeccion::whereIn('credito_id', $adicionales->pluck('id'))
-            ->select('id','credito_id','pagado','fecha','intereses_moratorios','gastos_cobranza', 'valor_mora', 'valor_cuota')
+            ->select('id', 'credito_id', 'pagado', 'fecha', 'intereses_moratorios', 'gastos_cobranza', 'valor_mora', 'valor_cuota')
             ->get()
             ->groupBy('credito_id');
 
@@ -142,8 +143,21 @@ class CreditoController extends Controller
         $updatesIntereses = [];
 
         $adicionales->select([
-            'id', 'valor_intereses', 'deleted_at', 'aval_value', 'aval_iva', 'valor_base', 'valor_cxc', 'valor_compra', 'num_cuotas', 'periocidad', 'por_anual', 'por_nominal', 'otro_por_ea', 'created_at'
-        ])->chunk(500, function($creditos) use ( &$totalIntMora, &$totalGasCobranza, &$valorSubTotalIntMora, &$valorSubTotalGasCobranza, &$totalIvaAval, &$total_cxc_aliado, &$total_credito_intereses, &$subtotal_credito_intereses, &$total_pendiente_mora, &$subtotal_pendiente_mora, &$updatesIntereses, $now, $proyeccionesCreditos) {
+            'id',
+            'valor_intereses',
+            'deleted_at',
+            'aval_value',
+            'aval_iva',
+            'valor_base',
+            'valor_cxc',
+            'valor_compra',
+            'num_cuotas',
+            'periocidad',
+            'por_anual',
+            'por_nominal',
+            'otro_por_ea',
+            'created_at'
+        ])->chunk(500, function ($creditos) use (&$totalIntMora, &$totalGasCobranza, &$valorSubTotalIntMora, &$valorSubTotalGasCobranza, &$totalIvaAval, &$total_cxc_aliado, &$total_credito_intereses, &$subtotal_credito_intereses, &$total_pendiente_mora, &$subtotal_pendiente_mora, &$updatesIntereses, $now, $proyeccionesCreditos) {
             foreach ($creditos as $credito) {
                 $calculoIntereses = 0;
                 $proyecciones = $proyeccionesCreditos[$credito->id] ?? collect();
@@ -167,10 +181,12 @@ class CreditoController extends Controller
                 // validar si el credito se ha eliminado o no
                 $isActive = is_null($credito->deleted_at);
 
-                if ($isActive) $subtotal_credito_intereses += $calculoIntereses;
+                if ($isActive)
+                    $subtotal_credito_intereses += $calculoIntereses;
 
                 // iva del aval
-                if (!empty($credito->aval_value)) $totalIvaAval += round(($credito->aval_value * ($credito->aval_iva ?? 0)) / 100);
+                if (!empty($credito->aval_value))
+                    $totalIvaAval += round(($credito->aval_value * ($credito->aval_iva ?? 0)) / 100);
 
                 // cuotas pendientes
                 $proyeccionesNoPagadas = $proyecciones->where('pagado', 0)
@@ -178,26 +194,31 @@ class CreditoController extends Controller
                     ->values();
 
                 if ($proyeccionesNoPagadas->isNotEmpty()) {
-                    $sumIntMora     = $proyeccionesNoPagadas->sum(fn($p) => round($p->intereses_moratorios ?? 0));
+                    $sumIntMora = $proyeccionesNoPagadas->sum(fn($p) => round($p->intereses_moratorios ?? 0));
                     $sumGasCobranza = $proyeccionesNoPagadas->sum(fn($p) => round($p->gastos_cobranza ?? 0));
 
                     $totalIntMora += $sumIntMora;
                     $totalGasCobranza += $sumGasCobranza;
 
                     if ($isActive) {
-                        $valorSubTotalIntMora     += $sumIntMora;
+                        $valorSubTotalIntMora += $sumIntMora;
                         $valorSubTotalGasCobranza += $sumGasCobranza;
                     }
 
-                        // Calcular mora total pendiente
+                    // Calcular mora total pendiente
                     $calculoPendienteMora = $this->pagoMinimo(
                         $proyecciones,
-                        null, null,
-                        true, true, 1, 1
+                        null,
+                        null,
+                        true,
+                        true,
+                        1,
+                        1
                     ) ?? 0;
 
                     $total_pendiente_mora += $calculoPendienteMora;
-                    if ($isActive) $subtotal_pendiente_mora += $calculoPendienteMora;
+                    if ($isActive)
+                        $subtotal_pendiente_mora += $calculoPendienteMora;
                 }
 
                 // Total cuenta por cobrar aliado
@@ -261,7 +282,7 @@ class CreditoController extends Controller
         $proyeccionesPorCredito = CreditoProyeccion::whereIn('credito_id', $creditos->pluck('id'))->get()->groupBy('credito_id');
 
         // Transformar los créditos
-        $creditos->getCollection()->transform(function ($credito) use ($hoy, $anular, $abonosPorCredito, $proyeccionesPorCredito, $isAdmin, $empresaId , $generarExtracto) {
+        $creditos->getCollection()->transform(function ($credito) use ($hoy, $anular, $abonosPorCredito, $proyeccionesPorCredito, $isAdmin, $empresaId, $generarExtracto) {
 
             $condicional = [['credito_id', $credito->id], ['pagado', 0]];
             $isMora = false;
@@ -275,12 +296,13 @@ class CreditoController extends Controller
                 $datetime2 = new DateTime($proyeccion->fecha);
                 $interval = $datetime1->diff($datetime2);
                 $omg = $interval->format('%R%a');
-                if (0 > $omg) $isMora = true;
+                if (0 > $omg)
+                    $isMora = true;
             }
 
             $intMora = 0;
             $gasCobranza = 0;
-            $credito->proyecciones->each(function($proyeccion) use (&$intMora, &$gasCobranza) {
+            $credito->proyecciones->each(function ($proyeccion) use (&$intMora, &$gasCobranza) {
                 if ($proyeccion->pagado == 0) {
                     $intMora += round($proyeccion->intereses_moratorios ?? 0);
                     $gasCobranza += round($proyeccion->gastos_cobranza ?? 0);
@@ -308,7 +330,7 @@ class CreditoController extends Controller
              * @param bool $estadoFunciones
              * @param bool $gastosCobranzaaAu
              * @param bool $intMoratoriosAu
-            */
+             */
             $table = $this->CalcularCapital($credito->id);
             $abono = $abonosPorCredito->get($credito->id, collect())->sum('valor');
 
@@ -320,7 +342,7 @@ class CreditoController extends Controller
             $saldo = $credito->valor_credito;
             $num = $cuotas;
             foreach ($table as $tab) {
-                if($num > 0){
+                if ($num > 0) {
                     $saldo -= $tab["valCuota"];
                 }
                 $num--;
@@ -330,10 +352,11 @@ class CreditoController extends Controller
             $valorMora = $this->pagoMinimo($credito->proyecciones, null, null, true, true, $GastosCobranzaAu, $InteresesMoratoriosAu) ?? 0;
 
             // Si el valor de la mora es mayor a 0, se asigna el valor de la mora al saldo (pueden existir diferencias de 1 o 2 pesos)
-            if (max(0, $saldo) == 0 && max(0, $valorMora) != 0) $saldo = $valorMora;
+            if (max(0, $saldo) == 0 && max(0, $valorMora) != 0)
+                $saldo = $valorMora;
 
             // Se valida si se ha realizado condonaciones al credito
-            $valorCondonaciones = Condonacion::whereIn('abono_id', function ($query) use($credito) {
+            $valorCondonaciones = Condonacion::whereIn('abono_id', function ($query) use ($credito) {
                 $query->select('id')->from('abono')->where('credito_id', $credito->id);
             })->where('concepto_condonacion', 'credito')->sum('valor_condonado');
 
@@ -369,9 +392,9 @@ class CreditoController extends Controller
                 'nombre' => $credito->cliente->nombre ?? '',
                 'client' => $credito->cliente->id ?? '',
                 'anular' => $anular,
-                'anulado' => (bool)$credito->deleted_at,
+                'anulado' => (bool) $credito->deleted_at,
                 'finalizado' => $isFinalizado > 0 ? 0 : 1,
-                'isDeletedAt' => (bool)$credito->deleted_at,
+                'isDeletedAt' => (bool) $credito->deleted_at,
                 'empresa' => $credito->empresa->razon_social ?? '',
                 'empresa_nit' => $credito->empresa->nit ?? null,
                 'placa' => $credito->placa,
@@ -435,8 +458,8 @@ class CreditoController extends Controller
     {
         $empresaId = $request->user()->empresa_id;
 
-        $credito_id     = $request['id'];
-        $creditoActual  = Credito::where('id', $credito_id)->first();
+        $credito_id = $request['id'];
+        $creditoActual = Credito::where('id', $credito_id)->first();
 
         // actualizar valor_cuota en la proyeccion del credito si contiene valores nulos
         $this->actualizarValorCuota($creditoActual);
@@ -453,7 +476,7 @@ class CreditoController extends Controller
         $abonos = Abono::where('credito_id', $credito_id)->sum('valor');
 
         // Se valida si se ha realizado condonaciones al credito
-        $valorCondonaciones = Condonacion::whereIn('abono_id', function ($query) use($creditoActual) {
+        $valorCondonaciones = Condonacion::whereIn('abono_id', function ($query) use ($creditoActual) {
             $query->select('id')->from('abono')->where('credito_id', $creditoActual->id);
         })->where('concepto_condonacion', 'credito')->sum('valor_condonado');
 
@@ -527,8 +550,8 @@ class CreditoController extends Controller
             ['credito_id', $credito_id],
             ['pagado', 0]
         ];
-        $isFinalizado =  CreditoProyeccion::where($condicional)->count();
-        $diasMora =  CreditoProyeccion::where($condicional)->max('diasMora');
+        $isFinalizado = CreditoProyeccion::where($condicional)->count();
+        $diasMora = CreditoProyeccion::where($condicional)->max('diasMora');
 
         $pagado = 0;
         $table = $this->CalcularCapital($creditoActual->id);
@@ -536,9 +559,9 @@ class CreditoController extends Controller
         $abonos = Abono::where('credito_id', $credito_id)->get();
 
         foreach ($arrayProyeccion as $key => &$item) {
-            $pagado +=  $item['valor'];
+            $pagado += $item['valor'];
 
-            $item['capital_cuota']  = $table[$key]['capital'];
+            $item['capital_cuota'] = $table[$key]['capital'];
             $item['fecha_pago'] = '- -';
 
             foreach ($abonos as $abono) {
@@ -552,21 +575,21 @@ class CreditoController extends Controller
             }
         }
 
-        $funcionMoratorioAu = EstadoFunciones::where('nombre_funcion','Intereses moratorios Automáticos')->first();
-        $InteresesMoratoriosAu = ParametrosEstadoFunciones::where([['empresa_id',$empresaId],['estado_funcion_id',$funcionMoratorioAu->id]])->first();
+        $funcionMoratorioAu = EstadoFunciones::where('nombre_funcion', 'Intereses moratorios Automáticos')->first();
+        $InteresesMoratoriosAu = ParametrosEstadoFunciones::where([['empresa_id', $empresaId], ['estado_funcion_id', $funcionMoratorioAu->id]])->first();
 
-        if($InteresesMoratoriosAu){
+        if ($InteresesMoratoriosAu) {
             $InteresesMoratoriosAu = 1;
-        }else{
+        } else {
             $InteresesMoratoriosAu = 0;
         }
 
-        $funcionGastoCAu = EstadoFunciones::where('nombre_funcion','Gastos de cobranza Automáticos')->first();
-        $GastosCobranzaAu = ParametrosEstadoFunciones::where([['empresa_id',$empresaId],['estado_funcion_id',$funcionGastoCAu->id]])->first();
+        $funcionGastoCAu = EstadoFunciones::where('nombre_funcion', 'Gastos de cobranza Automáticos')->first();
+        $GastosCobranzaAu = ParametrosEstadoFunciones::where([['empresa_id', $empresaId], ['estado_funcion_id', $funcionGastoCAu->id]])->first();
 
-        if($GastosCobranzaAu){
+        if ($GastosCobranzaAu) {
             $GastosCobranzaAu = 1;
-        }else{
+        } else {
             $GastosCobranzaAu = 0;
         }
 
@@ -580,13 +603,13 @@ class CreditoController extends Controller
          * @param bool $estadoFunciones
          * @param bool $gastosCobranzaaAu
          * @param bool $intMoratoriosAu
-        */
+         */
         $valorMora = $this->pagoMinimo($creditoActual->proyecciones, null, null, true, true, $GastosCobranzaAu, $InteresesMoratoriosAu);
 
         $saldo = $creditoActual->valor_credito;
         $num = $cuotas;
         foreach ($table as $tab) {
-            if($num > 0){
+            if ($num > 0) {
                 $saldo -= $tab["valCuota"];
             }
             $num--;
@@ -594,7 +617,8 @@ class CreditoController extends Controller
         $saldo = $saldo - $modular;
 
         // Si el valor de la mora es mayor a 0, se asigna el valor de la mora al saldo (pueden existir diferencias de 1 o 2 pesos)
-        if (max(0, $saldo) == 0 && max(0, $valorMora) != 0) $saldo = $valorMora;
+        if (max(0, $saldo) == 0 && max(0, $valorMora) != 0)
+            $saldo = $valorMora;
 
         $vAbonos = $abonos->sum('valor');
         $valorPendiente = $this->calculoLiquidacion($creditoActual, $creditoActual->proyecciones, $modular, $vAbonos);
@@ -649,9 +673,50 @@ class CreditoController extends Controller
         // Término de búsqueda
         $searchTerm = $request->input('search', '');
         // condiciones de busqueda
-        $conditions = $request->input('conditions', []);
+        $conditions = [
+            'estado_credito' => $request->input('estado_credito', ''),
+            'aliado' => $request->input('aliado', ''),
+        ];
         // condiciones de busqueda especificas para el modulo de cobranza
-        $conditionsCobranza = $request->input('conditionsCobranza', []);
+        $inputs = $request->only([
+            'estado_credito',
+            'meses_pagados',
+            'meses_pagados_hasta',
+            'notificacion',
+            'reporte',
+            'mes_corte',
+            'cuotas_pagadas',
+            'cuotas_pagadas_hasta',
+            'vencimiento_cuota',
+            'vencimiento_cuota_hasta',
+            'dias_mora',
+            'dias_mora_hasta',
+            'estado_cliente'
+        ]);
+
+        $conditionsCobranza = [
+            'estado_credito' => $inputs['estado_credito'] ?? '',
+            'meses_pagados' => [
+                'desde' => $inputs['meses_pagados'] ?? '',
+                'hasta' => $inputs['meses_pagados_hasta'] ?? ''
+            ],
+            'notificacion' => $inputs['notificacion'] ?? '',
+            'reporte' => $inputs['reporte'] ?? '',
+            'mes_corte' => $inputs['mes_corte'] ?? '',
+            'cuotas_pagadas' => [
+                'desde' => $inputs['cuotas_pagadas'] ?? '',
+                'hasta' => $inputs['cuotas_pagadas_hasta'] ?? '',
+            ],
+            'vencimiento_cuota' => [
+                'desde' => $inputs['vencimiento_cuota'] ?? '',
+                'hasta' => $inputs['vencimiento_cuota_hasta'] ?? ''
+            ],
+            'dias_mora' => [
+                'desde' => $inputs['dias_mora'] ?? '',
+                'hasta' => $inputs['dias_mora_hasta'] ?? '',
+            ],
+            'estado_cliente_tarea' => $inputs['estado_cliente'] ?? ''
+        ];
 
         // creditos por pagina
         $perPage = $request->input('per_page', 10);
@@ -685,7 +750,8 @@ class CreditoController extends Controller
         ]);
     }
 
-    public function clienteCreditData(Request $request) {
+    public function clienteCreditData(Request $request)
+    {
         $empresaId = auth()->user()->empresa_id;
 
         $condiction = [
@@ -715,31 +781,36 @@ class CreditoController extends Controller
         }
 
         // Se consultan los créditos del cliente
-        $creditos =  Credito::where('client_id', $cliente->id)
+        $creditos = Credito::where('client_id', $cliente->id)
             ->select('id', 'valor_compra')
             ->whereNull('fecha_cierre')
-            ->with(['proyecciones' => function ($query) {
-                $query->where('pagado', 0)->orderBy('fecha');
-            }])->get();
+            ->with([
+                'proyecciones' => function ($query) {
+                    $query->where('pagado', 0)->orderBy('fecha');
+                }
+            ])->get();
 
         // 1. validar si el cliente puede tener mas de un credito vigente de forma simultanea
         if ($creditos->count() > 0) {
             $creditosSimultaneos = $this->validarCreditosSimultaneos($request['id']);
-            if (!$creditosSimultaneos['continuar']) return $creditosSimultaneos['response'];
+            if (!$creditosSimultaneos['continuar'])
+                return $creditosSimultaneos['response'];
         }
 
         // 2. se valida si aplica reconsulta nuevamente en centrales de riesgo
         $resultadoValidacion = $this->validarConsultaCentrales($request['id']);
-        if (!$resultadoValidacion['continuar']) return $resultadoValidacion['response'];
+        if (!$resultadoValidacion['continuar'])
+            return $resultadoValidacion['response'];
 
         /**
          * 3. validaciones adicionales aplican para todos los clientes
          * * referencias
          * * autorizacion consulta
          * * consulta en centrales
-        */
+         */
         $validacionesCliente = $this->validacionesCliente($cliente);
-        if (!$validacionesCliente['continuar']) return $validacionesCliente['response'];
+        if (!$validacionesCliente['continuar'])
+            return $validacionesCliente['response'];
 
         //si hay más de un crédito , debemos verificar si tiene cupo.
         $tieneCreditos = false;
@@ -774,7 +845,8 @@ class CreditoController extends Controller
 
             // validar si el o los creditos que tenga el cliente vigentes esta en mora
             $proyeccion = $credito->proyecciones->first();
-            if ($proyeccion) $enMora = Carbon::today()->gt(Carbon::parse($proyeccion->fecha));
+            if ($proyeccion)
+                $enMora = Carbon::today()->gt(Carbon::parse($proyeccion->fecha));
 
             $tieneCreditos = true;
         }
@@ -802,16 +874,17 @@ class CreditoController extends Controller
         return response()->json(compact('datos'));
     }
 
-    private function procesarCreditosCobranza($creditos, $ids) {
+    private function procesarCreditosCobranza($creditos, $ids)
+    {
         $hoy = Carbon::now();
 
         // Ultimos reportes de los créditos
         $ultReportes = ReporteCentralesHistorial::select(
-                'reporte_centrales_historial.created_at',
-                'reporte_centrales_historial.tipo_reporte_id',
-                'reporte_centrales_tipo.tipo_reporte AS tipo_reporte_nombre',
-                'reporte_centrales_historial.credito_id'
-            )
+            'reporte_centrales_historial.created_at',
+            'reporte_centrales_historial.tipo_reporte_id',
+            'reporte_centrales_tipo.tipo_reporte AS tipo_reporte_nombre',
+            'reporte_centrales_historial.credito_id'
+        )
             ->whereIn('credito_id', $ids)
             ->orderBy('reporte_centrales_historial.created_at', 'desc')
             ->join('reporte_centrales_tipo', 'reporte_centrales_tipo.id', '=', 'reporte_centrales_historial.tipo_reporte_id')
@@ -846,9 +919,9 @@ class CreditoController extends Controller
             $ultReporte = $ultReporte ? $ultReporte->first() : null;
 
             $infoUltReporte = [
-                "fecha"   => $ultReporte ? $ultReporte->created_at : '',
+                "fecha" => $ultReporte ? $ultReporte->created_at : '',
                 "tipo_id" => $ultReporte ? $ultReporte->tipo_reporte_id : '',
-                "tipo"    => $ultReporte ? $ultReporte->tipo_reporte_nombre : '',
+                "tipo" => $ultReporte ? $ultReporte->tipo_reporte_nombre : '',
             ];
 
             $credito->cliente = $cliente;
@@ -909,7 +982,8 @@ class CreditoController extends Controller
         $valorAFavor = 0;
 
         foreach ($proyeccion as $key => $p) {
-            if (!isset($valorCuota)) $p->valor_cuota = $credito->val_cuotas;
+            if (!isset($valorCuota))
+                $p->valor_cuota = $credito->val_cuotas;
             $sumaPagos += $p->pagada_capital ? $this->CalcularCapital($credito->id)[$key]['capital'] : $p->valor_cuota;
 
             if (!$p->pagada_capital && $p->pagado == 0) {
@@ -960,7 +1034,8 @@ class CreditoController extends Controller
 
         $periodicidad = $credito->periocidad;
         // acá va el tema de los vencimientos
-        if ($periodicidad != 1) $n = $n * 2;
+        if ($periodicidad != 1)
+            $n = $n * 2;
         $fechas = (new MobileController)->calculoPlanPagos(null, $periodicidad, $n);
 
         $i = 0;
@@ -999,8 +1074,7 @@ class CreditoController extends Controller
             $firmaElecPorcentaje = $credito->firma_elec_porcentaje;
             $firmaElecTotal = $p * ($credito->firma_elec_porcentaje / 100);
             $firmaElec = ($p * ($credito->firma_elec_porcentaje / 100)) / $n;
-        }
-        else if (
+        } else if (
             $credito->por_plataforma &&
             $credito->por_plataforma != 0 &&
             $credito->por_plataforma != '' &&
@@ -1102,7 +1176,7 @@ class CreditoController extends Controller
                 $interesesGracia = $tabla[$j]['saldo'] * $i;
             }
 
-            $otroIntereses =  ($enGracia ? $saldoGracia : $tabla[$j]['saldo']) * $iOtro;
+            $otroIntereses = ($enGracia ? $saldoGracia : $tabla[$j]['saldo']) * $iOtro;
 
             // paso 3 : calcúlo de capital
             if ($j == 0) {
@@ -1122,7 +1196,8 @@ class CreditoController extends Controller
                 }
 
                 // en la última cuota se abona el capital en gracia
-                if ($j == $n - 1) $capital += $capitalGracia;
+                if ($j == $n - 1)
+                    $capital += $capitalGracia;
             } else {
                 $saldo = $tabla[$j]['saldo'] - $capital;
             }
@@ -1186,7 +1261,7 @@ class CreditoController extends Controller
         // valor a favor del cliente
         $favorCliente = $modular ?? 0;
 
-        forEach($proyeccion as $index => $p) {
+        foreach ($proyeccion as $index => $p) {
             $fechaCredito = Carbon::parse($credito->created_at)->endOfDay(); // fecha de colocacion del credito
             $diasCalculo = 0; // dias de intereses a pagar de la cuota pendiente
 
@@ -1213,7 +1288,7 @@ class CreditoController extends Controller
 
                     // validar si la fecha de pago es menor a hoy (cuota en mora)
                     if ($fechaPago->isPast()) {
-                        $diasCalculo = (int)  $fechaAnterior->diffInDays($fechaPago, true);
+                        $diasCalculo = (int) $fechaAnterior->diffInDays($fechaPago, true);
                     } else if ($fechaAnterior->isPast()) {
                         $diasCalculo = (int) $fechaAnterior->diffInDays($hoy, true); // al dia
                     }
@@ -1292,8 +1367,8 @@ class CreditoController extends Controller
         }
 
         $condonaciones = [];
-        foreach($abonos as $abono){
-            foreach($abono->condonaciones as $condonacion){
+        foreach ($abonos as $abono) {
+            foreach ($abono->condonaciones as $condonacion) {
                 $persona = Persona::find($condonacion->usuario->persona_id);
                 $condonacion->usuario_nombre = $persona->nombre;
 
@@ -1303,7 +1378,7 @@ class CreditoController extends Controller
 
         // condonaciones por credito
         $condonacionesTareas = Condonacion::where('credito_id', $credito->id)->get();
-        foreach($condonacionesTareas as $condonacion){
+        foreach ($condonacionesTareas as $condonacion) {
             $persona = Persona::find($condonacion->usuario->persona_id);
             $condonacion->usuario_nombre = $persona->nombre;
 
@@ -1311,7 +1386,7 @@ class CreditoController extends Controller
         }
 
         //$totalAbonos = Abono::where($conditions1)->sum('valor');
-        $cantidadPagas = CreditoProyeccion::where([[$conditions1],['pagado' , '1']])->count();
+        $cantidadPagas = CreditoProyeccion::where([[$conditions1], ['pagado', '1']])->count();
         $totalAbonos = $credito->val_cuotas * $cantidadPagas;
 
         $proyeccion = CreditoProyeccion::where($conditions1)->get();
@@ -1394,11 +1469,11 @@ class CreditoController extends Controller
                 $valorCompra = 0;
             }
 
-            $totales["capital"] +=  $capital;
-            $totales["intereses"]  += $intereses;
-            $totales["valorOtros"]  += $valorOtros;
-            $totales["valorCuota"]  += $valorCuotas;
-            $totales["total"]  += $valorCuotas;
+            $totales["capital"] += $capital;
+            $totales["intereses"] += $intereses;
+            $totales["valorOtros"] += $valorOtros;
+            $totales["valorCuota"] += $valorCuotas;
+            $totales["total"] += $valorCuotas;
 
             $capital = round($valorCuotas) - round($valorOtros) - round($intereses) - round($plataforma);
         }
@@ -1498,7 +1573,7 @@ class CreditoController extends Controller
         // $valorPendiente = $credito->valor_credito - $totalAbonos;
         // valor del credito sin intereses futuros
         // Se valida si se ha realizado condonaciones al credito
-        $valorCondonaciones = Condonacion::whereIn('abono_id', function ($query) use($credito) {
+        $valorCondonaciones = Condonacion::whereIn('abono_id', function ($query) use ($credito) {
             $query->select('id')->from('abono')->where('credito_id', $credito->id);
         })->where('concepto_condonacion', 'credito')->sum('valor_condonado');
 
@@ -1589,32 +1664,33 @@ class CreditoController extends Controller
             ['pagado', 0]
         ];
 
-        $funcionAbonoCapital = EstadoFunciones::where('nombre_funcion','Abonar al capital')->first();
-        $AbonoCapital = ParametrosEstadoFunciones::where([['empresa_id',$empresaId],['estado_funcion_id',$funcionAbonoCapital->id]])->first();
+        $funcionAbonoCapital = EstadoFunciones::where('nombre_funcion', 'Abonar al capital')->first();
+        $AbonoCapital = ParametrosEstadoFunciones::where([['empresa_id', $empresaId], ['estado_funcion_id', $funcionAbonoCapital->id]])->first();
 
-        if($AbonoCapital){
+        if ($AbonoCapital) {
             $AbonoCapital = 1;
-        }else{
+        } else {
             $AbonoCapital = 0;
         }
 
-        if ($credito->credito_liquidez == 1) $AbonoCapital = 0;
+        if ($credito->credito_liquidez == 1)
+            $AbonoCapital = 0;
 
-        $funcionMoratorioAu = EstadoFunciones::where('nombre_funcion','Intereses moratorios Automáticos')->first();
-        $InteresesMoratoriosAu = ParametrosEstadoFunciones::where([['empresa_id',$empresaId],['estado_funcion_id',$funcionMoratorioAu->id]])->first();
+        $funcionMoratorioAu = EstadoFunciones::where('nombre_funcion', 'Intereses moratorios Automáticos')->first();
+        $InteresesMoratoriosAu = ParametrosEstadoFunciones::where([['empresa_id', $empresaId], ['estado_funcion_id', $funcionMoratorioAu->id]])->first();
 
-        if($InteresesMoratoriosAu){
+        if ($InteresesMoratoriosAu) {
             $InteresesMoratoriosAu = 1;
-        }else{
+        } else {
             $InteresesMoratoriosAu = 0;
         }
 
-        $funcionGastoCAu = EstadoFunciones::where('nombre_funcion','Gastos de cobranza Automáticos')->first();
-        $GastosCobranzaAu = ParametrosEstadoFunciones::where([['empresa_id',$empresaId],['estado_funcion_id',$funcionGastoCAu->id]])->first();
+        $funcionGastoCAu = EstadoFunciones::where('nombre_funcion', 'Gastos de cobranza Automáticos')->first();
+        $GastosCobranzaAu = ParametrosEstadoFunciones::where([['empresa_id', $empresaId], ['estado_funcion_id', $funcionGastoCAu->id]])->first();
 
-        if($GastosCobranzaAu){
+        if ($GastosCobranzaAu) {
             $GastosCobranzaAu = 1;
-        }else{
+        } else {
             $GastosCobranzaAu = 0;
         }
 
@@ -1626,9 +1702,9 @@ class CreditoController extends Controller
         $activoAbonoCapital = 1;
         $fechaAbonoCapital = 'Digite el valor';
 
-        foreach($proyecciones as $proyeccion){
-            if($proyeccion->pagado == 0){
-                if($proyeccion->fecha->format('Y-m-d') < $hoy->format('Y-m-d')){
+        foreach ($proyecciones as $proyeccion) {
+            if ($proyeccion->pagado == 0) {
+                if ($proyeccion->fecha->format('Y-m-d') < $hoy->format('Y-m-d')) {
                     // si el cliente se encuentra en mora no se podra realizar abono a capital
                     $activoAbonoCapital = 0;
                     $fechaAbonoCapital = 'En mora';
@@ -1651,61 +1727,61 @@ class CreditoController extends Controller
         $table = $this->CalcularCapital($credito->id);
         $valorAFavor = 0;
 
-        $valorACuotasAFavor = 0 ;
-        foreach($abonos as $abono){
+        $valorACuotasAFavor = 0;
+        foreach ($abonos as $abono) {
             //Restar interes mora
             $valorACuotas = $abono->valor;
 
-            if($valorACuotas > 0 ){
+            if ($valorACuotas > 0) {
                 $valorACuotasAFavor = $valorACuotasAFavor + $valorACuotas;
-            }else{
+            } else {
                 $valorACuotasAFavor = $valorACuotasAFavor - $valorACuotas;
             }
         }
 
-            // Resultado de la división (cociente)
+        // Resultado de la división (cociente)
         $cuotasSaldadas = intdiv($valorACuotasAFavor, $credito->val_cuotas);
         $valorAFavor = $valorACuotasAFavor % $credito->val_cuotas;
 
         $capitalEnDeuda = 0;
 
-        foreach($table as $key => $tab){
+        foreach ($table as $key => $tab) {
             $capitalEnDeuda += $tab["capital"];
 
-            if($cuotasSaldadas == 0){
-                if($proyecciones[0]->pagado == 1){
+            if ($cuotasSaldadas == 0) {
+                if ($proyecciones[0]->pagado == 1) {
                     $valorAFavor = 0;
                 }
             }
 
             $capitalGC = 0;
-            if($proyecciones[$key]->pagado == 0){
-                $proyecciones[$key]->capital = round($tab["capital"],0);
-                if($valorAFavor > 0){
+            if ($proyecciones[$key]->pagado == 0) {
+                $proyecciones[$key]->capital = round($tab["capital"], 0);
+                if ($valorAFavor > 0) {
 
-                    if($tab["firmaElec"]>0){
-                        $capitalGC = $tab["capital"] +  $tab["intereses"] + $tab["firmaElec"] - $valorAFavor;
-                    }else{
-                        $capitalGC = $tab["capital"] +  $tab["intereses"] - $valorAFavor;
+                    if ($tab["firmaElec"] > 0) {
+                        $capitalGC = $tab["capital"] + $tab["intereses"] + $tab["firmaElec"] - $valorAFavor;
+                    } else {
+                        $capitalGC = $tab["capital"] + $tab["intereses"] - $valorAFavor;
                     }
 
                     $resultado = $credito->val_cuotas - $valorAFavor;
 
-                    if($resultado < $proyecciones[$key]->capital){
+                    if ($resultado < $proyecciones[$key]->capital) {
                         $proyecciones[$key]->capital = $resultado;
                     }
 
                     $valorAFavor = 0;
-                }else{
-                    if($tab["firmaElec"]>0){
-                        $capitalGC = $tab["capital"] +  $tab["intereses"] + $tab["firmaElec"];
-                    }else{
-                        $capitalGC = $tab["capital"] +  $tab["intereses"];
+                } else {
+                    if ($tab["firmaElec"] > 0) {
+                        $capitalGC = $tab["capital"] + $tab["intereses"] + $tab["firmaElec"];
+                    } else {
+                        $capitalGC = $tab["capital"] + $tab["intereses"];
                     }
                 }
 
 
-                $proyecciones[$key]->capitalGC =  round($capitalGC,0);
+                $proyecciones[$key]->capitalGC = round($capitalGC, 0);
 
             }
         }
@@ -1726,12 +1802,12 @@ class CreditoController extends Controller
          * @param bool $estadoFunciones
          * @param bool $gastosCobranzaaAu
          * @param bool $intMoratoriosAu
-        */
+         */
         $saldoMora = $this->pagoMinimo($credito->proyecciones, null, null, true, true, $GastosCobranzaAu, $InteresesMoratoriosAu);
         $valor_abonado = Abono::where('credito_id', $credito->id)->sum('valor');
 
         // Se valida si se ha realizado condonaciones al credito
-        $valorCondonaciones = Condonacion::whereIn('abono_id', function ($query) use($credito) {
+        $valorCondonaciones = Condonacion::whereIn('abono_id', function ($query) use ($credito) {
             $query->select('id')->from('abono')->where('credito_id', $credito->id);
         })->where('concepto_condonacion', 'credito')->sum('valor_condonado');
 
@@ -1746,7 +1822,7 @@ class CreditoController extends Controller
         $saldo = $credito->valor_credito;
         $num = $cuotas;
         foreach ($table as $tab) {
-            if($num > 0){
+            if ($num > 0) {
                 $saldo -= $tab["valCuota"];
             }
             $num--;
@@ -1754,7 +1830,8 @@ class CreditoController extends Controller
         $saldo = $saldo - $modular;
 
         // Si el valor de la mora es mayor a 0, se asigna el valor de la mora al saldo (pueden existir diferencias de 1 o 2 pesos)
-        if (max(0, $saldo) == 0 && max(0, $saldoMora) != 0) $saldo = $saldoMora;
+        if (max(0, $saldo) == 0 && max(0, $saldoMora) != 0)
+            $saldo = $saldoMora;
 
         // $saldo -= ($valorCondonaciones ?? 0);
         // $saldoMora -= ($valorCondonaciones ?? 0);
@@ -1791,11 +1868,13 @@ class CreditoController extends Controller
         ]);
     }
 
-    function calcularIntereses($credito) {
+    function calcularIntereses($credito)
+    {
         $n = $credito->num_cuotas;
         $p = $credito->valor_compra;
 
-        if ($credito->periocidad != 1) $n *= 2;
+        if ($credito->periocidad != 1)
+            $n *= 2;
 
         $i = 0;
         $iOtro = 0;
@@ -1861,9 +1940,10 @@ class CreditoController extends Controller
                 $intereses = $tabla[$j]['saldo'] * $i;
             }
 
-            if ($intereses) $totalIntereses += round($intereses);
+            if ($intereses)
+                $totalIntereses += round($intereses);
 
-            $otroIntereses =  $tabla[$j]['saldo'] * $iOtro;
+            $otroIntereses = $tabla[$j]['saldo'] * $iOtro;
 
             if ($j == 0) {
                 $capital = $valCuotaFija - ($tabla[$j]['saldo'] * $i) - $otroIntereses;
@@ -1881,7 +1961,8 @@ class CreditoController extends Controller
         return $totalIntereses ?? 0;
     }
 
-    public function obtenerEstadoFuncion($nombreFuncion, $empresaId) {
+    public function obtenerEstadoFuncion($nombreFuncion, $empresaId)
+    {
         $funcion = EstadoFunciones::where('nombre_funcion', $nombreFuncion)->first();
         return ParametrosEstadoFunciones::where([
             ['empresa_id', $empresaId],
@@ -1903,7 +1984,7 @@ class CreditoController extends Controller
 
         // verificar si esta habilitada la funcion que permite que un cliente pueda tener mas de un credito a la vez
         $creditosSimultaneos = ParametrosEstadoFunciones::where('empresa_id', $empresaCliente->id)
-            ->whereHas('estado_funcion', function($query) {
+            ->whereHas('estado_funcion', function ($query) {
                 $query->where('nombre_funcion', 'Restringir créditos simultáneos');
             })
             ->exists();
@@ -1938,12 +2019,13 @@ class CreditoController extends Controller
 
         // verificar si esta habilitada la funcion que permite validar la vigencia de la consulta en centrales
         $vigenciaAval = ParametrosEstadoFunciones::where('empresa_id', $empresaCliente->id)
-            ->whereHas('estado_funcion', function($query) {
+            ->whereHas('estado_funcion', function ($query) {
                 $query->where('nombre_funcion', 'Actualización consulta en centrales');
             })
             ->exists();
 
-        if (!$vigenciaAval) return ['continuar' => true];
+        if (!$vigenciaAval)
+            return ['continuar' => true];
 
         // meses de vigencia de la consulta
         $vigencia = $empresaCliente->vigencia_aval;
@@ -1962,7 +2044,8 @@ class CreditoController extends Controller
 
         $fechaReferencia = $cliente->firmado ? $cliente->firmado : $cliente->created_at;
         // si el cliente tiene un historico de autorizaciones firmadas, se toma como referencia la fecha de la ultima
-        if ($historicoAutorizaciones) $fechaReferencia = $historicoAutorizaciones->created_at;
+        if ($historicoAutorizaciones)
+            $fechaReferencia = $historicoAutorizaciones->created_at;
 
         if (Carbon::parse($fechaReferencia)->diffInMonths(now()) >= $vigencia) {
             // si aun no se ha generado el archivo de autorizacion porque este no ha sido visualizado por el cliente
@@ -1987,7 +2070,8 @@ class CreditoController extends Controller
                 'nota' => null
             ]);
 
-            if ($notification) $notification->delete();
+            if ($notification)
+                $notification->delete();
 
             return [
                 'continuar' => false,
@@ -2029,7 +2113,8 @@ class CreditoController extends Controller
 
         // rechazado por centrales
         if ($cliente->estado_aval === 0) {
-            return $respuesta(412,
+            return $respuesta(
+                412,
                 'La consulta realizada en centrales ha sido rechazada, por lo cual no es posible continuar con el proceso de colocación del crédito.',
                 'Crédito no autorizado',
                 'error',
@@ -2039,7 +2124,8 @@ class CreditoController extends Controller
 
         // pendiente autorizacion consulta en centrales
         if (empty($cliente->aprobar_autorizacion)) {
-            return $respuesta(403,
+            return $respuesta(
+                403,
                 'El cliente aún no ha autorizado la consulta en centrales de riesgo.<br><br>¿Desea enviar la solicitud de autorización al correo electrónico: ' . ($cliente->email ?? '') . '?',
                 'Autorización pendiente',
                 'warning',
@@ -2055,7 +2141,7 @@ class CreditoController extends Controller
         if ($cliente->cliente_validado == 0 && !$empresaCliente->inactivar_validacion) {
             // $vEmpresaCliente = Empresa::find($cliente->empresa_id);
             $validacionParametros = ParametrosEstadoFunciones::where('empresa_id', $empresaId)
-                ->whereHas('estado_funcion', function($query) {
+                ->whereHas('estado_funcion', function ($query) {
                     $query->where('nombre_funcion', 'Validación cliente');
                 })
                 ->exists();
@@ -2070,7 +2156,7 @@ class CreditoController extends Controller
             ];
 
             if ($validacionParametros) {
-                $permisos =  UsuarioTipoUsuario::where('id_usuario', $usuarioId)
+                $permisos = UsuarioTipoUsuario::where('id_usuario', $usuarioId)
                     ->join('subtipousuario', 'subtipousuario.id', '=', 'usuario_tipo_usuario.id_tipo_usuario')
                     ->select('subtipousuario.id', 'subtipousuario.nombre')
                     ->pluck('id')->toArray();
@@ -2079,12 +2165,14 @@ class CreditoController extends Controller
                 foreach ($mapValidacion as $campo => $nombre) {
                     if ($empresaCliente->$campo == 1) {
                         $rol = $empresaCliente->{'rol_' . $campo};
-                        if (!$rol || in_array($rol, $permisos)) $pendientes[] = $nombre;
+                        if (!$rol || in_array($rol, $permisos))
+                            $pendientes[] = $nombre;
                     }
                 }
 
                 // si la funcion esta activa pero no se ha checkeado ningun parametro por defecto se obligara a validar las referencias
-                if (empty($pendientes)) $pendientes[] = 'Referencias';
+                if (empty($pendientes))
+                    $pendientes[] = 'Referencias';
             } else {
                 // por defecto si esta inactiva la funcion de validacion cliente, se obliga a validar las referencias (funcionalidad legacy)
                 $pendientes[] = 'Referencias';
@@ -2102,7 +2190,8 @@ class CreditoController extends Controller
                 // $mensaje .= '<br>¿Desea realizar el proceso de validación?';
                 $mensaje .= '<br>Haga clic en aceptar para iniciar la validación.';
 
-                return $respuesta(412,
+                return $respuesta(
+                    412,
                     $mensaje,
                     'Validación pendiente',
                     'warning',
@@ -2113,7 +2202,8 @@ class CreditoController extends Controller
 
         // consulta en centrales pendiente de aprobación
         if (empty($cliente->estado_aval)) {
-            return $respuesta(412,
+            return $respuesta(
+                412,
                 'La consulta realizada en centrales de riesgo está pendiente de aprobación por parte del usuario responsable de esta gestión.',
                 'Consulta pendiente de aprobación',
                 'warning',
@@ -2123,7 +2213,8 @@ class CreditoController extends Controller
 
         // foto del cliente no adjuntada
         if (empty($cliente->comprobar_cliente)) {
-            return $respuesta(412,
+            return $respuesta(
+                412,
                 'La foto del cliente está pendiente.<br><br>Para continuar, por favor sube una foto.',
                 'Foto pendiente',
                 'warning',
@@ -2137,15 +2228,16 @@ class CreditoController extends Controller
             );
         }
 
-        return [ 'continuar' => true ];
+        return ['continuar' => true];
     }
 
-    public function updateMora(Request $request) {
+    public function updateMora(Request $request)
+    {
         $empresaId = auth()->user()->empresa_id;
 
         $limiteCreditos = 50;
         $estadoFuncion = ParametrosEstadoFunciones::where('empresa_id', $empresaId)
-            ->whereHas('estado_funcion', function($query) {
+            ->whereHas('estado_funcion', function ($query) {
                 $query->where('nombre_funcion', 'Mora un día más');
             })
             ->exists();
@@ -2202,7 +2294,8 @@ class CreditoController extends Controller
         }
     }
 
-    public function listCreditsCorresponsal(Excel $excel) {
+    public function listCreditsCorresponsal(Excel $excel)
+    {
         $empresaId = auth()->user()->empresa_id;
 
         $hoy = Carbon::now()->startOfDay();
@@ -2245,7 +2338,7 @@ class CreditoController extends Controller
 
         // Validar si el valor minimo a pagar se calcula con un dia de mora más
         $estadoFuncion = ParametrosEstadoFunciones::where('empresa_id', $empresaId)
-            ->whereHas('estado_funcion', function($query) {
+            ->whereHas('estado_funcion', function ($query) {
                 $query->where('nombre_funcion', 'Mora un día más');
             })
             ->exists();
@@ -2300,10 +2393,10 @@ class CreditoController extends Controller
 
         $creditoIds = $creditos->pluck('id')->toArray();
         $condonacionesPorCredito = Condonacion::whereIn('abono_id', function ($query) use ($creditoIds) {
-                $query->select('id')
-                    ->from('abono')
-                    ->whereIn('credito_id', $creditoIds);
-            })
+            $query->select('id')
+                ->from('abono')
+                ->whereIn('credito_id', $creditoIds);
+        })
             ->where('concepto_condonacion', 'credito')
             ->join('abono', 'condonaciones.abono_id', '=', 'abono.id')
             ->select('abono.credito_id', DB::raw('SUM(valor_condonado) as total'))
@@ -2337,7 +2430,8 @@ class CreditoController extends Controller
         }
     }
 
-    private function procesarCredito($credito, $hoy, $estadoFuncion, $condonacionesPorCredito) {
+    private function procesarCredito($credito, $hoy, $estadoFuncion, $condonacionesPorCredito)
+    {
         $estado = 'Finalizado';
         $cuotaMinPago = 0;
         $fechaVencimiento = '';
@@ -2379,12 +2473,14 @@ class CreditoController extends Controller
         return $credito;
     }
 
-    public function listCreditsAdministrativo(Request $request) {
+    public function listCreditsAdministrativo(Request $request)
+    {
         $empresaId = auth()->user()->empresa_id;
 
         // Validar si la empresa es un aliado o una sede
         $empresa = Empresa::find($empresaId);
-        if ($empresa->aliado || $empresa->sede) $empresa = Empresa::find($empresa->aliado ?? $empresa->sede);
+        if ($empresa->aliado || $empresa->sede)
+            $empresa = Empresa::find($empresa->aliado ?? $empresa->sede);
 
         // Filtros
         $conditions = [
@@ -2439,8 +2535,8 @@ class CreditoController extends Controller
                 DB::raw("GROUP_CONCAT(credito.id) as creditos_ids"),
                 DB::raw("NULL as total_abonos")
             )
-            ->groupBy('fecha')
-            ->orderBy('fecha', 'desc');
+                ->groupBy('fecha')
+                ->orderBy('fecha', 'desc');
         } else {
             // se agrupan los creditos por fecha y empresa
             $creditosByDate->select(
@@ -2452,8 +2548,8 @@ class CreditoController extends Controller
                 DB::raw("GROUP_CONCAT(credito.id) as creditos_ids"),
                 DB::raw("NULL as total_abonos")
             )
-            ->groupBy('empresa_id', 'fecha')
-            ->orderBy('fecha', 'desc');
+                ->groupBy('empresa_id', 'fecha')
+                ->orderBy('fecha', 'desc');
         }
 
         // Se obtienen los totales de las ventas y creditos
@@ -2471,7 +2567,7 @@ class CreditoController extends Controller
         $totalVentas = $totalesCredito->total_suma_compra ?? 0;
 
         $totalAbonos = Credito::whereIn('empresa_id', $empresasIds)
-            ->leftJoin('abono', function($join) {
+            ->leftJoin('abono', function ($join) {
                 $join->on('abono.credito_id', '=', 'credito.id')
                     ->whereNull('abono.deleted_at');
             })
@@ -2501,7 +2597,7 @@ class CreditoController extends Controller
                     DB::raw("NULL as creditos_ids"),
                     DB::raw("SUM(abono.valor) as total_abonos")
                 )
-                ->groupBy('fecha');
+                    ->groupBy('fecha');
             } else {
                 // se agrupan los abonos por fecha y empresa
                 $abonosByDate->select(
@@ -2513,7 +2609,7 @@ class CreditoController extends Controller
                     DB::raw("NULL as creditos_ids"),
                     DB::raw("SUM(abono.valor) as total_abonos")
                 )
-                ->groupBy('credito.empresa_id', 'fecha');
+                    ->groupBy('credito.empresa_id', 'fecha');
             }
 
             $combinedQuery = $creditosByDate->unionAll($abonosByDate);
@@ -2551,11 +2647,11 @@ class CreditoController extends Controller
                     ->orderBy('fecha', 'desc');
             }
 
-            $totalAbonosMes = Abono::whereIn('credito_id', function($query) use ($empresasIds) {
-                    $query->select('id')
-                        ->from('credito')
-                        ->whereIn('empresa_id', $empresasIds);
-                })
+            $totalAbonosMes = Abono::whereIn('credito_id', function ($query) use ($empresasIds) {
+                $query->select('id')
+                    ->from('credito')
+                    ->whereIn('empresa_id', $empresasIds);
+            })
                 ->select(DB::raw("SUM(valor) as total_abonos"))
                 ->when($fechaInicialParsed && $fechaFinalParsed, function ($query) use ($fechaInicialParsed, $fechaFinalParsed) {
                     $query->whereBetween('abono.created_at', [$fechaInicialParsed, $fechaFinalParsed]);
@@ -2587,7 +2683,7 @@ class CreditoController extends Controller
 
             $resultado = DB::table('abono')
                 ->select(DB::raw("SUM(valor) as suma_abonos"))
-                ->whereIn('credito_id', function($query) use ($idsCredito) {
+                ->whereIn('credito_id', function ($query) use ($idsCredito) {
                     $query->select('id')
                         ->from('credito')
                         ->whereIn('credito_id', $idsCredito)
@@ -2679,20 +2775,24 @@ class CreditoController extends Controller
         }
     }
 
-    private function calcularSaldoRecuperacion($sumaCompra, $abonos) {
+    private function calcularSaldoRecuperacion($sumaCompra, $abonos)
+    {
         return $this->toFloat($sumaCompra) - $this->toFloat($abonos);
     }
 
-    private function calcularSaldoUtilidad($sumaCredito, $sumaCompra) {
+    private function calcularSaldoUtilidad($sumaCredito, $sumaCompra)
+    {
         return $this->toFloat($sumaCredito) - $this->toFloat($sumaCompra);
     }
 
-    private function calcularSaldoTotal($sumaCompra, $abonos, $sumaCredito) {
+    private function calcularSaldoTotal($sumaCompra, $abonos, $sumaCredito)
+    {
         return $this->calcularSaldoRecuperacion($sumaCompra, $abonos) + $this->calcularSaldoUtilidad($sumaCredito, $sumaCompra);
     }
 
     // Método auxiliar para convertir a float y evitar errores
-    private function toFloat($value) {
-        return is_numeric($value) ? (float)$value : 0.0;
+    private function toFloat($value)
+    {
+        return is_numeric($value) ? (float) $value : 0.0;
     }
 }

@@ -249,9 +249,11 @@
                     :options="tiposInforme"
                     :vertical="true"
                 />
+            </div>
 
-                <!-- Botones descarga -->
-                <div class="flex flex-wrap gap-2 sm:ml-auto">
+            <!-- Botones descarga -->
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
                     <button
                         @click="descargarInforme"
                         :disabled="loadingInforme === 'informe'"
@@ -305,6 +307,17 @@
                             />
                         </svg>
                         Informe hábito de pago
+                    </button>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button
+                        @click="resetFilters"
+                        class="btn border border-gray-200 text-sm text-gray-500 hover:bg-gray-50 hover:border-gray-300"
+                    >
+                        Limpiar
+                    </button>
+                    <button @click="fetchCreditos" class="btn btn-main">
+                        Aplicar filtros
                     </button>
                 </div>
             </div>
@@ -392,13 +405,13 @@
                 <div class="flex items-center gap-1.5">
                     <button
                         @click.stop="verEstadoCredito(null, row.id)"
-                        class="h-7 px-3 rounded-lg bg-[#1a5c2a] hover:bg-[#154d22] text-white text-xs font-medium transition-all"
+                        class="btn btn-main"
                     >
                         Detalle
                     </button>
                     <button
                         @click.stop="habitoPago(row)"
-                        class="h-7 px-3 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-medium transition-all whitespace-nowrap"
+                        class="btn btn-primary"
                     >
                         Hábito de pago
                     </button>
@@ -419,6 +432,18 @@
                 @imprimir-abono="imprimirAbono"
             />
         </transition>
+
+        <!-- ── Modal hábito de pago ── -->
+        <AppModal
+            v-model="modalHabito.open"
+            :title="`Hábito de pago - ${nombreClienteHabito}`"
+            size="xl"
+            :show-footer="false"
+            :close-on-overlay="true"
+            @update:modelValue="cerrarModalHabito"
+        >
+            <TableGrid :items="habitoPagoCredito" :columns="cols" />
+        </AppModal>
     </div>
 </template>
 
@@ -433,6 +458,8 @@ import FormSelectAsync from '@/components/form/FormSelectAsync.vue'
 import FormRadioGroup from '@/components/form/FormRadioGroup.vue'
 import FormCheckbox from '@/components/form/FormCheckbox.vue'
 import FormInput from '@/components/form/FormInput.vue'
+import TableGrid from '@/components/TableGrid.vue'
+import AppModal from '@/components/AppModal.vue'
 
 import UpdateMoraButton from '@/components/table/UpdateMoraButton.vue'
 import DataTable from '@/components/table/DataTable.vue'
@@ -440,6 +467,9 @@ import DataTable from '@/components/table/DataTable.vue'
 // -- Loader ---------------------------------------------------------
 import { useLoader } from '@/composables/useLoader'
 const { start, stop } = useLoader()
+
+// -- Toaster -----------------------------------------------
+import { notify } from '@/composables/useNotify'
 
 // -- Composables ----------------------------------------------------
 import { useEstadoCredito } from '@/composables/useEstadoCredito'
@@ -555,7 +585,26 @@ const columns = [
     { key: 'acciones', label: '', sortable: false },
 ]
 
-const opcionesStore = useOpcionesStore()
+// -- Modal hábito de pago -------------------------------------------------
+const cols = [
+    { key: 'fecha_cuota', label: 'Fecha de cuota' },
+    {
+        key: 'fecha_pago',
+        label: 'Fecha de pago',
+    },
+    {
+        key: 'estado_pago',
+        label: 'Estado de pago',
+    },
+    {
+        key: 'dias_mora',
+        label: 'Días de mora',
+        headerClass: 'text-center',
+        cellClass: 'text-center',
+    },
+]
+
+const habitoPagoCredito = ref([])
 
 // -- Estado ----------------------------------------------------------------
 const creditos = ref([])
@@ -563,6 +612,9 @@ const loading = ref(false)
 const loadingInforme = ref(null)
 const selected = ref([])
 const busquedaAvanzada = ref(true)
+const nombreClienteHabito = ref('')
+
+const opcionesStore = useOpcionesStore()
 
 // Definir las fechas de corte (inicial y final) para el estado de créditos
 let fechaCorte = {
@@ -599,13 +651,13 @@ const filters = reactive({
 const reporteOpts = ref([])
 
 const estadoCreditoOpts = [
-    { value: 'vigente', label: 'Al día' },
-    { value: 'mora', label: 'En mora' },
-    { value: 'finalizado', label: 'Finalizado' },
+    { value: '2', label: 'Al día' },
+    { value: '1', label: 'En mora' },
+    { value: '4', label: 'Finalizado' },
 ]
 const notificacionOpts = [
-    { value: 'si', label: 'Si' },
-    { value: 'no', label: 'No' },
+    { value: '1', label: 'Si' },
+    { value: '2', label: 'No' },
 ]
 
 const estadoClienteOpts = [
@@ -716,6 +768,30 @@ function buildParams() {
     })
 }
 
+function resetFilters() {
+    ;((filters.estadoCredito = ''),
+        (filters.mesesPagados = ''),
+        (filters.mesesPagadosHasta = ''),
+        (filters.mesesPorRango = false))
+    ;((filters.notificacion = ''),
+        (filters.reporte = ''),
+        (filters.aliado = ''),
+        (filters.mesCorte = ''),
+        (filters.estadoCliente = ''),
+        (filters.cuotasPagadas = ''),
+        (filters.cuotasPagadasHasta = ''),
+        (filters.cuotasPorRango = false))
+    ;((filters.numeroDias = ''),
+        (filters.numeroDiasHasta = ''),
+        (filters.diasPorRango = false))
+    ;((filters.vencimientoCuota = ''),
+        (filters.vencimientoCuotaHasta = ''),
+        (filters.vencimientoPorRango = false))
+    filters.tipoInforme = 'cobranza'
+    pagination.currentPage = 1
+    fetchCreditos()
+}
+
 // -- Backend --------------------------------------------------------------
 async function fetchCreditos() {
     loading.value = true
@@ -735,7 +811,9 @@ async function fetchCreditos() {
         pagination.currentPage = current_page
         pagination.total = total
     } catch (err) {
-        console.error(err)
+        notify.error(
+            'Ocurrió un error al obtener la información de los créditos.'
+        )
     } finally {
         loading.value = false
     }
@@ -764,6 +842,19 @@ async function fetchReportesTipos() {
     } catch (err) {
         console.error(err)
     }
+}
+
+// -- Modal hábito de pago -------------------------------------------
+const modalHabito = reactive({
+    open: false,
+})
+
+function abrirModalHabito() {
+    modalHabito.open = true
+}
+
+function cerrarModalHabito() {
+    modalHabito.open = false
 }
 
 async function descargarArchivo(url, nombre) {
@@ -805,9 +896,61 @@ async function descargarHabitoPago() {
     }
 }
 
-// ── Acciones de fila ───────────────────────────────────────────────────────
+// -- Acciones de fila ----------------------------------------
 function habitoPago(row) {
-    console.log('Hábito de pago:', row.id)
+    const proyecciones = row.proyecciones
+    const abonos = row.abonos
+
+    habitoPagoCredito.value = proyecciones.map((proy, index) => {
+        const fecha = new Date(proy.fecha)
+
+        // Fecha de cuota
+        const fechaCuota = `${index + 1} - ${fecha.toISOString().split('T')[0]}`
+
+        const abonoPago = abonos.find(
+            abono =>
+                abono.credito_proyeccion_cuotas_pagadas &&
+                JSON.parse(abono.credito_proyeccion_cuotas_pagadas).includes(
+                    proy.id
+                )
+        )
+
+        // Fecha de pago
+        const fechaPago = abonoPago ? abonoPago.created_at : null
+
+        let estadoPago = 'Pendiente'
+        let fechaForm = '- -'
+        let diasMora = '- -'
+
+        // si al cuota tiene fecha de pago
+        if (fechaPago) {
+            const pago = new Date(fechaPago)
+
+            // limpiar las horas de las fechas a calcular
+            pago.setHours(0, 0, 0, 0)
+            fecha.setHours(0, 0, 0, 0)
+
+            fechaForm = new Date(fechaPago).toISOString().split('T')[0]
+
+            if (pago <= fecha) {
+                estadoPago = 'Al día'
+            } else {
+                estadoPago = 'En mora'
+                const diffMs = pago - fecha
+                diasMora = Math.ceil(diffMs / (1000 * 60 * 60 * 24)) // milisegundos a dias y redondear
+            }
+        }
+
+        return {
+            fecha_cuota: fechaCuota,
+            fecha_pago: fechaForm, // fecha formateada en la que el cliente realiza el pago
+            estado_pago: estadoPago,
+            dias_mora: diasMora,
+        }
+    })
+
+    nombreClienteHabito.value = row.cliente
+    abrirModalHabito()
 }
 
 function transformCreditos(data) {
@@ -847,6 +990,8 @@ function transformCreditos(data) {
         numCuotasPagadas: cr[NumCuotasValidarEn],
         numDiasMora: cr.dias_mora,
         aliado: cr.razon_social,
+        proyecciones: cr.proyecciones,
+        abonos: cr.abonos,
     }))
 }
 

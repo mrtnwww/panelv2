@@ -50,71 +50,73 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class Credito extends Model
 {
-	use SoftDeletes;
-	protected $table = 'credito';
-	public $timestamps = false;
+    use SoftDeletes;
+    protected $table = 'credito';
+    public $timestamps = false;
 
-	protected $casts = [
-		'user_id' => 'int',
-		'client_id' => 'int',
-		'valor_compra' => 'int',
-		'valor_credito' => 'int',
-		'num_cuotas' => 'int',
-		'val_cuotas' => 'int',
-		'periocidad' => 'int',
-		'consecutivo' => 'int',
-		'enviar_reporte' => 'int',
-		'notificar' => 'int',
-		'notificarPlanPagos' => 'int',
-		'empresa_id' => 'int',
-		'notificarCentral' => 'int'
-	];
+    protected $casts = [
+        'user_id' => 'int',
+        'client_id' => 'int',
+        'valor_compra' => 'int',
+        'valor_credito' => 'int',
+        'num_cuotas' => 'int',
+        'val_cuotas' => 'int',
+        'periocidad' => 'int',
+        'consecutivo' => 'int',
+        'enviar_reporte' => 'int',
+        'notificar' => 'int',
+        'notificarPlanPagos' => 'int',
+        'empresa_id' => 'int',
+        'notificarCentral' => 'int'
+    ];
 
-	protected $dates = [
-		'fecha_cierre'
-	];
+    protected $dates = [
+        'fecha_cierre'
+    ];
 
-	protected $fillable = [
-		'user_id',
-		'client_id',
-		'valor_compra',
-		'valor_credito',
-		'num_cuotas',
-		'val_cuotas',
-		'periocidad',
-		'consecutivo',
-		'placa',
+    protected $fillable = [
+        'user_id',
+        'client_id',
+        'valor_compra',
+        'valor_credito',
+        'num_cuotas',
+        'val_cuotas',
+        'periocidad',
+        'consecutivo',
+        'placa',
         'observacion',
-		'enviar_reporte',
-		'notificar',
-		'motivo_anulacion',
-		'notificarPlanPagos',
-		'empresa_id',
-		'por_nominal',
+        'enviar_reporte',
+        'notificar',
+        'motivo_anulacion',
+        'notificarPlanPagos',
+        'empresa_id',
+        'por_nominal',
         'por_anual',
         'otro_por_ea',
         'otro_por_nm',
         'firma_elec',
-		'por_plataforma',
-		'por_otros',
-		'val_otros',
-		'aval_porcentaje',
-		'aval_value',
-		'isexention',
-		'valueExention',
-		'fecha_cierre',
-		'notificarCentral',
+        'por_plataforma',
+        'por_otros',
+        'val_otros',
+        'aval_porcentaje',
+        'aval_value',
+        'isexention',
+        'valueExention',
+        'fecha_cierre',
+        'notificarCentral',
         'lineas_credito_id',
         'valor_intereses',
         'otros_sin_dividir'
-	];
+    ];
 
     public function scopeApplySearch($query, $searchTerm, $form)
     {
         if (!empty($searchTerm)) {
-            $query->where(function($subQuery) use ($searchTerm, $form) {
-                if (strtoupper(trim($searchTerm)) === 'MENSUAL' ||
-                    strtoupper(trim($searchTerm)) === 'QUINCENAL') {
+            $query->where(function ($subQuery) use ($searchTerm, $form) {
+                if (
+                    strtoupper(trim($searchTerm)) === 'MENSUAL' ||
+                    strtoupper(trim($searchTerm)) === 'QUINCENAL'
+                ) {
                     $periocidad = strtoupper(trim($searchTerm)) === 'MENSUAL' ? 1 : 2;
                     $subQuery->orWhere('periocidad', 'LIKE', '%' . $periocidad . '%');
                 } else {
@@ -144,7 +146,7 @@ class Credito extends Model
     public function scopeApplySearchAdmin($query, $searchTerm)
     {
         if (!empty($searchTerm)) {
-            $query->where(function($subQuery) use ($searchTerm) {
+            $query->where(function ($subQuery) use ($searchTerm) {
                 $subQuery->orWhere('credito.created_at', 'LIKE', '%' . $searchTerm . '%');
 
                 $subQuery->orWhereHas('empresa', function ($empresaQuery) use ($searchTerm) {
@@ -154,15 +156,16 @@ class Credito extends Model
         }
     }
 
-    public function scopeApplyConditions($query, $conditions, $form = null) {
+    public function scopeApplyConditions($query, $conditions, $form = null)
+    {
         if (count($conditions) > 0) {
-            $query->where(function($subQuery) use ($conditions, $form) {
+            $query->where(function ($subQuery) use ($conditions, $form) {
                 if (!empty($conditions['estado_credito'])) {
                     $hoy = now()->toDateString();
 
                     // En mora
                     if ($conditions['estado_credito'] == 1) {
-                        $subQuery->whereHas('proyecciones', function($proyeccionQuery) use ($hoy) {
+                        $subQuery->whereHas('proyecciones', function ($proyeccionQuery) use ($hoy) {
                             $proyeccionQuery->where('pagado', 0)
                                 ->whereDate('fecha', '<', $hoy);
                         });
@@ -171,13 +174,13 @@ class Credito extends Model
                     // Normal
                     if ($conditions['estado_credito'] == 2) {
                         $subQuery->whereNull('deleted_at')
-                        ->whereDoesntHave('proyecciones', function($proyeccionQuery) use ($hoy) {
-                            $proyeccionQuery->where('pagado', 0)
-                                ->whereDate('fecha', '<', $hoy);
-                        })
-                        ->whereHas('proyecciones', function($proyeccionQuery) {
-                            $proyeccionQuery->where('pagado', 0);
-                        });
+                            ->whereDoesntHave('proyecciones', function ($proyeccionQuery) use ($hoy) {
+                                $proyeccionQuery->where('pagado', 0)
+                                    ->whereDate('fecha', '<', $hoy);
+                            })
+                            ->whereHas('proyecciones', function ($proyeccionQuery) {
+                                $proyeccionQuery->where('pagado', 0);
+                            });
                     }
 
                     // Anulado
@@ -187,7 +190,7 @@ class Credito extends Model
 
                     // Finalizado
                     if ($conditions['estado_credito'] == 4) {
-                        $subQuery->whereDoesntHave('proyecciones', function($proyeccionQuery) {
+                        $subQuery->whereDoesntHave('proyecciones', function ($proyeccionQuery) {
                             $proyeccionQuery->where('pagado', 0);
                         });
                     }
@@ -296,7 +299,7 @@ class Credito extends Model
                             ->join(DB::raw('(SELECT credito_id, MIN(fecha) as primera_fecha
                                             FROM credito_proyeccion
                                             WHERE pagado = 0
-                                            GROUP BY credito_id) as primeras_cuotas'), function($join) {
+                                            GROUP BY credito_id) as primeras_cuotas'), function ($join) {
                                 $join->on('cp.credito_id', '=', 'primeras_cuotas.credito_id')
                                     ->on('cp.fecha', '=', 'primeras_cuotas.primera_fecha');
                             })
@@ -323,21 +326,25 @@ class Credito extends Model
         }
     }
 
-    public function scopeApplyConditionsCobranza($query, $conditions) {
+    public function scopeApplyConditionsCobranza($query, $conditions)
+    {
         if (!empty($conditions)) {
             $applyRangeFilter = function ($query, $desde, $hasta, $expr) {
                 $columna = DB::raw($expr);
 
-                if ($desde !== null && $hasta === null) {
+                if (!empty($desde) && empty($hasta)) {
                     $query->where($columna, '=', $desde);
-                } elseif ($desde !== null && $hasta !== null) {
+                } elseif (!empty($desde) && !empty($hasta)) {
                     $query->whereBetween($columna, [$desde, $hasta]);
-                } elseif ($desde === null && $hasta !== null) {
+                } elseif (empty($desde)&& !empty($hasta)) {
                     $query->where($columna, '<=', $hasta);
                 }
             };
 
-            if (!empty($conditions['meses_pagados']) || !empty($conditions['cuotas_pagadas'])) {
+            if (
+                (!empty($conditions['meses_pagados']['desde']) || !empty($conditions['meses_pagados']['hasta'])) ||
+                !empty($conditions['cuotas_pagadas'])
+            ) {
                 $mesesDesde = $conditions['meses_pagados']['desde'] ?? null;
                 $mesesHasta = $conditions['meses_pagados']['hasta'] ?? null;
 
@@ -354,12 +361,12 @@ class Credito extends Model
                             ->select(DB::raw('credito_id, count(*) as cuotas_pagadas'))
                             ->groupBy('credito_id');
 
-                            if ($estadoCredito == 1) {
-                                $q->where('pagado', 0)
+                        if ($estadoCredito == 1) {
+                            $q->where('pagado', 0)
                                 ->where('fecha', '<', $hoy);
-                            } else {
-                                $q->where('pagado', 1);
-                            }
+                        } else {
+                            $q->where('pagado', 1);
+                        }
                     }, 'proyecciones_count', 'credito.id', '=', 'proyecciones_count.credito_id');
 
                     if ($mesesDesde || $mesesHasta) {
@@ -400,16 +407,16 @@ class Credito extends Model
             }
 
             // cantidad de dias en mora
-            if (!empty($conditions['dias_mora'])) {
+            if (!empty($conditions['dias_mora']['desde']) || !empty($conditions['dias_mora']['hasta'])) {
                 $diasDesde = $conditions['dias_mora']['desde'] ?? null;
                 $diasHasta = $conditions['dias_mora']['hasta'] ?? null;
 
                 if ($diasDesde !== null || $diasHasta !== null) {
                     $query->leftJoinSub(function ($q) {
                         $q->from('credito_proyeccion')
-                        ->select(DB::raw('credito_id, MAX(diasMora) as dias_mora_max'))
-                        ->where('pagado', 0)
-                        ->groupBy('credito_id');
+                            ->select(DB::raw('credito_id, MAX(diasMora) as dias_mora_max'))
+                            ->where('pagado', 0)
+                            ->groupBy('credito_id');
                     }, 'proyecciones_max', 'credito.id', '=', 'proyecciones_max.credito_id');
 
                     if ($diasDesde !== null && $diasHasta === null) {
@@ -423,15 +430,15 @@ class Credito extends Model
             }
 
             // fecha de vencimiento de la cuota
-            if (!empty($conditions['vencimiento_cuota'])) {
+            if (!empty($conditions['vencimiento_cuota']['desde']) || !empty($conditions['vencimiento_cuota']['hasta'])) {
                 $vencimientoDesde = $conditions['vencimiento_cuota']['desde'] ?? null;
                 $vencimientoHasta = $conditions['vencimiento_cuota']['hasta'] ?? null;
 
                 $query->whereExists(function ($q) use ($vencimientoDesde, $vencimientoHasta) {
                     $q->select(DB::raw(1))
-                    ->from('credito_proyeccion as cp')
-                    ->whereColumn('cp.credito_id', 'credito.id')
-                    ->where('cp.pagado', 0);
+                        ->from('credito_proyeccion as cp')
+                        ->whereColumn('cp.credito_id', 'credito.id')
+                        ->where('cp.pagado', 0);
 
                     if ($vencimientoDesde && !$vencimientoHasta) {
                         $q->whereDate('cp.fecha', '=', $vencimientoDesde);
@@ -446,7 +453,7 @@ class Credito extends Model
             }
 
             if (!empty($conditions['estado_cliente_tarea'])) {
-                $query->WhereHas('cliente', function ($clienteQuery) use ($conditions) {
+                $query->whereHas('cliente', function ($clienteQuery) use ($conditions) {
                     $clienteQuery->where('estado_cliente_tarea', $conditions['estado_cliente_tarea']);
                 });
             }
@@ -463,7 +470,8 @@ class Credito extends Model
         return $this->belongsTo(Cliente::class, 'client_id');
     }
 
-    public function empresa(): BelongsTo {
+    public function empresa(): BelongsTo
+    {
         return $this->belongsTo(Empresa::class, 'empresa_id');
     }
 
@@ -475,9 +483,9 @@ class Credito extends Model
     public function proyeccionesCartera(): HasMany
     {
         return $this->hasMany(CreditoProyeccion::class)
-                    ->where('pagado', 0)
-                    ->whereDate('fecha', '<', now());
-                    // ->where('diasMora', '>', 0);
+            ->where('pagado', 0)
+            ->whereDate('fecha', '<', now());
+        // ->where('diasMora', '>', 0);
     }
 
     public function proyeccionPendiente()
@@ -502,7 +510,8 @@ class Credito extends Model
         return $this->belongsTo(ClienteLibranza::class, 'client_id', 'cliente_id');
     }
 
-    public function lineasCredito() {
+    public function lineasCredito()
+    {
         return $this->belongsTo(LineasCredito::class)->withTrashed();
     }
 
