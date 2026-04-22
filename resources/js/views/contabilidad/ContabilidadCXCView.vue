@@ -4,55 +4,61 @@
         <h1 class="text-lg font-semibold text-[#0A2540]">Recibo de caja CXC</h1>
 
         <!-- Panel de filtros -->
-        <div class="bg-white rounded-xl border border-gray-200 px-6 py-4">
-            <div class="flex flex-wrap items-end gap-4">
+        <div
+            class="bg-white rounded-xl border border-gray-200 px-4 py-4 sm:px-6"
+        >
+            <div
+                class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 items-end gap-4"
+            >
+                <!-- Fecha Inicial -->
                 <FormInput
                     label="Fecha inicial"
                     type="date"
                     v-model="filters.fechaInicial"
+                    class="w-full"
                 />
 
+                <!-- Fecha Final -->
                 <FormInput
                     label="Fecha final"
                     type="date"
                     v-model="filters.fechaFinal"
+                    class="w-full"
                 />
 
+                <!-- Aliado: ocupa 1 columna en móvil/tablet y puede crecer en desktop si quieres -->
                 <FormSelectAsync
                     label="Aliado"
                     v-model="filters.establecimiento"
                     :fetch-options="opcionesStore.fetchEmpresas"
                     placeholder="Seleccione un aliado"
-                    wrapper-class="xl:w-[30%]"
+                    wrapper-class="w-full"
+                    @change="procesarAliados($event)"
                 />
 
-                <!-- Botón alineado al fondo junto a los inputs -->
+                <!-- Botón Generar CXC -->
+                <button
+                    @click="abrirModal"
+                    class="btn btn-primary w-full h-10.5 flex justify-center items-center gap-2 sm:w-fit"
+                >
+                    Generar CXC
+                </button>
+            </div>
+
+            <div
+                class="flex flex-row items-center justify-end gap-2 pt-4 mt-4 border-t border-gray-100"
+            >
+                <button
+                    @click="resetFilters"
+                    class="btn flex-1 sm:flex-none border border-gray-200 text-sm text-gray-500 hover:bg-gray-50 hover:border-gray-300"
+                >
+                    Limpiar
+                </button>
                 <button
                     @click="fetchRecibos"
-                    :disabled="loading"
-                    class="btn btn-primary"
+                    class="btn btn-main flex-1 sm:flex-none"
                 >
-                    <svg
-                        v-if="loading"
-                        class="animate-spin w-3.5 h-3.5"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                    >
-                        <circle
-                            class="opacity-25"
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            stroke="currentColor"
-                            stroke-width="4"
-                        />
-                        <path
-                            class="opacity-75"
-                            fill="currentColor"
-                            d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                        />
-                    </svg>
-                    Generar CXC
+                    Aplicar filtros
                 </button>
             </div>
         </div>
@@ -101,6 +107,62 @@
                 </div>
             </template>
         </DataTable>
+
+        <!-- Modal crear recibo de caja CXC -->
+        <AppModal
+            :model-value="modal.open"
+            :title="`Recibo de caja - ${nombreAliadoCXC}`"
+            size="lg"
+            :show-footer="true"
+            cancel-label="Cancelar"
+            confirm-label="Guardar"
+            :confirm-loading="modal.loading"
+            :close-on-overlay="true"
+            @update:modelValue="cerrarModal"
+        >
+            <div class="flex flex-col gap-4">
+                <FormInput
+                    label="Cliente"
+                    type="select"
+                    v-model="modal.form.cliente"
+                    :options="clientesOpts"
+                    placeholder="Seleccione un cliente"
+                    :searchable="true"
+                    @update:modelValue="procesarCliente"
+                />
+
+                <FormInput
+                    label="Tipo"
+                    type="select"
+                    v-model="modal.form.tipoTarea"
+                    :options="creditosOpts"
+                    placeholder="Seleccione un crédito"
+                    :searchable="true"
+                />
+
+                <FormSelectAsync
+                    label="Productos"
+                    v-model="modal.form.producto"
+                    :fetch-options="opcionesStore.fetchProductos"
+                    placeholder="Selecciona un producto"
+                />
+
+                <div class="flex justify-center">
+                    <button class="btn btn-main">Añadir</button>
+                </div>
+
+                <TableGrid :items="[]" :columns="cols" />
+
+                <transition name="fade">
+                    <div
+                        v-if="modal.error"
+                        class="px-3 py-2.5 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm"
+                    >
+                        {{ modal.error }}
+                    </div>
+                </transition>
+            </div>
+        </AppModal>
     </div>
 </template>
 
@@ -111,10 +173,15 @@ import { ref, reactive, onMounted } from 'vue'
 import FormSelectAsync from '@/components/form/FormSelectAsync.vue'
 import DataTable from '@/components/table/DataTable.vue'
 import FormInput from '@/components/form/FormInput.vue'
+import TableGrid from '@/components/TableGrid.vue'
+import AppModal from '@/components/AppModal.vue'
 
 // -- Loader -----------------------------------------------
 import { useLoader } from '@/composables/useLoader'
 const { start, stop } = useLoader()
+
+// -- Toaster -----------------------------------------------
+import { notify } from '@/composables/useNotify'
 
 // -- Composables ------------------------------------------
 // -- DataTable --------------------------------------------
@@ -135,18 +202,40 @@ const columns = [
     { key: 'acciones', label: 'Acciones', sortable: false, align: 'center' },
 ]
 
+const cols = [
+    { key: 'cliente', label: 'Cliente', headerClass: 'text-center' },
+    {
+        key: 'credito',
+        label: 'Crédito',
+        headerClass: 'text-center',
+    },
+    {
+        key: 'producto',
+        label: 'Producto',
+        headerClass: 'text-center',
+    },
+]
+
 const opcionesStore = useOpcionesStore()
 
 // -- Estado ------------------------------------------------
 const recibos = ref([])
+const clientes = ref([])
+const productos = ref([])
 const loading = ref(false)
+const nombreAliadoCXC = ref('')
 
-// -- Filtros ---------------------------------------------------------
+// -- Filtros -----------------------------------------------
 const filters = reactive({
     fechaInicial: '',
     fechaFinal: '',
     establecimiento: '',
 })
+
+// -- Opciones ----------------------------------------------
+const clientesOpts = ref([])
+const creditosOpts = ref([])
+const productosOpts = ref([])
 
 function authHeaders() {
     return {
@@ -154,6 +243,18 @@ function authHeaders() {
         Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
     }
 }
+
+// -- Modal crear recibo de caja CXC ----------------------------------
+const modal = reactive({
+    open: false,
+    loading: false,
+    error: '',
+    form: {
+        cliente: '',
+        credito: '',
+        producto: '',
+    },
+})
 
 // -- Backend ---------------------------------------------------------------
 async function fetchRecibos() {
@@ -191,6 +292,49 @@ async function fetchRecibos() {
     }
 }
 
+async function procesarAliados(id) {
+    if (!id) {
+        nombreAliadoCXC.value = ''
+        clientes.value = []
+        return
+    }
+
+    // Nombre empresas gestionada a mostrar en el encabezado del modal
+    const aliado = opcionesStore.empresas.find(e => e.id == id)
+    if (aliado) nombreAliadoCXC.value = aliado.razon_social
+
+    start()
+
+    try {
+        const { data } = await api.get('api/clientes/getClientesAliado', {
+            params: {
+                idAliado: filters.establecimiento,
+            },
+        })
+
+        clientes.value = data.clientes
+    } catch (e) {
+        notify.error('Ocurrió un error al obtener la información del aliado.')
+    } finally {
+        stop()
+    }
+}
+
+function procesarCliente() {
+    const clienteEncontrado = clientes.value.find(
+        c => c.id == modal.form.cliente
+    )
+
+    if (clienteEncontrado && clienteEncontrado.credito) {
+        creditosOpts.value = clienteEncontrado.credito.map(cr => ({
+            value: cr.id,
+            label: `Crédito ${cr.id} (${formatCurrency(cr.valor_compra)})`,
+        }))
+    } else {
+        creditosOpts.value = []
+    }
+}
+
 async function imprimirRecibo(row) {
     try {
         const response = await fetch(
@@ -207,6 +351,45 @@ async function imprimirRecibo(row) {
     } catch (err) {
         console.error(err)
     }
+}
+
+function abrirModal() {
+    if (!filters.establecimiento) {
+        notify.error('Es necesario seleccionar un aliado.')
+        return
+    }
+
+    if (!clientes.value.length) {
+        notify.error(
+            'No se encontraron créditos vigentes para el aliado seleccionado.'
+        )
+        return
+    }
+
+    // Listado de clientes
+    clientesOpts.value = clientes.value.map(cl => ({
+        value: cl.id,
+        label: `${cl.nombre} - (${cl.cedula})`,
+    }))
+
+    Object.assign(modal.form, {
+        cliente: '',
+        credito: '',
+        producto: '',
+    })
+    modal.error = ''
+    modal.open = true
+}
+
+function cerrarModal() {
+    modal.open = false
+}
+
+async function resetFilters() {
+    filters.fechaInicial = ''
+    filters.fechaFinal = ''
+    filters.establecimiento = ''
+    await fetchRecibos()
 }
 
 function transformarRecibos(data) {

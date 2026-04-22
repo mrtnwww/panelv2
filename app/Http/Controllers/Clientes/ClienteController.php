@@ -1149,8 +1149,8 @@ class ClienteController extends Controller
     {
         $data = $request->validate([
             'cliente.id' => 'required|exists:cliente,id',
-            'cliente.nombre'   => 'required|string|max:255',
-            'cliente.correo'   => 'required|email',
+            'cliente.nombre' => 'required|string|max:255',
+            'cliente.correo' => 'required|email',
             'cliente.telefono' => 'nullable|string|max:20',
         ]);
 
@@ -1164,6 +1164,33 @@ class ClienteController extends Controller
 
         return response()->json([
             'message' => 'Cliente actualizado correctamente'
+        ]);
+    }
+
+    public function getClientesAliado(Request $request)
+    {
+        $request->validate([
+            'idAliado' => 'required|integer'
+        ]);
+
+        $idAliado = $request->idAliado;
+
+        // Consultamos Clientes que tengan al menos un crédito con ese aliado
+        $clientes = Cliente::whereHas('credito', function ($query) use ($idAliado) {
+            $query->where('empresa_id', $idAliado)
+                ->whereNull('fecha_cierre');
+        })
+            ->with([
+                'credito' => function ($query) use ($idAliado) {
+                    $query->where('empresa_id', $idAliado)
+                        ->whereNull('fecha_cierre');
+                }
+            ])
+            ->orderBy('nombre')
+            ->get();
+
+        return response()->json([
+            'clientes' => $clientes
         ]);
     }
 }

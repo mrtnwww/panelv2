@@ -9,14 +9,20 @@ use Illuminate\Http\Request;
 
 class ContabilidadController extends Controller
 {
-    function listRecibosCXC(Request $request) {
+    function listRecibosCXC(Request $request)
+    {
         $usuario = auth()->user();
 
         $empresaId = $usuario->empresa_id;
 
-        $conditions = $request->input('conditions', []);
         $per_page = $request->input('per_page', 10);
         $search = $request->input('search');
+
+        $conditions = [
+            'fecha_inicial' => $request->input('fecha_inicial', ''),
+            'fecha_final' => $request->input('fecha_final', ''),
+            'aliado' => $request->input('establecimiento', '')
+        ];
 
         $recibosQuery = ReciboCajaCXC::where('empresa_principal_id', $empresaId)
             ->with(['empresa', 'producto'])
@@ -39,7 +45,7 @@ class ContabilidadController extends Controller
         });
 
         return response()->json([
-            'id_empresa'  => $empresaId,
+            'id_empresa' => $empresaId,
             'recibosCaja' => $recibosCaja,
             'totalCXC' => $totalCXC
         ]);

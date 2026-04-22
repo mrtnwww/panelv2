@@ -1,10 +1,14 @@
 import { defineStore } from 'pinia'
 import api from '@/services/api'
 
+// Utils
+import { formatCurrency } from '@/utils/format'
+
 export const useOpcionesStore = defineStore('opciones', {
     state: () => ({
         clientesCreditos: [],
         tiposPago: [],
+        empresas: [],
         destinos: [],
         ciudades: [],
         cajeras: [],
@@ -24,6 +28,8 @@ export const useOpcionesStore = defineStore('opciones', {
             const { data } = await api.get('/api/empresas', {
                 params: { search: query, perPage: 10 },
             })
+
+            this.empresas = data.empresas.data
 
             return data.empresas.data.map(empresa => ({
                 value: empresa.id,
@@ -75,6 +81,18 @@ export const useOpcionesStore = defineStore('opciones', {
             })
 
             return data.ciudades.data
+        },
+
+        async fetchProductos(query) {
+            console.log('test')
+            const { data } = await api.get('api/productos', {
+                params: { search: query, perPage: 50 },
+            })
+
+            return data.productos.data.map(p => ({
+                value: p.id,
+                label: `${p.nombre} - (${formatCurrency(p.precio)})`,
+            }))
         },
 
         async fetchDestinos() {
