@@ -252,16 +252,18 @@
             </div>
 
             <!-- Botones descarga -->
-            <div class="flex items-center justify-between">
-                <div class="flex items-center gap-2">
+            <div
+                class="flex flex-col lg:flex-row lg:items-center justify-between gap-4"
+            >
+                <div class="flex flex-wrap items-center gap-2">
                     <button
                         @click="descargarInforme"
                         :disabled="loadingInforme === 'informe'"
-                        class="btn btn-main"
+                        class="btn btn-main w-full sm:w-auto"
                     >
                         <svg
                             v-if="loadingInforme === 'informe'"
-                            class="animate-spin w-3.5 h-3.5"
+                            class="animate-spin w-3.5 h-3.5 mr-2"
                             viewBox="0 0 24 24"
                             fill="none"
                         >
@@ -281,14 +283,15 @@
                         </svg>
                         Descargar informe
                     </button>
+
                     <button
                         @click="descargarHabitoPago"
                         :disabled="loadingInforme === 'habito'"
-                        class="btn btn-primary"
+                        class="btn btn-primary w-full sm:w-auto"
                     >
                         <svg
                             v-if="loadingInforme === 'habito'"
-                            class="animate-spin w-3.5 h-3.5"
+                            class="animate-spin w-3.5 h-3.5 mr-2"
                             viewBox="0 0 24 24"
                             fill="none"
                         >
@@ -309,23 +312,37 @@
                         Informe hábito de pago
                     </button>
 
-                    <div v-if="selected.length" class="flex ml-8">
-                        <button @click="abrirModalCrear" class="btn btn-main">
+                    <div
+                        v-if="selected.length"
+                        class="flex flex-wrap items-center gap-2 mt-2 lg:mt-0 lg:ml-4 border-l-0 lg:border-l lg:pl-4 border-gray-200"
+                    >
+                        <button
+                            @click="abrirModalCrear"
+                            class="btn btn-main flex-1"
+                        >
                             Crear tarea
                         </button>
-                        <button class="btn btn-warning">Notificar</button>
-                        <button class="btn btn-secondary">Negociación</button>
-                        <button class="btn btn-danger">Reportar</button>
+                        <button class="btn btn-warning flex-1">
+                            Notificar
+                        </button>
+                        <button class="btn btn-secondary flex-1">
+                            Negociación
+                        </button>
+                        <button class="btn btn-danger flex-1">Reportar</button>
                     </div>
                 </div>
-                <div class="flex items-center gap-2">
+
+                <div class="flex items-center gap-2 sm:justify-end">
                     <button
                         @click="resetFilters"
-                        class="btn border border-gray-200 text-sm text-gray-500 hover:bg-gray-50 hover:border-gray-300"
+                        class="btn flex-1 sm:flex-none border border-gray-200 text-sm text-gray-500 hover:bg-gray-50 hover:border-gray-300"
                     >
                         Limpiar
                     </button>
-                    <button @click="fetchCreditos" class="btn btn-main">
+                    <button
+                        @click="fetchCreditos"
+                        class="btn btn-main flex-1 sm:flex-none"
+                    >
                         Aplicar filtros
                     </button>
                 </div>

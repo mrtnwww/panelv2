@@ -71,31 +71,46 @@
                 />
             </div>
 
-            <div class="flex items-center justify-between gap-2">
-                <div class="flex gap-2">
+            <div
+                class="flex flex-col md:flex-row md:items-center justify-between gap-4"
+            >
+                <!-- Grupo de Acciones (Izquierda) -->
+                <div class="flex flex-wrap items-center gap-2">
                     <button
                         @click="iniciarTarea"
                         :disabled="selected.length === 0"
-                        class="btn btn-warning"
+                        class="btn btn-warning w-full sm:w-auto"
                     >
                         Iniciar tarea
                     </button>
-                    <button v-if="selected.length" class="btn btn-danger">
+
+                    <button
+                        v-if="selected.length"
+                        class="btn btn-danger w-full sm:w-auto"
+                    >
                         Eliminar tarea
                     </button>
-                    <button v-if="selected.length" class="btn btn-primary">
+
+                    <button
+                        v-if="selected.length"
+                        class="btn btn-primary w-full sm:w-auto"
+                    >
                         Marcar como completada
                     </button>
                 </div>
 
-                <div class="flex gap-2">
+                <!-- Grupo de Filtros (Derecha) -->
+                <div class="flex items-center gap-2">
                     <button
                         @click="resetFilters"
-                        class="btn border border-gray-200 text-sm text-gray-500 hover:bg-gray-50 hover:border-gray-300"
+                        class="btn flex-1 md:flex-none border border-gray-200 text-sm text-gray-500 hover:bg-gray-50 hover:border-gray-300"
                     >
                         Limpiar
                     </button>
-                    <button @click="fetchTareas" class="btn btn-main">
+                    <button
+                        @click="fetchTareas"
+                        class="btn btn-main flex-1 md:flex-none"
+                    >
                         Aplicar filtros
                     </button>
                 </div>
