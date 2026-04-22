@@ -308,6 +308,15 @@
                         </svg>
                         Informe hábito de pago
                     </button>
+
+                    <div v-if="selected.length" class="flex ml-8">
+                        <button @click="abrirModalCrear" class="btn btn-main">
+                            Crear tarea
+                        </button>
+                        <button class="btn btn-warning">Notificar</button>
+                        <button class="btn btn-secondary">Negociación</button>
+                        <button class="btn btn-danger">Reportar</button>
+                    </div>
                 </div>
                 <div class="flex items-center gap-2">
                     <button
@@ -444,6 +453,18 @@
         >
             <TableGrid :items="habitoPagoCredito" :columns="cols" />
         </AppModal>
+
+        <!-- ── Modal crear tarea ── -->
+        <CrearTareaModal
+            v-model="modal.open"
+            :tipoTarea="tipoTareaOpts"
+            :prioridad="prioridadOpts"
+            :usuarios="usuariosOpts"
+            :loading="modal.loading"
+            :error="modal.error"
+            :modal="modal.form"
+            @confirm="crearTarea"
+        />
     </div>
 </template>
 
@@ -454,6 +475,7 @@ import dayjs from 'dayjs'
 
 // -- Componentes -----------------------------------------------------
 import EstadoCreditoModal from '@/components/modals/EstadoCreditoModal.vue'
+import CrearTareaModal from '@/components/modals/CrearTareaModal.vue'
 import FormSelectAsync from '@/components/form/FormSelectAsync.vue'
 import FormRadioGroup from '@/components/form/FormRadioGroup.vue'
 import FormCheckbox from '@/components/form/FormCheckbox.vue'
@@ -649,6 +671,7 @@ const filters = reactive({
 
 // -- Opciones ------------------------------------------------
 const reporteOpts = ref([])
+const usuariosOpts = ref([])
 
 const estadoCreditoOpts = [
     { value: '2', label: 'Al día' },
@@ -676,6 +699,18 @@ const tiposInforme = [
     { value: 'cobranza', label: 'Informe Cobranza' },
     { value: 'datacredito', label: 'Informe DataCrédito' },
     { value: 'cifin', label: 'Informe CIFIN' },
+]
+
+const tipoTareaOpts = [
+    { value: '2', label: 'Llamada' },
+    { value: '3', label: 'Correo' },
+    { value: '1', label: 'Otro' },
+]
+
+const prioridadOpts = [
+    { value: '1', label: 'Alta' },
+    { value: '2', label: 'Media' },
+    { value: '3', label: 'Baja' },
 ]
 
 // -- Selección ---------------------------------------------------------
@@ -768,7 +803,7 @@ function buildParams() {
     })
 }
 
-function resetFilters() {
+async function resetFilters() {
     ;((filters.estadoCredito = ''),
         (filters.mesesPagados = ''),
         (filters.mesesPagadosHasta = ''),
@@ -789,7 +824,7 @@ function resetFilters() {
         (filters.vencimientoPorRango = false))
     filters.tipoInforme = 'cobranza'
     pagination.currentPage = 1
-    fetchCreditos()
+    await fetchCreditos()
 }
 
 // -- Backend --------------------------------------------------------------
@@ -839,6 +874,20 @@ async function fetchReportesTipos() {
             'reportesCentralesTipos',
             JSON.stringify(data.reportes)
         )
+    } catch (err) {
+        console.error(err)
+    }
+}
+
+async function fetchUsuarios() {
+    try {
+        const { data } = await api.get('/api/usuarios/listMyUsers')
+
+        // Opciones formateadas para FormInput type="select"
+        usuariosOpts.value = data.usuarios.data.map(c => ({
+            value: c.idUsuario,
+            label: c.nombre,
+        }))
     } catch (err) {
         console.error(err)
     }
@@ -894,6 +943,82 @@ async function descargarHabitoPago() {
     } finally {
         loadingInforme.value = null
     }
+}
+
+async function crearTarea() {
+    const camposRequeridos = [
+        modal.form.titulo,
+        modal.form.tipoTarea,
+        modal.form.prioridad,
+        modal.form.usuarioAsignado,
+        modal.form.vencimiento,
+        modal.form.nota,
+    ]
+
+    if (camposRequeridos.some(campo => !campo)) {
+        modal.error =
+            'Es necesario completar todos los campos antes de continuar.'
+        return
+    }
+    modal.loading = true
+    modal.error = ''
+
+    const payload = {
+        ...modal.form,
+        creditosId: JSON.stringify(selected.value),
+    }
+
+    try {
+        const { data } = await api.post('/api/tareas/createTarea', {
+            tarea: payload,
+        })
+
+        await fetchCreditos()
+
+        notify.success(data.message || 'Tareas creadas exitósamente.')
+
+        cerrarModal()
+        selected.value = []
+    } catch (err) {
+        notify.error(
+            err.response?.data?.message ||
+                'Ocurrió un error al crear las tareas.'
+        )
+    } finally {
+        modal.loading = false
+    }
+}
+
+// -- Modal crear tarea ---------------------------------------------------
+const modal = reactive({
+    open: false,
+    loading: false,
+    error: '',
+    form: {
+        titulo: '',
+        tipoTarea: '',
+        prioridad: '',
+        usuarioAsignado: '',
+        vencimiento: '',
+        nota: '',
+    },
+})
+
+function abrirModalCrear() {
+    Object.assign(modal.form, {
+        titulo: '',
+        prioridad: '',
+        usuarioAsignado: '',
+        tipoTarea: '',
+        vencimiento: '',
+        nota: '',
+    })
+    modal.error = ''
+    modal.open = true
+}
+
+function cerrarModal() {
+    modal.open = false
 }
 
 // -- Acciones de fila ----------------------------------------
@@ -1416,7 +1541,11 @@ onMounted(async () => {
     start()
 
     try {
-        await Promise.all([fetchCreditos(), fetchReportesTipos()])
+        await Promise.all([
+            fetchCreditos(),
+            fetchReportesTipos(),
+            fetchUsuarios(),
+        ])
     } finally {
         stop()
     }

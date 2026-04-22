@@ -333,7 +333,7 @@ class Credito extends Model
                 $columna = DB::raw($expr);
 
                 if (!empty($desde) && empty($hasta)) {
-                    $query->where($columna, '=', $desde);
+                    $query->where($columna, '>=', $desde);
                 } elseif (!empty($desde) && !empty($hasta)) {
                     $query->whereBetween($columna, [$desde, $hasta]);
                 } elseif (empty($desde)&& !empty($hasta)) {

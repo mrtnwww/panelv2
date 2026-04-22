@@ -85,6 +85,7 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     // Tareas
     Route::prefix('tareas')->group(function () {
         Route::get('/', [TareaController::class, 'listTasks']);
+        Route::post('/createTarea', [TareaController::class, 'createTarea']);
     });
 
     // Contabilidad

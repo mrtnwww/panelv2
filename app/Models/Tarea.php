@@ -93,29 +93,29 @@ class Tarea extends Model
 					$desde = $range['desde'] ?? null;
 					$hasta = $range['hasta'] ?? null;
 
-					if ($desde !== null && $hasta === null) {
-						$query->whereDate($field, '>=', $desde);
-					} elseif ($desde !== null && $hasta !== null) {
-						$query->whereDate($field, '>=', $desde)->whereDate($field, '<=', $hasta);
-					} elseif ($desde === null && $hasta !== null) {
-						$query->whereDate($field, '<=', $hasta);
+					if (!empty($desde) && empty($hasta)) {
+						$query->where($field, '>=', $desde);
+					} elseif (!empty($desde) && !empty($hasta)) {
+						$query->whereBetween($field, [$desde, $hasta]);
+					} elseif (empty($desde)&& !empty($hasta)) {
+						$query->where($field, '<=', $hasta);
 					}
 
 					return $query;
 				};
 
 				// fecha de creacion
-				if (!empty($conditions['creacion'])) {
+				if (!empty($conditions['creacion']['desde']) || !empty($conditions['creacion']['hasta'])) {
 					$applyDateRange($subQuery, 'tareas.created_at', $conditions['creacion']);
 				}
 
 				// fecha de completado
-				if (!empty($conditions['completada'])) {
+				if (!empty($conditions['completada']['desde']) || !empty($conditions['completada']['hasta'])) {
 					$applyDateRange($subQuery, 'tareas.fecha_completado', $conditions['completada']);
 				}
 
 				// fecha de vencimiento
-				if (!empty($conditions['vencimiento'])) {
+				if (!empty($conditions['vencimiento']['desde']) || !empty($conditions['vencimiento']['hasta'])) {
 					$applyDateRange($subQuery, 'tareas.fecha_vencimiento', $conditions['vencimiento']);
 				}
 

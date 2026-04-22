@@ -363,19 +363,17 @@
             </div>
         </transition>
 
-        <transition name="modal">
-            <EstadoCreditoModal
-                v-model="modalOpen"
-                :loading="loadingCredito"
-                :credito="credito"
-                @ver-historico="verHistorico"
-                @liquidar="liquidarCredito"
-                @ver-plan-pagos="verPlanPagos"
-                @descargar-paz-salvo="descargarPazSalvo"
-                @imprimir="imprimirCredito"
-                @imprimir-abono="imprimirAbono"
-            />
-        </transition>
+        <EstadoCreditoModal
+            v-model="modalOpen"
+            :loading="loadingCredito"
+            :credito="credito"
+            @ver-historico="verHistorico"
+            @liquidar="liquidarCredito"
+            @ver-plan-pagos="verPlanPagos"
+            @descargar-paz-salvo="descargarPazSalvo"
+            @imprimir="imprimirCredito"
+            @imprimir-abono="imprimirAbono"
+        />
     </div>
 </template>
 

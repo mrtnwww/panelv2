@@ -69,30 +69,34 @@
                     placeholder="Seleccionar tipo"
                     wrapper-class="min-w-[200px]"
                 />
+            </div>
 
-                <div class="flex items-center gap-2">
-                    <button @click="abrirModalCrear" class="btn btn-main">
-                        <svg
-                            width="13"
-                            height="13"
-                            viewBox="0 0 13 13"
-                            fill="none"
-                        >
-                            <path
-                                d="M6.5 1v11M1 6.5h11"
-                                stroke="currentColor"
-                                stroke-width="1.5"
-                                stroke-linecap="round"
-                            />
-                        </svg>
-                        Crear tarea
-                    </button>
+            <div class="flex items-center justify-between gap-2">
+                <div class="flex gap-2">
                     <button
                         @click="iniciarTarea"
                         :disabled="selected.length === 0"
                         class="btn btn-warning"
                     >
                         Iniciar tarea
+                    </button>
+                    <button v-if="selected.length" class="btn btn-danger">
+                        Eliminar tarea
+                    </button>
+                    <button v-if="selected.length" class="btn btn-primary">
+                        Marcar como completada
+                    </button>
+                </div>
+
+                <div class="flex gap-2">
+                    <button
+                        @click="resetFilters"
+                        class="btn border border-gray-200 text-sm text-gray-500 hover:bg-gray-50 hover:border-gray-300"
+                    >
+                        Limpiar
+                    </button>
+                    <button @click="fetchTareas" class="btn btn-main">
+                        Aplicar filtros
                     </button>
                 </div>
             </div>
@@ -173,137 +177,6 @@
                 </template>
             </DataTable>
         </div>
-
-        <!-- ── Modal crear tarea ── -->
-        <transition name="modal">
-            <div
-                v-if="modal.open"
-                class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
-                @click.self="modal.open = false"
-            >
-                <div
-                    class="bg-white rounded-2xl w-full max-w-lg p-6 flex flex-col gap-5 shadow-xl"
-                >
-                    <!-- Cabecera modal -->
-                    <div class="flex items-center justify-between">
-                        <h2 class="text-base font-semibold text-[#0A2540]">
-                            Nueva tarea
-                        </h2>
-                        <button
-                            @click="modal.open = false"
-                            class="text-gray-300 hover:text-gray-500 transition-colors"
-                        >
-                            <svg
-                                width="18"
-                                height="18"
-                                viewBox="0 0 18 18"
-                                fill="none"
-                            >
-                                <path
-                                    d="M3 3L15 15M15 3L3 15"
-                                    stroke="currentColor"
-                                    stroke-width="1.5"
-                                    stroke-linecap="round"
-                                />
-                            </svg>
-                        </button>
-                    </div>
-
-                    <!-- Campos del modal -->
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <FormInput
-                            label="Título"
-                            v-model="modal.form.titulo"
-                            placeholder="Descripción de la tarea"
-                            :required="true"
-                            wrapper-class="sm:col-span-2"
-                        />
-                        <FormSelectAsync
-                            label="Cliente"
-                            v-model="filters.cliente"
-                            :fetch-options="
-                                opcionesStore.fetchClientesValidated
-                            "
-                            placeholder="Seleccione un cliente"
-                        />
-                        <FormInput
-                            label="Asignar a"
-                            type="select"
-                            v-model="modal.form.usuarioAsignado"
-                            :options="usuariosOpts"
-                            placeholder="Seleccione el usuario"
-                            :searchable="true"
-                        />
-                        <FormInput
-                            label="Tipo de tarea"
-                            type="select"
-                            v-model="modal.form.tipoTarea"
-                            :options="tipoTareaOpts"
-                            placeholder="Seleccionar tipo"
-                        />
-                        <FormInput
-                            label="Fecha vencimiento"
-                            type="date"
-                            v-model="modal.form.vencimiento"
-                        />
-                        <FormInput
-                            label="Nota"
-                            type="textarea"
-                            v-model="modal.form.nota"
-                            placeholder="Observaciones..."
-                            wrapper-class="sm:col-span-2"
-                        />
-                    </div>
-
-                    <!-- Error -->
-                    <transition name="fade">
-                        <div
-                            v-if="modal.error"
-                            class="px-3 py-2.5 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm"
-                        >
-                            {{ modal.error }}
-                        </div>
-                    </transition>
-
-                    <!-- Acciones modal -->
-                    <div class="flex justify-end gap-2 pt-1">
-                        <button
-                            @click="modal.open = false"
-                            class="h-9 px-4 rounded-lg border border-gray-200 text-sm text-gray-500 hover:bg-gray-50 transition-all"
-                        >
-                            Cancelar
-                        </button>
-                        <button
-                            @click="guardarTarea"
-                            :disabled="modal.loading"
-                            class="btn btn-main"
-                        >
-                            <svg
-                                v-if="modal.loading"
-                                class="animate-spin w-3.5 h-3.5"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                            >
-                                <circle
-                                    class="opacity-25"
-                                    cx="12"
-                                    cy="12"
-                                    r="10"
-                                    stroke="currentColor"
-                                    stroke-width="4"
-                                />
-                                <path
-                                    class="opacity-75"
-                                    fill="currentColor"
-                                    d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                                />
-                            </svg>
-                            Crear tarea
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </transition>
     </div>
 </template>
 
@@ -385,9 +258,9 @@ const filters = reactive({
 const usuariosOpts = ref([])
 
 const tipoTareaOpts = [
-    { value: 'llamada', label: 'Llamada' },
-    { value: 'correo', label: 'Correo' },
-    { value: 'otro', label: 'Otro' },
+    { value: '2', label: 'Llamada' },
+    { value: '3', label: 'Correo' },
+    { value: '1', label: 'Otro' },
 ]
 
 // -- Selección --------------------------------------------------------
@@ -493,63 +366,12 @@ async function fetchUsuarios() {
         const { data } = await api.get('/api/usuarios/listMyUsers')
 
         // Opciones formateadas para FormInput type="select"
-        usuariosOpts.value = data.usuarios.map(c => ({
+        usuariosOpts.value = data.usuarios.data.map(c => ({
             value: c.idUsuario,
             label: c.nombre,
         }))
     } catch (err) {
         console.error(err)
-    }
-}
-
-// ── Modal crear ────────────────────────────────────────────────────────────
-const modal = reactive({
-    open: false,
-    loading: false,
-    error: '',
-    form: {
-        titulo: '',
-        cliente: '',
-        usuarioAsignado: '',
-        tipoTarea: '',
-        vencimiento: '',
-        nota: '',
-    },
-})
-
-function abrirModalCrear() {
-    Object.assign(modal.form, {
-        titulo: '',
-        cliente: '',
-        usuarioAsignado: '',
-        tipoTarea: '',
-        vencimiento: '',
-        nota: '',
-    })
-    modal.error = ''
-    modal.open = true
-}
-
-async function guardarTarea() {
-    if (!modal.form.titulo) {
-        modal.error = 'El título es requerido.'
-        return
-    }
-    modal.loading = true
-    modal.error = ''
-    try {
-        const response = await fetch('/api/cobranza/tareas', {
-            method: 'POST',
-            headers: { ...authHeaders(), 'Content-Type': 'application/json' },
-            body: JSON.stringify(modal.form),
-        })
-        if (!response.ok) throw new Error()
-        modal.open = false
-        fetchTareas()
-    } catch {
-        modal.error = 'No se pudo crear la tarea. Intenta nuevamente.'
-    } finally {
-        modal.loading = false
     }
 }
 
@@ -600,6 +422,19 @@ function addPropertiesTasksList(registros) {
                 }[item.tipo] || '',
         }
     })
+}
+
+async function resetFilters() {
+    filters.creacionDesde = ''
+    filters.creacionHasta = ''
+    filters.vencimientoDesde = ''
+    filters.vencimientoHasta = ''
+    filters.completadaDesde = ''
+    filters.completadaHasta = ''
+    filters.cliente = ''
+    filters.usuarioAsignado = ''
+    filters.tipoTarea = ''
+    await fetchTareas()
 }
 
 const {

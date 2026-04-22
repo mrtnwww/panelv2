@@ -84,7 +84,7 @@
             "
             size="md"
             :show-footer="true"
-            :cancel-label="'Cancelar'"
+            cancel-label="Cancelar"
             :confirm-label="
                 modal.mode === 'crear' ? 'Crear producto' : 'Guardar'
             "
