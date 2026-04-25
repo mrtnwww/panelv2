@@ -7,6 +7,7 @@ import { formatCurrency } from '@/utils/format'
 export const useOpcionesStore = defineStore('opciones', {
     state: () => ({
         clientesCreditos: [],
+        productos: [],
         tiposPago: [],
         empresas: [],
         destinos: [],
@@ -84,12 +85,13 @@ export const useOpcionesStore = defineStore('opciones', {
         },
 
         async fetchProductos(query) {
-            console.log('test')
             const { data } = await api.get('api/productos', {
                 params: { search: query, perPage: 50 },
             })
 
-            return data.productos.data.map(p => ({
+            this.productos = data.productos.data
+
+            return this.productos.map(p => ({
                 value: p.id,
                 label: `${p.nombre} - (${formatCurrency(p.precio)})`,
             }))

@@ -70,7 +70,7 @@
                         class="btn btn-default"
                         title="Eliminar"
                     >
-                        <i class="fa fa-trash"></i>
+                        <i class="fa fa-trash-can"></i>
                     </button>
                 </div>
             </template>

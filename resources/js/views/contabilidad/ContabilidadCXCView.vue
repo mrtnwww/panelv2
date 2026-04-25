@@ -33,7 +33,6 @@
                     :fetch-options="opcionesStore.fetchEmpresas"
                     placeholder="Seleccione un aliado"
                     wrapper-class="w-full"
-                    @change="procesarAliados($event)"
                 />
 
                 <!-- Botón Generar CXC -->
@@ -112,12 +111,13 @@
         <AppModal
             :model-value="modal.open"
             :title="`Recibo de caja - ${nombreAliadoCXC}`"
-            size="lg"
+            size="xl"
             :show-footer="true"
             cancel-label="Cancelar"
             confirm-label="Guardar"
             :confirm-loading="modal.loading"
             :close-on-overlay="true"
+            @confirm="guardarReciboCXC"
             @update:modelValue="cerrarModal"
         >
             <div class="flex flex-col gap-4">
@@ -134,7 +134,7 @@
                 <FormInput
                     label="Tipo"
                     type="select"
-                    v-model="modal.form.tipoTarea"
+                    v-model="modal.form.credito"
                     :options="creditosOpts"
                     placeholder="Seleccione un crédito"
                     :searchable="true"
@@ -148,19 +148,23 @@
                 />
 
                 <div class="flex justify-center">
-                    <button class="btn btn-main">Añadir</button>
+                    <button @click="añadirReciboCaja" class="btn btn-main">
+                        Añadir
+                    </button>
                 </div>
 
-                <TableGrid :items="[]" :columns="cols" />
-
-                <transition name="fade">
-                    <div
-                        v-if="modal.error"
-                        class="px-3 py-2.5 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm"
-                    >
-                        {{ modal.error }}
-                    </div>
-                </transition>
+                <TableGrid
+                    :items="listaRecibosCaja"
+                    :columns="cols"
+                    :showActions="true"
+                >
+                    <template #actions="{ item, index }">
+                        <i
+                            @click="eliminarFila(index)"
+                            class="fa-solid fa-trash-can cursor-pointer text-red-500"
+                        ></i>
+                    </template>
+                </TableGrid>
             </div>
         </AppModal>
     </div>
@@ -187,7 +191,10 @@ import { notify } from '@/composables/useNotify'
 // -- DataTable --------------------------------------------
 import { useDataTable } from '@/composables/useDataTable'
 
+// -- Utils -------------------------------------------------
 import { formatCurrency } from '@/utils/format'
+import { confirmAlert } from '@/utils/alert'
+
 import api from '@/services/api'
 
 // -- Store -------------------------------------------------
@@ -208,6 +215,7 @@ const cols = [
         key: 'credito',
         label: 'Crédito',
         headerClass: 'text-center',
+        cellClass: 'text-center',
     },
     {
         key: 'producto',
@@ -224,6 +232,7 @@ const clientes = ref([])
 const productos = ref([])
 const loading = ref(false)
 const nombreAliadoCXC = ref('')
+const listaRecibosCaja = ref([])
 
 // -- Filtros -----------------------------------------------
 const filters = reactive({
@@ -286,37 +295,12 @@ async function fetchRecibos() {
         pagination.total = total
         pagination.currentPage = current_page
     } catch (err) {
-        console.error(err)
+        notify.error(
+            err.response.data.message ||
+                'Ocurrió un error al consultar la información de los recibos de caja.'
+        )
     } finally {
         loading.value = false
-    }
-}
-
-async function procesarAliados(id) {
-    if (!id) {
-        nombreAliadoCXC.value = ''
-        clientes.value = []
-        return
-    }
-
-    // Nombre empresas gestionada a mostrar en el encabezado del modal
-    const aliado = opcionesStore.empresas.find(e => e.id == id)
-    if (aliado) nombreAliadoCXC.value = aliado.razon_social
-
-    start()
-
-    try {
-        const { data } = await api.get('api/clientes/getClientesAliado', {
-            params: {
-                idAliado: filters.establecimiento,
-            },
-        })
-
-        clientes.value = data.clientes
-    } catch (e) {
-        notify.error('Ocurrió un error al obtener la información del aliado.')
-    } finally {
-        stop()
     }
 }
 
@@ -336,49 +320,81 @@ function procesarCliente() {
 }
 
 async function imprimirRecibo(row) {
+    start()
+
     try {
-        const response = await fetch(
-            `/api/contabilidad/recibo-caja-cxc/${row.id}/imprimir`,
-            {
-                headers: authHeaders(),
-            }
-        )
-        if (!response.ok) throw new Error()
-        const blob = await response.blob()
-        const url = URL.createObjectURL(blob)
-        window.open(url, '_blank')
-        setTimeout(() => URL.revokeObjectURL(url), 10000)
+        const response = await api.get('/api/contabilidad/imprimirReciboCXC', {
+            params: {
+                id: row.id,
+            },
+        })
+
+        const url = response.data.url
+
+        if (url) {
+            window.open(url, '_blank')
+        } else {
+            notify.error('No se encontró la URL del recibo.')
+        }
     } catch (err) {
-        console.error(err)
+        notify.error('Ocurrió un error al imprimir el recibo de caja.')
+    } finally {
+        stop()
     }
 }
 
-function abrirModal() {
+async function abrirModal() {
     if (!filters.establecimiento) {
         notify.error('Es necesario seleccionar un aliado.')
         return
     }
 
-    if (!clientes.value.length) {
-        notify.error(
-            'No se encontraron créditos vigentes para el aliado seleccionado.'
-        )
-        return
+    nombreAliadoCXC.value = ''
+    clientes.value = []
+
+    // Nombre empresas gestionada a mostrar en el encabezado del modal
+    const aliado = opcionesStore.empresas.find(
+        e => e.id == filters.establecimiento
+    )
+    if (aliado) nombreAliadoCXC.value = aliado.razon_social
+
+    start()
+
+    try {
+        const { data } = await api.get('api/clientes/getClientesAliado', {
+            params: {
+                idAliado: filters.establecimiento,
+            },
+        })
+
+        clientes.value = data.clientes
+
+        if (!clientes.value.length) {
+            notify.error(
+                'No se encontraron créditos vigentes para el aliado seleccionado.'
+            )
+            return
+        }
+
+        // Listado de clientes
+        clientesOpts.value = clientes.value.map(cl => ({
+            value: cl.id,
+            label: `${cl.nombre} - (${cl.cedula})`,
+        }))
+
+        listaRecibosCaja.value = []
+        Object.assign(modal.form, {
+            cliente: '',
+            credito: '',
+            producto: '',
+        })
+
+        modal.open = true
+    } catch (e) {
+        notify.error('Ocurrió un error al obtener la información del aliado.')
+    } finally {
+        stop()
     }
-
-    // Listado de clientes
-    clientesOpts.value = clientes.value.map(cl => ({
-        value: cl.id,
-        label: `${cl.nombre} - (${cl.cedula})`,
-    }))
-
-    Object.assign(modal.form, {
-        cliente: '',
-        credito: '',
-        producto: '',
-    })
-    modal.error = ''
-    modal.open = true
 }
 
 function cerrarModal() {
@@ -392,8 +408,128 @@ async function resetFilters() {
     await fetchRecibos()
 }
 
+function añadirReciboCaja() {
+    if (modal.form.cliente && modal.form.credito && modal.form.producto) {
+        const { cliente: clienteId, credito: creditoId } = modal.form
+
+        const clienteSeleccionado = clientes.value.find(c => c.id == clienteId)
+
+        const creditoSeleccionado = clienteSeleccionado?.credito.find(
+            c => c.id == creditoId
+        )
+
+        const productoSeleccionado = opcionesStore.productos.find(
+            p => p.id == modal.form.producto
+        )
+
+        const sumaProductos = listaRecibosCaja.value.reduce((sum, item) => {
+            return item.id_credito == creditoId
+                ? sum + item.productoSeleccionado.precio
+                : sum
+        }, 0)
+
+        let valorAval = 0
+
+        if (creditoSeleccionado.aval_columnas == 0) {
+            if (
+                creditoSeleccionado.aval_value &&
+                !isNaN(creditoSeleccionado.aval_value)
+            ) {
+                valorAval = Number(creditoSeleccionado.aval_value)
+                if (
+                    creditoSeleccionado.aval_iva &&
+                    !isNaN(creditoSeleccionado.aval_iva)
+                ) {
+                    valorAval += Math.round(
+                        valorAval * (Number(creditoSeleccionado.aval_iva) / 100)
+                    )
+                }
+
+                let compraSinAval =
+                    Number(creditoSeleccionado.valor_compra) - valorAval
+                if (
+                    sumaProductos + productoSeleccionado.precio >
+                    compraSinAval
+                ) {
+                    notify.error(
+                        `La suma total de los productos no puede ser mayor al valor de la compra sin aval: (${formatCurrency(compraSinAval)})`
+                    )
+                    return
+                }
+            }
+        } else {
+            if (
+                sumaProductos + productoSeleccionado.precio >
+                creditoSeleccionado.valor_compra
+            ) {
+                notify.error(
+                    'La suma total de los productos no puede ser mayor al valor de la compra.'
+                )
+                return
+            }
+        }
+
+        let reciboCredito = {
+            credito: `Crédito ${creditoSeleccionado.id} (${formatCurrency(creditoSeleccionado.valor_compra)})`,
+            producto: `${productoSeleccionado.nombre} (${formatCurrency(productoSeleccionado.precio)})`,
+            cliente: clienteSeleccionado.nombre,
+            id_credito: creditoId,
+            productoSeleccionado,
+        }
+
+        listaRecibosCaja.value.push(reciboCredito)
+
+        Object.assign(modal.form, {
+            cliente: '',
+            credito: '',
+            producto: '',
+        })
+    } else {
+        notify.error('Debe seleccionar un cliente, crédito y producto')
+    }
+}
+
+function eliminarFila(index) {
+    listaRecibosCaja.value.splice(index, 1)
+}
+
+async function guardarReciboCXC() {
+    if (listaRecibosCaja.value.length > 0) {
+        const confirmado = await confirmAlert({
+            title: 'Crear recibo de caja CXC',
+            text: `¿Está seguro(a) de crear el recibo de caja?`,
+        })
+
+        if (!confirmado) return
+
+        modal.loading = true
+
+        try {
+            const response = await api.post('api/contabilidad/saveRecibosCXC', {
+                recibosCaja: listaRecibosCaja.value,
+                establecimiento: filters.establecimiento,
+            })
+
+            await fetchRecibos()
+            notify.success('Recibo de caja guardado correctamente.')
+
+            modal.open = false
+        } catch (err) {
+            notify.error(
+                err.response?.data?.message ||
+                    'Error al guardar el recibo de caja.'
+            )
+        } finally {
+            modal.loading = false
+        }
+    } else {
+        notify.error('Se debe agregar información de al menos un crédito.')
+    }
+}
+
 function transformarRecibos(data) {
     recibos.value = data.map(recibo => ({
+        id: recibo.id,
         establecimiento: recibo.empresa.razon_social,
         valorCXC: recibo.valor_cxc,
         fecha: recibo.fecha,

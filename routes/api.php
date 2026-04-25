@@ -92,6 +92,8 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     // Contabilidad
     Route::prefix('contabilidad')->group(function () {
         Route::get('/listRecibosCXC', [ContabilidadController::class, 'listRecibosCXC']);
+        Route::post('/saveRecibosCXC', [ContabilidadController::class, 'saveRecibosCXC']);
+        Route::get('/imprimirReciboCXC', [ContabilidadController::class, 'imprimirReciboCXC']);
     });
 
     // Cartera

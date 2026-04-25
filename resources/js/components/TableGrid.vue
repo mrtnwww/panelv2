@@ -40,6 +40,16 @@
                                 <span class="block">{{ item[col.key] }}</span>
                             </slot>
                         </div>
+
+                        <!-- Columna de acciones opcional en la fila -->
+                        <div
+                            v-if="showActions"
+                            class="flex justify-end items-center"
+                        >
+                            <slot name="actions" :item="item" :index="index">
+                                <!-- Botón por defecto o vacío -->
+                            </slot>
+                        </div>
                     </div>
                     <slot name="insertion-row" />
                 </div>
@@ -64,10 +74,18 @@ const props = defineProps({
     minWidth: { type: String, default: 'min-w-150' },
     columns: { type: Array, required: true }, // [{ key, label, width }]
     emptyText: { type: String, default: 'No hay registros disponibles' },
+    showActions: { type: Boolean, default: false },
+    actionsWidth: { type: String, default: '80px' },
 })
 
 // Genera el estilo de grid-template-columns automáticamente
 const gridTemplate = computed(() => {
-    return props.columns.map(col => col.width || '1fr').join(' ')
+    let template = props.columns.map(col => col.width || '1fr').join(' ')
+
+    if (props.showActions) {
+        template += ` ${props.actionsWidth}`
+    }
+
+    return template
 })
 </script>

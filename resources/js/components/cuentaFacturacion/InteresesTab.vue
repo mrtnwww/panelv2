@@ -411,7 +411,7 @@
                                 :disabled="creandoNuevaLinea || editandoLinea"
                                 class="bg-red-500 text-white p-1.5 rounded-lg hover:bg-red-600 disabled:bg-gray-300 disabled:pointer-events-none"
                             >
-                                <i class="fa-solid fa-trash"></i>
+                                <i class="fa-solid fa-trash-can"></i>
                             </button>
                         </div>
                     </template>
