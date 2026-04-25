@@ -290,29 +290,24 @@ class Credito extends Model
 
                 // consultar los creditos por fecha de vencimiento de cuota
                 if (!empty($conditions['valorFechaVenceDesde']) || !empty($conditions['valorFechaVenceHasta'])) {
-                    $fechaVenceDesde = !empty($conditions['valorFechaVenceDesde']) ? Carbon::parse($conditions['valorFechaVenceDesde'])->startOfDay() : null;
-                    $fechaVenceHasta = !empty($conditions['valorFechaVenceHasta']) ? Carbon::parse($conditions['valorFechaVenceHasta'])->endOfDay() : null;
+                    $vencimientoDesde = !empty($conditions['valorFechaVenceDesde']) ? Carbon::parse($conditions['valorFechaVenceDesde'])->startOfDay() : null;
+                    $vencimientoHasta = !empty($conditions['valorFechaVenceHasta']) ? Carbon::parse($conditions['valorFechaVenceHasta'])->endOfDay() : null;
 
-                    $subQuery->whereIn('credito.id', function ($query) use ($fechaVenceDesde, $fechaVenceHasta) {
-                        $query->select('cp.credito_id')
+                    $subQuery->whereExists(function ($q) use ($vencimientoDesde, $vencimientoHasta) {
+                        $q->select(DB::raw(1))
                             ->from('credito_proyeccion as cp')
-                            ->join(DB::raw('(SELECT credito_id, MIN(fecha) as primera_fecha
-                                            FROM credito_proyeccion
-                                            WHERE pagado = 0
-                                            GROUP BY credito_id) as primeras_cuotas'), function ($join) {
-                                $join->on('cp.credito_id', '=', 'primeras_cuotas.credito_id')
-                                    ->on('cp.fecha', '=', 'primeras_cuotas.primera_fecha');
-                            })
-                            ->where('cp.pagado', 0)
-                            ->when($fechaVenceDesde && $fechaVenceHasta, function ($q) use ($fechaVenceDesde, $fechaVenceHasta) {
-                                $q->whereBetween('cp.fecha', [$fechaVenceDesde, $fechaVenceHasta]);
-                            })
-                            ->when($fechaVenceDesde && !$fechaVenceHasta, function ($q) use ($fechaVenceDesde) {
-                                $q->where('cp.fecha', $fechaVenceDesde);
-                            })
-                            ->when(!$fechaVenceDesde && $fechaVenceHasta, function ($q) use ($fechaVenceHasta) {
-                                $q->where('cp.fecha', '<=', $fechaVenceHasta);
-                            });
+                            ->whereColumn('cp.credito_id', 'credito.id')
+                            ->where('cp.pagado', 0);
+
+                        if ($vencimientoDesde && !$vencimientoHasta) {
+                            $q->whereDate('cp.fecha', '=', $vencimientoDesde);
+
+                        } elseif ($vencimientoDesde && $vencimientoHasta) {
+                            $q->whereBetween('cp.fecha', [$vencimientoDesde, $vencimientoHasta]);
+
+                        } elseif (!$vencimientoDesde && $vencimientoHasta) {
+                            $q->whereDate('cp.fecha', '<=', $vencimientoHasta);
+                        }
                     });
                 }
 

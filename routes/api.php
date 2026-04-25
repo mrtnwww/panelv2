@@ -54,8 +54,9 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     Route::prefix('creditos')->group(function () {
         Route::post('/updateMora', [CreditoController::class, 'updateMora']);
         Route::get('/listCredits', [CreditoController::class, 'listCredits']);
-        Route::get('/{id}/details', [CreditoController::class, 'creditDetails']);
         Route::get('/detailCredit', [CreditoController::class, 'detailCredit']);
+        Route::get('/{id}/details', [CreditoController::class, 'creditDetails']);
+        Route::delete('/anularCredito', [CreditoController::class, 'anularCredito']);
         Route::get('/creditsCobranza', [CreditoController::class, 'creditsCobranza']);
         Route::get('/clienteCreditData', [CreditoController::class, 'clienteCreditData']);
         Route::get('/listCreditsCorresponsal', [CreditoController::class, 'listCreditsCorresponsal']);

@@ -246,13 +246,6 @@ const clientesOpts = ref([])
 const creditosOpts = ref([])
 const productosOpts = ref([])
 
-function authHeaders() {
-    return {
-        Accept: 'application/json',
-        Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
-    }
-}
-
 // -- Modal crear recibo de caja CXC ----------------------------------
 const modal = reactive({
     open: false,

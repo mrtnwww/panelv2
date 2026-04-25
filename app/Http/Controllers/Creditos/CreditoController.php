@@ -62,11 +62,24 @@ class CreditoController extends Controller
         // Formulario desde donde se genera la busqueda
         $form = $request->input('form', null);
 
-        // Filtros
-        $conditions = $request->input('conditions', []);
-
         // Término de búsqueda
         $searchTerm = $request->input('search', '');
+
+        // Filtros
+        $conditions = [
+            'fecha_inicial' => $request->input('fecha_inicial'),
+            'periodicidad' => $request->input('periodicidad'),
+            'soloAliados' => $request->input('solo_aliados'),
+            'fecha_final' => $request->input('fecha_final'),
+            'estado_credito' => $request->input('estado'),
+            'cliente' => $request->input('cliente_id'),
+            'destino' => $request->input('destino'),
+            'aliado' => $request->input('aliado'),
+
+            // Vencimiento de cuota
+            'valorFechaVenceDesde' => $request->input('vencimiento_cuota'),
+            'valorFechaVenceHasta' => $request->input('vencimiento_cuota_hasta'),
+        ];
 
         // Nit de la empresa del usuario
         $empresa = Empresa::find($empresaId);
@@ -2794,5 +2807,26 @@ class CreditoController extends Controller
     private function toFloat($value)
     {
         return is_numeric($value) ? (float) $value : 0.0;
+    }
+
+    public function anularCredito(Request $request)
+    {
+        $request->validate([
+            'credito' => 'required|integer',
+            'observacion' => 'required|max:255'
+        ]);
+
+        $credito = Credito::findOrFail($request->credito);
+
+        $credito->update([
+            'motivo_anulacion' => $request->observacion
+        ]);
+
+        $credito->delete();
+
+        return response()->json([
+            'message' => 'Crédito anulado correctamente',
+            'credito' => $credito->id
+        ]);
     }
 }

@@ -43,11 +43,28 @@
                             Vencimiento de cuota
                         </label>
                         <FormCheckbox
-                            v-model="filters.porRango"
+                            v-model="filters.vencimientoPorRango"
                             label="Por rango"
                         />
                     </div>
-                    <FormInput v-model="filters.vencimientoCuota" type="date" />
+                    <div
+                        class="grid gap-2"
+                        :class="
+                            filters.vencimientoPorRango
+                                ? 'grid-cols-2'
+                                : 'grid-cols-1'
+                        "
+                    >
+                        <FormInput
+                            v-model="filters.vencimientoCuota"
+                            type="date"
+                        />
+                        <FormInput
+                            v-if="filters.vencimientoPorRango"
+                            v-model="filters.vencimientoCuotaHasta"
+                            type="date"
+                        />
+                    </div>
                 </div>
 
                 <FormInput
@@ -85,62 +102,79 @@
 
             <!-- Botones de informe -->
             <div
-                class="flex flex-col items-start justify-end gap-3 pt-1 border-t border-gray-100 xl:flex-row xl:items-end"
+                class="flex flex-col lg:flex-row lg:items-center justify-between gap-4"
             >
-                <button
-                    @click="generarInforme('resumido')"
-                    :disabled="loadingInforme === 'resumido'"
-                    class="btn btn-main"
-                >
-                    <svg
-                        v-if="loadingInforme === 'resumido'"
-                        class="animate-spin w-3.5 h-3.5"
-                        viewBox="0 0 24 24"
-                        fill="none"
+                <div class="flex flex-wrap items-center gap-2">
+                    <button
+                        @click="generarInforme('resumido')"
+                        :disabled="loadingInforme === 'resumido'"
+                        class="btn btn-main"
                     >
-                        <circle
-                            class="opacity-25"
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            stroke="currentColor"
-                            stroke-width="4"
-                        />
-                        <path
-                            class="opacity-75"
-                            fill="currentColor"
-                            d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                        />
-                    </svg>
-                    Generar informe resumido
-                </button>
-                <button
-                    @click="generarInforme('detallado')"
-                    :disabled="loadingInforme === 'detallado'"
-                    class="btn btn-primary"
-                >
-                    <svg
-                        v-if="loadingInforme === 'detallado'"
-                        class="animate-spin w-3.5 h-3.5"
-                        viewBox="0 0 24 24"
-                        fill="none"
+                        <svg
+                            v-if="loadingInforme === 'resumido'"
+                            class="animate-spin w-3.5 h-3.5"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                        >
+                            <circle
+                                class="opacity-25"
+                                cx="12"
+                                cy="12"
+                                r="10"
+                                stroke="currentColor"
+                                stroke-width="4"
+                            />
+                            <path
+                                class="opacity-75"
+                                fill="currentColor"
+                                d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                            />
+                        </svg>
+                        Generar informe resumido
+                    </button>
+                    <button
+                        @click="generarInforme('detallado')"
+                        :disabled="loadingInforme === 'detallado'"
+                        class="btn btn-primary"
                     >
-                        <circle
-                            class="opacity-25"
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            stroke="currentColor"
-                            stroke-width="4"
-                        />
-                        <path
-                            class="opacity-75"
-                            fill="currentColor"
-                            d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                        />
-                    </svg>
-                    Generar informe detallado
-                </button>
+                        <svg
+                            v-if="loadingInforme === 'detallado'"
+                            class="animate-spin w-3.5 h-3.5"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                        >
+                            <circle
+                                class="opacity-25"
+                                cx="12"
+                                cy="12"
+                                r="10"
+                                stroke="currentColor"
+                                stroke-width="4"
+                            />
+                            <path
+                                class="opacity-75"
+                                fill="currentColor"
+                                d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                            />
+                        </svg>
+                        Generar informe detallado
+                    </button>
+                </div>
+
+                <div class="flex items-center gap-2 sm:justify-end">
+                    <button
+                        @click="resetFilters"
+                        class="btn flex-1 sm:flex-none border border-gray-200 text-sm text-gray-500 hover:bg-gray-50 hover:border-gray-300"
+                    >
+                        Limpiar
+                    </button>
+                    <button
+                        @click="fetchCreditos"
+                        class="btn btn-main flex-1 sm:flex-none"
+                    >
+                        Aplicar filtros
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -193,7 +227,8 @@
                         Generar extracto
                     </button>
                     <button
-                        @click.stop="anularCredito(row)"
+                        v-if="!row.anulado && row.totalAbonado == 0"
+                        @click.stop="abrirModalAnularCredito(row)"
                         class="btn btn-danger"
                     >
                         Anular
@@ -266,6 +301,27 @@
             @imprimir="imprimirCredito"
             @imprimir-abono="imprimirAbono"
         />
+
+        <AppModal
+            :model-value="modalAnular.open"
+            :title="`Anular crédito ${modalAnular.credito} - ${modalAnular.cliente}`"
+            size="lg"
+            :show-footer="true"
+            cancel-label="Cancelar"
+            confirm-label="Anular"
+            :confirm-loading="modalAnular.loading"
+            :close-on-overlay="true"
+            @confirm="anularCredito"
+            @update:modelValue="cerrarModalAnularCredito"
+        >
+            <div>
+                <FormInput
+                    label="Motivo de anulación del crédito"
+                    v-model="modalAnular.observacion"
+                    type="textarea"
+                />
+            </div>
+        </AppModal>
     </div>
 </template>
 
@@ -277,6 +333,7 @@ import EstadoCreditoModal from '@/components/modals/EstadoCreditoModal.vue'
 import FormSelectAsync from '@/components/form/FormSelectAsync.vue'
 import FormCheckbox from '@/components/form/FormCheckbox.vue'
 import FormInput from '@/components/form/FormInput.vue'
+import AppModal from '@/components/AppModal.vue'
 
 import UpdateMoraButton from '@/components/table/UpdateMoraButton.vue'
 import DataTable from '@/components/table/DataTable.vue'
@@ -290,7 +347,13 @@ import { useDataTable } from '@/composables/useDataTable'
 import { useLoader } from '@/composables/useLoader'
 const { start, stop } = useLoader()
 
+// -- Toaster ------------------------------------------------------
+import { notify } from '@/composables/useNotify'
+
+// -- Utils ----------------------------------------------------------
 import { formatCurrency } from '@/utils/format'
+import { confirmAlert } from '@/utils/alert'
+
 import api from '@/services/api'
 
 // -- Store --------------------------------------------------------
@@ -407,26 +470,37 @@ const filters = reactive({
     cliente: '',
     estado: '',
     vencimientoCuota: '',
-    porRango: false,
+    vencimientoCuotaHasta: '',
+    vencimientoPorRango: false,
     destino: '',
     periodicidad: '',
     aliado: '',
     soloAliados: false,
 })
 
+// Modal anulación del crédito
+const modalAnular = reactive({
+    open: false,
+    loading: false,
+    observacion: '',
+    cliente: '',
+    credito: null,
+    error: '',
+})
+
 // -- Opciones de selects ---------------------------------------------------
 const destinoOpts = ref([])
 
 const estadosCredito = [
-    { value: 'vigente', label: 'Al día' },
-    { value: 'finalizado', label: 'Finalizado' },
-    { value: 'mora', label: 'En mora' },
+    { value: 1, label: 'En mora' },
+    { value: 2, label: 'Al día' },
+    { value: 4, label: 'Finalizado' },
 ]
 
 const periodicidades = [
-    { value: 'semanal', label: 'Semanal' },
-    { value: 'quincenal', label: 'Quincenal' },
-    { value: 'mensual', label: 'Mensual' },
+    { value: 'Semanal', label: 'Semanal' },
+    { value: 'Quincenal', label: 'Quincenal' },
+    { value: 'Mensual', label: 'Mensual' },
 ]
 
 // -- Helpers ----------------------------------------------------------------
@@ -451,10 +525,14 @@ async function fetchCreditos() {
             ...(filters.vencimientoCuota && {
                 vencimiento_cuota: filters.vencimientoCuota,
             }),
+            ...(filters.vencimientoPorRango &&
+                filters.vencimientoCuotaHasta && {
+                    vencimiento_cuota_hasta: filters.vencimientoCuotaHasta,
+                }),
             ...(filters.destino && { destino: filters.destino }),
             ...(filters.periodicidad && { periodicidad: filters.periodicidad }),
             ...(filters.aliado && { aliado: filters.aliado }),
-            ...(filters.porRango && { por_rango: 1 }),
+            ...(filters.vencimientoPorRango && { por_rango: 1 }),
             ...(filters.soloAliados && { solo_aliados: 1 }),
         })
 
@@ -472,6 +550,22 @@ async function fetchCreditos() {
     } finally {
         loading.value = false
     }
+}
+
+async function resetFilters() {
+    filters.fechaInicial = ''
+    filters.fechaFinal = ''
+    filters.cliente = ''
+    filters.estado = ''
+    filters.vencimientoCuota = ''
+    filters.vencimientoCuotaHasta = ''
+    filters.vencimientoPorRango = ''
+    filters.destino = ''
+    filters.periodicidad = ''
+    filters.aliado = ''
+    filters.soloAliados = ''
+
+    await fetchCreditos()
 }
 
 async function generarInforme(tipo) {
@@ -507,8 +601,52 @@ async function generarInforme(tipo) {
 function generarExtracto(row) {
     console.log('Generar extracto:', row.id)
 }
-function anularCredito(row) {
-    console.log('Anular crédito:', row.id)
+
+function abrirModalAnularCredito(row) {
+    modalAnular.cliente = row.cliente
+    modalAnular.credito = row.id
+    modalAnular.open = true
+}
+
+function cerrarModalAnularCredito() {
+    modalAnular.open = false
+}
+
+async function anularCredito() {
+    if (!modalAnular.observacion) {
+        notify.error('No se ha especificado el motivo de la anulación.')
+        return
+    }
+
+    const confirmado = await confirmAlert({
+        title: 'Anular crédito',
+        text: `¿Está seguro(a) de anular el crédito?`,
+    })
+
+    if (!confirmado) return
+
+    start()
+
+    try {
+        await api.delete('/api/creditos/anularCredito', {
+            data: {
+                credito: modalAnular.credito,
+                observacion: modalAnular.observacion,
+            },
+        })
+
+        modalAnular.open = false
+
+        await fetchCreditos()
+        notify.success('Crédito anulado correctamente.')
+    } catch (err) {
+        notify.error(
+            err.response?.data?.message ||
+                'Ocurrió un error al realizar la anulación del abono.'
+        )
+    } finally {
+        stop()
+    }
 }
 
 function transformCreditos(data, sumaTotales) {
@@ -545,6 +683,7 @@ function transformCreditos(data, sumaTotales) {
         cxpAliados: cr.valor_cxc_aliado,
         destino: cr.destino,
         estadoCredito: estadoCredito(cr),
+        anulado: cr.anulado,
     })
 
     creditos.value = data.map(mapCredito)
