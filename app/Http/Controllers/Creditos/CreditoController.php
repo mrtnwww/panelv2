@@ -67,6 +67,7 @@ class CreditoController extends Controller
 
         // Filtros
         $conditions = [
+            'cxc_pendientes' => $request->input('cxc_pendientes'),
             'fecha_inicial' => $request->input('fecha_inicial'),
             'periodicidad' => $request->input('periodicidad'),
             'soloAliados' => $request->input('solo_aliados'),
