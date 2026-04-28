@@ -91,7 +91,7 @@ class Abono extends Model
 
                 if (!empty($conditions['aliado'])) {
                     $subQuery->WhereHas('credito.empresa', function ($empresaQuery) use ($conditions) {
-                        $empresaQuery->where('razon_social', 'LIKE', '%' . $conditions['aliado'] . '%');
+                        $empresaQuery->where('id', $conditions['aliado']);
                     });
                 }
 

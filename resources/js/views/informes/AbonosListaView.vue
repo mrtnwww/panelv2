@@ -49,16 +49,39 @@
                 />
             </div>
 
-            <!-- Fila 2: checkboxes + botones -->
-            <div
-                class="flex flex-wrap items-center gap-x-5 gap-y-3 pt-3 border-t border-gray-100"
-            >
+            <!-- Fila 2: checkboxes -->
+            <div class="flex flex-col">
                 <!-- Checkboxes -->
-                <FormCheckbox v-model="filters.diasMora" label="Días de mora" />
-                <FormCheckbox v-model="filters.abonoAval" label="Abono aval" />
+                <div class="flex gap-3">
+                    <FormCheckbox
+                        v-model="filters.diasMora"
+                        label="Días de mora"
+                    />
+                    <FormCheckbox
+                        v-model="filters.abonoAval"
+                        label="Abono aval"
+                    />
+                </div>
+                <div v-if="filters.diasMora" class="flex gap-1.5 mt-2">
+                    <FormInput
+                        type="number"
+                        placeholder="Desde"
+                        v-model="filters.diasMoraDesde"
+                    />
+                    <FormInput
+                        type="number"
+                        placeholder="Hasta"
+                        v-model="filters.diasMoraHasta"
+                    />
+                </div>
+            </div>
 
+            <!-- Fila 3: botones -->
+            <div
+                class="flex flex-col lg:flex-row lg:items-center justify-between gap-4"
+            >
                 <!-- Botones -->
-                <div class="flex flex-wrap items-center gap-2 sm:ml-auto">
+                <div class="flex flex-wrap items-center gap-2">
                     <button
                         @click="generarInforme('resumido')"
                         :disabled="loadingInforme === 'resumido'"
@@ -139,6 +162,21 @@
                             />
                         </svg>
                         Generar factura
+                    </button>
+                </div>
+
+                <div class="flex items-center gap-2 sm:justify-end">
+                    <button
+                        @click="resetFilters"
+                        class="btn flex-1 sm:flex-none border border-gray-200 text-sm text-gray-500 hover:bg-gray-50 hover:border-gray-300"
+                    >
+                        Limpiar
+                    </button>
+                    <button
+                        @click="fetchAbonos"
+                        class="btn btn-main flex-1 sm:flex-none"
+                    >
+                        Aplicar filtros
                     </button>
                 </div>
             </div>
@@ -292,6 +330,8 @@ const filters = reactive({
     cajero: '',
     aliado: '',
     diasMora: false,
+    diasMoraDesde: '',
+    diasMoraHasta: '',
     abonoAval: false,
 })
 
@@ -333,6 +373,12 @@ async function fetchAbonos() {
             ...(filters.cajero && { cajero_id: filters.cajero }),
             ...(filters.aliado && { aliado: filters.aliado }),
             ...(filters.diasMora && { dias_mora: 1 }),
+            ...(filters.diasMoraDesde && {
+                dias_mora_desde: filters.diasMoraDesde,
+            }),
+            ...(filters.diasMoraHasta && {
+                dias_mora_hasta: filters.diasMoraHasta,
+            }),
             ...(filters.abonoAval && { abono_aval: 1 }),
         })
 
@@ -350,6 +396,21 @@ async function fetchAbonos() {
     } finally {
         loading.value = false
     }
+}
+
+async function resetFilters() {
+    filters.fechaInicial = ''
+    filters.fechaFinal = ''
+    filters.recibidoEn = ''
+    filters.cliente = ''
+    filters.cajero = ''
+    filters.aliado = ''
+    filters.diasMora = false
+    filters.diasMoraDesde = ''
+    filters.diasMoraHasta = ''
+    filters.abonoAval = false
+
+    await fetchAbonos()
 }
 
 async function descargarArchivo(url, nombre) {

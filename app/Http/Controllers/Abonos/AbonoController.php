@@ -31,7 +31,19 @@ class AbonoController extends Controller
 
         // Filtros
         $conditions = [
-            'factura' => $request->input('factura', 0)
+            'factura' => $request->input('factura', 0),
+            'fecha_inicial' => $request->input('fecha_inicial'),
+            'fecha_final' => $request->input('fecha_final'),
+            'tipo_pago' => $request->input('recibido_en'),
+            'cliente' => $request->input('cliente_id'),
+            'cajera' => $request->input('cajero_id'),
+            'aliado' => $request->input('aliado'),
+
+            // Dias mora
+            'diasMoraDesde' => $request->input('dias_mora_desde'),
+            'diasMoraHasta' => $request->input('dias_mora_hasta'),
+            // Abono aval
+            'abonoAval' => $request->input('abono_aval'),
         ];
 
         $factura = 0;
