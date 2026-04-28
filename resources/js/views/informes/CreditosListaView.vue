@@ -221,7 +221,7 @@
                         Detalle
                     </button>
                     <button
-                        @click.stop="generarExtracto(row)"
+                        @click.stop="abrirModalGenerarExtracto(row)"
                         class="btn btn-info"
                     >
                         Generar extracto
@@ -322,6 +322,73 @@
                 />
             </div>
         </AppModal>
+
+        <AppModal
+            :model-value="modalExtractoCredito.open"
+            :title="`Extracto crédito ${modalExtractoCredito.credito} - ${modalExtractoCredito.cliente}`"
+            size="lg"
+            :show-footer="false"
+            :confirm-loading="modalExtractoCredito.loading"
+            :close-on-overlay="true"
+            @update:modelValue="cerrarModalGenerarExtracto"
+        >
+            <div>
+                <div class="mb-4">
+                    <FormInput
+                        label="Fecha de corte"
+                        v-model="modalExtractoCredito.fecha"
+                        type="date"
+                    />
+                </div>
+
+                <div class="flex gap-1.5 justify-content-center">
+                    <button
+                        @click="generarExtracto('pdf')"
+                        :disabled="modalExtractoCredito.loading"
+                        class="btn btn-main"
+                    >
+                        <i class="fa-regular fa-file-pdf text-lg"></i>
+
+                        <span
+                            v-if="modalExtractoCredito.loading"
+                            class="flex items-center gap-1"
+                        >
+                            Descargando
+                            <svg
+                                class="animate-spin w-3.5 h-3.5"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                            >
+                                <circle
+                                    class="opacity-25"
+                                    cx="12"
+                                    cy="12"
+                                    r="10"
+                                    stroke="currentColor"
+                                    stroke-width="4"
+                                />
+                                <path
+                                    class="opacity-75"
+                                    fill="currentColor"
+                                    d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                                />
+                            </svg>
+                        </span>
+
+                        <span v-else> Descargar </span>
+                    </button>
+
+                    <button
+                        @click="generarExtracto('email')"
+                        :disabled="modalExtractoCredito.loading"
+                        class="btn btn-primary"
+                    >
+                        <i class="fa-regular fa-envelope text-lg"></i>
+                        <span>Enviar</span>
+                    </button>
+                </div>
+            </div>
+        </AppModal>
     </div>
 </template>
 
@@ -353,6 +420,7 @@ import { notify } from '@/composables/useNotify'
 // -- Utils ----------------------------------------------------------
 import { formatCurrency } from '@/utils/format'
 import { confirmAlert } from '@/utils/alert'
+import dayjs from 'dayjs'
 
 import api from '@/services/api'
 
@@ -488,6 +556,15 @@ const modalAnular = reactive({
     error: '',
 })
 
+const modalExtractoCredito = reactive({
+    open: false,
+    loading: false,
+    cliente: '',
+    fecha: '',
+    credito: null,
+    error: '',
+})
+
 // -- Opciones de selects ---------------------------------------------------
 const destinoOpts = ref([])
 
@@ -598,18 +675,55 @@ async function generarInforme(tipo) {
 }
 
 // -- Acciones de fila --------------------------------------------------
-function generarExtracto(row) {
-    console.log('Generar extracto:', row.id)
+function abrirModalGenerarExtracto(row) {
+    modalExtractoCredito.fecha = dayjs().format('YYYY-MM-DD')
+    modalExtractoCredito.cliente = row.cliente
+    modalExtractoCredito.credito = row.id
+    modalExtractoCredito.loading = false
+    modalExtractoCredito.error = ''
+    modalExtractoCredito.open = true
+}
+
+function cerrarModalGenerarExtracto() {
+    modalExtractoCredito.open = false
 }
 
 function abrirModalAnularCredito(row) {
     modalAnular.cliente = row.cliente
     modalAnular.credito = row.id
+    modalAnular.observacion = ''
+    modalAnular.error = ''
     modalAnular.open = true
 }
 
 function cerrarModalAnularCredito() {
     modalAnular.open = false
+}
+
+async function generarExtracto(action, credito) {
+    modalExtractoCredito.loading = true
+
+    try {
+        if (action === 'pdf') {
+            const response = await api.get(
+                `/api/extracto/generar/${modalExtractoCredito.credito}`,
+                {
+                    params: {
+                        fecha_corte: modalExtractoCredito.fecha,
+                    },
+                }
+            )
+
+            window.open(response.data, '_blank')
+        }
+    } catch (err) {
+        notify.error(
+            err.response.data.message ||
+                'Ocurrió un error al generar el extracto.'
+        )
+    } finally {
+        modalExtractoCredito.loading = false
+    }
 }
 
 async function anularCredito() {

@@ -1,7 +1,6 @@
 <?php
 
 use App\Http\Controllers\Abonos\AbonoController;
-use App\Http\Controllers\TipoPago\TipoPagoController;
 use App\Http\Controllers\Cajeras\CajeraController;
 use App\Http\Controllers\Cartera\CarteraController;
 use App\Http\Controllers\Ciudades\CiudadController;
@@ -11,10 +10,12 @@ use App\Http\Controllers\Creditos\CreditoController;
 use App\Http\Controllers\CuentaFacturacion\CuentaFacturacionController;
 use App\Http\Controllers\Destinos\DestinoController;
 use App\Http\Controllers\Empresas\EmpresaController;
+use App\Http\Controllers\Extracto\ExtractoController;
 use App\Http\Controllers\Notificaciones\NotificacionController;
 use App\Http\Controllers\Productos\ProductoController;
 use App\Http\Controllers\ReporteCentralesTipo\ReporteCentralesTipoController;
 use App\Http\Controllers\Tareas\TareaController;
+use App\Http\Controllers\TipoPago\TipoPagoController;
 use App\Http\Controllers\Usuarios\UsuarioController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -127,6 +128,11 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     Route::prefix('notificaciones')->group(function () {
         Route::get('/getNotificaciones', [NotificacionController::class, 'getNotificaciones']);
         Route::post('/visualizeNotificaciones', [NotificacionController::class, 'visualizeNotificaciones']);
+    });
+
+    // Extracto
+    Route::prefix('extracto')->group(function () {
+        Route::get('/generar/{creditoId}', [ExtractoController::class, 'generate']);
     });
 
     // Cuenta y Facturación

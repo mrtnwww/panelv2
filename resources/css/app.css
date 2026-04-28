@@ -91,27 +91,51 @@ input[type='number'] {
 }
 
 .btn-main {
-    @apply bg-[#1a5c2a] hover:bg-[#154d22] text-white;
+    @apply bg-[#1a5c2a] text-white;
+
+    &:not(:disabled):hover {
+        @apply bg-[#154d22];
+    }
 }
 
 .btn-primary {
-    @apply bg-emerald-500 hover:bg-emerald-600 text-white;
+    @apply bg-emerald-500 text-white;
+
+    &:not(:disabled):hover {
+        @apply bg-emerald-600;
+    }
 }
 
 .btn-secondary {
-    @apply bg-orange-400 hover:bg-orange-500 text-white;
+    @apply bg-orange-500 text-white;
+
+    &:not(:disabled):hover {
+        @apply bg-orange-600;
+    }
 }
 
 .btn-info {
-    @apply bg-sky-500 hover:bg-sky-600 text-white;
+    @apply bg-sky-500 text-white;
+
+    &:not(:disabled):hover {
+        @apply bg-sky-600;
+    }
 }
 
 .btn-warning {
-    @apply bg-yellow-500 hover:bg-yellow-600 text-white;
+    @apply bg-yellow-500 text-white;
+
+    &:not(:disabled):hover {
+        @apply bg-yellow-600;
+    }
 }
 
 .btn-danger {
-    @apply bg-red-500 hover:bg-red-600 text-white;
+    @apply bg-red-500 text-white;
+
+    &:not(:disabled):hover {
+        @apply bg-red-600;
+    }
 }
 
 /* Toast */
