@@ -1,36 +1,55 @@
 <template>
     <div class="flex flex-col gap-5">
-        <!-- Encabezado + filtros en una línea -->
-        <div class="flex flex-wrap items-end gap-4">
-            <h1 class="text-lg font-semibold text-[#0A2540] mr-auto">
-                Informe cartera por edades
-            </h1>
+        <h1 class="text-lg font-semibold text-[#0A2540] mr-auto">
+            Informe cartera por edades
+        </h1>
+        <!-- Filtros -->
+        <div
+            class="bg-white rounded-xl border border-gray-200 p-5 flex flex-col gap-5"
+        >
+            <!-- Panel de filtros -->
+            <div class="flex flex-col md:flex-row md:items-end gap-3">
+                <!-- Fecha inicial -->
+                <FormInput
+                    label="Fecha inicial"
+                    type="date"
+                    v-model="filters.fechaInicial"
+                />
 
-            <!-- Fecha inicial -->
-            <FormInput
-                label="Fecha inicial"
-                type="date"
-                v-model="filters.fechaInicial"
-            />
+                <!-- Fecha final -->
+                <FormInput
+                    label="Fecha inicial"
+                    type="date"
+                    v-model="filters.fechaFinal"
+                />
 
-            <!-- Fecha final -->
-            <FormInput
-                label="Fecha inicial"
-                type="date"
-                v-model="filters.fechaFinal"
-            />
+                <!-- Aliado -->
+                <FormSelectAsync
+                    label="Aliado"
+                    v-model="filters.aliado"
+                    :fetch-options="opcionesStore.fetchEmpresas"
+                    placeholder="Seleccione un aliado"
+                    wrapper-class="xl:w-[30%]"
+                />
 
-            <!-- Aliado -->
-            <FormSelectAsync
-                label="Aliado"
-                v-model="filters.aliado"
-                :fetch-options="opcionesStore.fetchEmpresas"
-                placeholder="Seleccione un aliado"
-                wrapper-class="xl:w-[30%]"
-            />
+                <!-- Botón actualizar mora -->
+                <UpdateMoraButton :onSuccess="fetchCartera" />
+            </div>
 
-            <!-- Botón actualizar mora -->
-            <UpdateMoraButton :onSuccess="fetchCartera" />
+            <div class="flex items-center gap-2 sm:justify-end">
+                <button
+                    @click="resetFilters"
+                    class="btn flex-1 sm:flex-none border border-gray-200 text-sm text-gray-500 hover:bg-gray-50 hover:border-gray-300"
+                >
+                    Limpiar
+                </button>
+                <button
+                    @click="fetchCartera"
+                    class="btn btn-main flex-1 sm:flex-none"
+                >
+                    Aplicar filtros
+                </button>
+            </div>
         </div>
 
         <!-- Tabla de cartera por edades -->
@@ -275,6 +294,14 @@ async function fetchCartera() {
     } finally {
         loading.value = false
     }
+}
+
+async function resetFilters() {
+    filters.fechaInicial = ''
+    filters.fechaFinal = ''
+    filters.aliado = ''
+
+    await fetchCartera()
 }
 
 onMounted(async () => {

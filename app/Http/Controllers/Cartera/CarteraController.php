@@ -12,11 +12,17 @@ use Illuminate\Support\Facades\DB;
 
 class CarteraController extends Controller
 {
-    public function listCartera(Request $request) {
+    public function listCartera(Request $request)
+    {
         $empresaId = auth()->user()->empresa_id;
 
-        $aliado = $request->input('conditions.idAliado', null);
-        $conditions = $request->input('conditions', []);
+        $conditions = [
+            'fecha_inicial' => $request->input('fecha_inicial'),
+            'fecha_final' => $request->input('fecha_final'),
+            'aliado' => $request->input('aliado'),
+        ];
+
+        $aliado = $conditions['aliado'];
 
         $listaAliados = is_null($aliado)
             ? Empresa::where('aliado', $empresaId)
@@ -33,9 +39,9 @@ class CarteraController extends Controller
             ->toArray();
 
         $creditos = Credito::select([
-                'credito.*',
-                DB::raw('COALESCE(SUM(CASE WHEN abono.deleted_at IS NULL THEN abono.valor ELSE 0 END), 0) as total_abonos')
-            ])
+            'credito.*',
+            DB::raw('COALESCE(SUM(CASE WHEN abono.deleted_at IS NULL THEN abono.valor ELSE 0 END), 0) as total_abonos')
+        ])
             ->leftJoin('abono', 'credito.id', '=', 'abono.credito_id')
             // ->whereIn('credito.empresa_id', $listaAliados)
             ->whereIn('credito.id', $creditosIds)
@@ -44,26 +50,27 @@ class CarteraController extends Controller
                 'proyecciones', // proyecciones del credito sin filtro
                 'proyeccionesCartera' => function ($query) {
                     $query->select([
-                            'credito_id',
-                            DB::raw('SUM(COALESCE(valor_cuota, 0)) as total_valor_cuota'),
-                            DB::raw('COUNT(credito_id) as conteo'),
-                            DB::raw('MAX(diasMora) as diasMora')
-                        ])
+                        'credito_id',
+                        DB::raw('SUM(COALESCE(valor_cuota, 0)) as total_valor_cuota'),
+                        DB::raw('COUNT(credito_id) as conteo'),
+                        DB::raw('MAX(diasMora) as diasMora')
+                    ])
                         ->groupBy('credito_id');
                 }
             ])
             ->applyConditions($conditions)
             ->get();
 
-        $moras = [ 'mora_1_10' => 0, 'mora_11_30' => 0, 'mora_31_60' => 0, 'mora_61_90' => 0, 'mora_91_120' => 0, 'mora_120_mas' => 0 ];
+        $moras = ['mora_1_10' => 0, 'mora_11_30' => 0, 'mora_31_60' => 0, 'mora_61_90' => 0, 'mora_91_120' => 0, 'mora_120_mas' => 0];
 
         foreach ($creditos as $credito) {
-            if (count($credito->proyeccionesCartera) == 0) continue;
+            if (count($credito->proyeccionesCartera) == 0)
+                continue;
 
             $totalAbonado = $credito->total_abonos ?? 0;
 
             // Validar si se han realizado condonaciones al credito
-            $valorCondonaciones = Condonacion::whereIn('abono_id', function ($query) use($credito) {
+            $valorCondonaciones = Condonacion::whereIn('abono_id', function ($query) use ($credito) {
                 $query->select('id')->from('abono')->where('credito_id', $credito->id);
             })->where('concepto_condonacion', 'credito')->sum('valor_condonado');
 
@@ -79,7 +86,8 @@ class CarteraController extends Controller
 
                 // Se adiciona al valor pendiente los gastos de cobranza y los intereses moratorios
                 $adicionales = $credito->proyecciones
-                    ->sum(fn($proyeccion) => $proyeccion->pagado == 0
+                    ->sum(
+                        fn($proyeccion) => $proyeccion->pagado == 0
                         ? round(($proyeccion->gastos_cobranza ?? 0)) + round(($proyeccion->intereses_moratorios ?? 0))
                         : 0
                     );
