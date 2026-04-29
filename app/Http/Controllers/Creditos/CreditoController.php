@@ -75,6 +75,7 @@ class CreditoController extends Controller
             'estado_credito' => $request->input('estado'),
             'cliente' => $request->input('cliente_id'),
             'destino' => $request->input('destino'),
+            'usuario' => $request->input('cajera'),
             'aliado' => $request->input('aliado'),
 
             // Vencimiento de cuota

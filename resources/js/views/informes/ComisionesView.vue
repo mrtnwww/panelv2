@@ -27,7 +27,7 @@
                 />
                 <FormSelectAsync
                     label="Cajera"
-                    v-model="filters.cajero"
+                    v-model="filters.cajera"
                     :fetch-options="opcionesStore.fetchCajeras"
                     placeholder="Seleccione una cajera"
                 />
@@ -35,62 +35,79 @@
 
             <!-- Botones de informe -->
             <div
-                class="flex flex-col items-start justify-end gap-3 pt-1 border-t border-gray-100 xl:flex-row xl:items-end"
+                class="flex flex-col lg:flex-row lg:items-center justify-between gap-4"
             >
-                <button
-                    @click="generarInforme('resumido')"
-                    :disabled="loadingInforme === 'resumido'"
-                    class="btn btn-main"
-                >
-                    <svg
-                        v-if="loadingInforme === 'resumido'"
-                        class="animate-spin w-3.5 h-3.5"
-                        viewBox="0 0 24 24"
-                        fill="none"
+                <div class="flex flex-wrap items-center gap-2">
+                    <button
+                        @click="generarInforme('resumido')"
+                        :disabled="loadingInforme === 'resumido'"
+                        class="btn btn-main"
                     >
-                        <circle
-                            class="opacity-25"
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            stroke="currentColor"
-                            stroke-width="4"
-                        />
-                        <path
-                            class="opacity-75"
-                            fill="currentColor"
-                            d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                        />
-                    </svg>
-                    Generar informe resumido
-                </button>
-                <button
-                    @click="generarInforme('detallado')"
-                    :disabled="loadingInforme === 'detallado'"
-                    class="btn btn-primary"
-                >
-                    <svg
-                        v-if="loadingInforme === 'detallado'"
-                        class="animate-spin w-3.5 h-3.5"
-                        viewBox="0 0 24 24"
-                        fill="none"
+                        <svg
+                            v-if="loadingInforme === 'resumido'"
+                            class="animate-spin w-3.5 h-3.5"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                        >
+                            <circle
+                                class="opacity-25"
+                                cx="12"
+                                cy="12"
+                                r="10"
+                                stroke="currentColor"
+                                stroke-width="4"
+                            />
+                            <path
+                                class="opacity-75"
+                                fill="currentColor"
+                                d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                            />
+                        </svg>
+                        Generar informe resumido
+                    </button>
+                    <button
+                        @click="generarInforme('detallado')"
+                        :disabled="loadingInforme === 'detallado'"
+                        class="btn btn-primary"
                     >
-                        <circle
-                            class="opacity-25"
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            stroke="currentColor"
-                            stroke-width="4"
-                        />
-                        <path
-                            class="opacity-75"
-                            fill="currentColor"
-                            d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                        />
-                    </svg>
-                    Generar informe detallado
-                </button>
+                        <svg
+                            v-if="loadingInforme === 'detallado'"
+                            class="animate-spin w-3.5 h-3.5"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                        >
+                            <circle
+                                class="opacity-25"
+                                cx="12"
+                                cy="12"
+                                r="10"
+                                stroke="currentColor"
+                                stroke-width="4"
+                            />
+                            <path
+                                class="opacity-75"
+                                fill="currentColor"
+                                d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                            />
+                        </svg>
+                        Generar informe detallado
+                    </button>
+                </div>
+
+                <div class="flex items-center gap-2 sm:justify-end">
+                    <button
+                        @click="resetFilters"
+                        class="btn flex-1 sm:flex-none border border-gray-200 text-sm text-gray-500 hover:bg-gray-50 hover:border-gray-300"
+                    >
+                        Limpiar
+                    </button>
+                    <button
+                        @click="fetchCreditos"
+                        class="btn btn-main flex-1 sm:flex-none"
+                    >
+                        Aplicar filtros
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -217,7 +234,7 @@ const valoresTotales = ref({})
 const filters = reactive({
     fechaInicial: '',
     fechaFinal: '',
-    cajero: '',
+    cajera: '',
     aliado: '',
 })
 
@@ -235,16 +252,8 @@ async function fetchCreditos() {
                 fecha_inicial: filters.fechaInicial,
             }),
             ...(filters.fechaFinal && { fecha_final: filters.fechaFinal }),
-            ...(filters.cliente && { cliente_id: filters.cliente }),
-            ...(filters.estado && { estado: filters.estado }),
-            ...(filters.vencimientoCuota && {
-                vencimiento_cuota: filters.vencimientoCuota,
-            }),
-            ...(filters.destino && { destino: filters.destino }),
-            ...(filters.periodicidad && { periodicidad: filters.periodicidad }),
             ...(filters.aliado && { aliado: filters.aliado }),
-            ...(filters.porRango && { por_rango: 1 }),
-            ...(filters.soloAliados && { solo_aliados: 1 }),
+            ...(filters.cajera && { cajera: filters.cajera }),
         })
 
         const { data } = await api.get('/api/creditos/listCredits', { params })
@@ -261,6 +270,15 @@ async function fetchCreditos() {
     } finally {
         loading.value = false
     }
+}
+
+async function resetFilters() {
+    filters.fechaInicial = ''
+    filters.fechaFinal = ''
+    filters.cajera = ''
+    filters.aliado = ''
+
+    await fetchCreditos()
 }
 
 async function generarInforme(tipo) {
