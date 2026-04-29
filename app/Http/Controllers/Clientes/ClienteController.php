@@ -301,8 +301,11 @@ class ClienteController extends Controller
             ->whereIn('empresa_id', $empresas)
             ->where('iscontinue', '!=', 1)
             ->when($search, function ($query, $search) {
-                $query->where('nombre', 'like', "%{$search}%")
-                    ->orWhere('cedula', 'like', "%{$search}%");
+                $query->where(function ($query) use ($search) {
+                    $query->where('nombre', 'like', "%{$search}%")
+                        ->orWhere('cedula', 'like', "%{$search}%");
+                });
+
             })
             ->orderBy('nombre')
             ->paginate($perPage);

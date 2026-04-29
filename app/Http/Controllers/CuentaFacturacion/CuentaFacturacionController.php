@@ -166,7 +166,7 @@ class CuentaFacturacionController extends Controller
 
         return response()->json([
             'message' => 'Línea de crédito eliminada correctamente.'
-        ], 204);
+        ], 200);
     }
 
     private function buildParametrosIntereses($periodicidad, $p, $empresaId, $usuarioId, $lineaId)

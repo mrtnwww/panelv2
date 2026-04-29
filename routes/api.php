@@ -106,8 +106,11 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
 
     // Usuarios
     Route::prefix('usuarios')->group(function () {
-        Route::get('/listMyUsers', [UsuarioController::class, 'listMyUsers']);
         Route::get('/listRoles', [UsuarioController::class, 'listRoles']);
+        Route::get('/listMyUsers', [UsuarioController::class, 'listMyUsers']);
+        Route::post('/saveUsuario', [UsuarioController::class, 'saveUsuario']);
+        Route::put('/updateUsuario', [UsuarioController::class, 'updateUsuario']);
+        Route::delete('/deleteUsuario', [UsuarioController::class, 'deleteUsuario']);
     });
 
     // Cajeras

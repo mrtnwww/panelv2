@@ -209,15 +209,6 @@
                     </div>
                 </div>
             </div>
-
-            <transition name="fade">
-                <div
-                    v-if="modal.error"
-                    class="px-3 py-2.5 mt-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm"
-                >
-                    {{ modal.error }}
-                </div>
-            </transition>
         </AppModal>
     </div>
 </template>
@@ -235,6 +226,9 @@ import DataTable from '@/components/table/DataTable.vue'
 // -- Loader -------------------------------------------------------
 import { useLoader } from '@/composables/useLoader'
 const { start, stop } = useLoader()
+
+// -- Toaster ------------------------------------------------------
+import { notify } from '@/composables/useNotify'
 
 // -- DataTable ---------------------------------------------------
 import { useDataTable } from '@/composables/useDataTable'
@@ -270,13 +264,6 @@ function caducidadClass(fecha) {
     if (dias < 0) return 'text-red-500 font-medium'
     if (dias < 15) return 'text-orange-500 font-medium'
     return 'text-gray-600'
-}
-
-function authHeaders() {
-    return {
-        Accept: 'application/json',
-        Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
-    }
 }
 
 // -- Backend -------------------------------------------------------
@@ -338,7 +325,6 @@ function abrirModalCrear() {
         roles: [],
     })
     modal.mode = 'crear'
-    modal.error = ''
     modal.showPass = false
     modal.open = true
 }
@@ -355,7 +341,6 @@ function abrirModalEditar(row) {
         roles: row.roles ?? [],
     })
     modal.mode = 'editar'
-    modal.error = ''
     modal.showPass = false
     modal.open = true
 }
@@ -366,62 +351,75 @@ function cerrarModal() {
 
 async function guardarUsuario() {
     if (!modal.form.nombre || !modal.form.email) {
-        modal.error = 'Nombre y correo son requeridos.'
+        notify.error('El nombre y correo son requeridos.')
         return
     }
     if (modal.mode === 'crear' && !modal.form.password) {
-        modal.error = 'La contraseña es requerida.'
+        notify.error('La contraseña es requerida.')
         return
     }
     if (modal.form.roles.length === 0) {
-        modal.error = 'Selecciona al menos un tipo de usuario.'
+        notify.error('Selecciona al menos un tipo de usuario.')
         return
     }
-    modal.loading = true
-    modal.error = ''
-    try {
-        const isEditar = modal.mode === 'editar'
-        const body = { ...modal.form }
-        if (isEditar && !body.password) delete body.password
 
-        const response = await fetch(
-            isEditar ? `/api/usuarios/${modal.form.id}` : '/api/usuarios',
-            {
-                method: isEditar ? 'PUT' : 'POST',
-                headers: {
-                    ...authHeaders(),
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(body),
-            }
+    modal.loading = true
+
+    try {
+        const payload = { ...modal.form }
+
+        const isEditar = modal.mode === 'editar'
+        if (isEditar && !payload.password) delete payload.password
+
+        const url = isEditar
+            ? `/api/usuarios/updateUsuario`
+            : '/api/usuarios/saveUsuario'
+
+        const metodo = isEditar ? 'put' : 'post'
+
+        const { data: responseData } = await api[metodo](url, payload)
+
+        notify.success(
+            `Usuario ${isEditar ? 'guardado' : 'creado'} correctamente.`
         )
-        if (!response.ok) throw new Error()
+
         modal.open = false
-        fetchUsuarios()
-    } catch {
-        modal.error = 'No se pudo guardar el usuario. Intenta nuevamente.'
+        await fetchUsuarios()
+    } catch (err) {
+        notify.error(
+            err.response?.data?.message ||
+                'Ocurrió un error al guardar el usuario.'
+        )
     } finally {
         modal.loading = false
     }
 }
 
 async function eliminarUsuario(row) {
+    const confirmado = await confirmAlert({
+        title: 'Eliminar usuario',
+        text: `¿Está seguro(a) de eliminar el usuario ${row.nombre}?`,
+        icon: 'warning',
+    })
+
+    if (!confirmado) return
+
+    start()
+
     try {
-        const confirmado = await confirmAlert({
-            title: 'Eliminar usuario',
-            text: `¿Está seguro(a) de eliminar el usuario ${row.nombre}?`,
-            icon: 'warning',
-        })
-
-        if (!confirmado) return
-
-        await api.delete('/api/usuarios/eliminarUsuario', {
+        await api.delete('/api/usuarios/deleteUsuario', {
             data: { id: row.id },
         })
 
         await fetchUsuarios()
+        notify.success('Usuario eliminado correctamente.')
     } catch (err) {
-        console.error(err)
+        notify.error(
+            err.response?.data?.message ||
+                'Ocurrió un error al eliminar el usuario.'
+        )
+    } finally {
+        stop()
     }
 }
 
@@ -437,6 +435,7 @@ function transformarUsuarios(data) {
 
         return {
             roles: roles,
+            id: u.idUsuario,
             avatar: u.image,
             email: u.correo,
             nombre: u.nombre,
