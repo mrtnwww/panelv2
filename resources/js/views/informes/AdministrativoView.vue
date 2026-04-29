@@ -13,12 +13,12 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <FormInput
                     label="Fecha inicial"
-                    type="date"
+                    type="month"
                     v-model="filters.fechaInicial"
                 />
                 <FormInput
                     label="Fecha final"
-                    type="date"
+                    type="month"
                     v-model="filters.fechaFinal"
                 />
                 <FormSelectAsync
@@ -29,10 +29,8 @@
                 />
             </div>
 
-            <!-- Fila 2: checkboxes + botones -->
-            <div
-                class="flex flex-wrap items-center gap-x-5 gap-y-3 pt-3 border-t border-gray-100"
-            >
+            <!-- Fila 2: checkboxes -->
+            <div class="flex gap-3">
                 <!-- Checkboxes -->
                 <FormCheckbox
                     v-model="filters.abonosMes"
@@ -42,9 +40,14 @@
                     v-model="filters.consolidarEmpresas"
                     label="Consolidar empresas"
                 />
+            </div>
 
+            <!-- Fila 3: botones -->
+            <div
+                class="flex flex-col lg:flex-row lg:items-center justify-between gap-4"
+            >
                 <!-- Botones -->
-                <div class="flex flex-wrap items-center gap-2 sm:ml-auto">
+                <div class="flex flex-wrap items-center gap-2">
                     <button
                         @click="generarInforme('resumido')"
                         :disabled="loadingInforme === 'resumido'"
@@ -71,6 +74,21 @@
                             />
                         </svg>
                         Generar informe
+                    </button>
+                </div>
+
+                <div class="flex items-center gap-2 sm:justify-end">
+                    <button
+                        @click="resetFilters"
+                        class="btn flex-1 sm:flex-none border border-gray-200 text-sm text-gray-500 hover:bg-gray-50 hover:border-gray-300"
+                    >
+                        Limpiar
+                    </button>
+                    <button
+                        @click="fetchCreditos"
+                        class="btn btn-main flex-1 sm:flex-none"
+                    >
+                        Aplicar filtros
                     </button>
                 </div>
             </div>
@@ -134,6 +152,15 @@
                     <td class="px-3 py-3 text-gray-700 text-right">
                         {{ formatCurrency(valoresTotales.saldo) }}
                     </td>
+
+                    <template v-if="mostrarColumnasAbonos">
+                        <td class="px-3 py-3 text-gray-700 text-right">
+                            {{ formatCurrency(valoresTotales.abonoMes) }}
+                        </td>
+                        <td class="px-3 py-3 text-gray-700 text-right">
+                            {{ formatCurrency(valoresTotales.saldoCaja) }}
+                        </td>
+                    </template>
                 </tr>
             </template>
         </DataTable>
@@ -141,7 +168,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 
 // -- Componentes -----------------------------------------------------------
 import FormSelectAsync from '@/components/form/FormSelectAsync.vue'
@@ -164,42 +191,65 @@ import api from '@/services/api'
 // -- Store -----------------------------------------------------------------
 import { useOpcionesStore } from '@/stores/opciones'
 
+const mostrarColumnasAbonos = ref(false)
+
 // -- Columnas --------------------------------------------------------------
-const columns = [
-    { key: 'mes', label: 'mes', sortable: false },
-    { key: 'empresa', label: 'Empresa', sortable: false, truncate: false },
-    {
-        key: 'valorCredito',
-        label: 'Créditos',
-        sortable: false,
-        align: 'right',
-    },
-    {
-        key: 'ventasBase',
-        label: 'Ventas base',
-        sortable: false,
-        align: 'right',
-    },
-    { key: 'abonos', label: 'Abonos', sortable: false, align: 'right' },
-    {
-        key: 'saldoRecuperacion',
-        label: 'Saldo (Recuperación)',
-        sortable: false,
-        align: 'right',
-    },
-    {
-        key: 'saldoUtilidad',
-        label: 'Saldo (Utilidad)',
-        sortable: false,
-        align: 'right',
-    },
-    {
-        key: 'saldoTotal',
-        label: 'Saldo (Total)',
-        sortable: false,
-        align: 'right',
-    },
-]
+const columns = computed(() => {
+    const cols = [
+        { key: 'mes', label: 'mes', sortable: false },
+        { key: 'empresa', label: 'Empresa', sortable: false, truncate: false },
+        {
+            key: 'valorCredito',
+            label: 'Créditos',
+            sortable: false,
+            align: 'right',
+        },
+        {
+            key: 'ventasBase',
+            label: 'Ventas base',
+            sortable: false,
+            align: 'right',
+        },
+        { key: 'abonos', label: 'Abonos', sortable: false, align: 'right' },
+        {
+            key: 'saldoRecuperacion',
+            label: 'Saldo (Recuperación)',
+            sortable: false,
+            align: 'right',
+        },
+        {
+            key: 'saldoUtilidad',
+            label: 'Saldo (Utilidad)',
+            sortable: false,
+            align: 'right',
+        },
+        {
+            key: 'saldoTotal',
+            label: 'Saldo (Total)',
+            sortable: false,
+            align: 'right',
+        },
+    ]
+
+    if (mostrarColumnasAbonos.value) {
+        cols.push(
+            {
+                key: 'abonosMes',
+                label: 'Abonos del mes',
+                sortable: false,
+                align: 'right',
+            },
+            {
+                key: 'saldoCaja',
+                label: 'Saldo caja',
+                sortable: false,
+                align: 'right',
+            }
+        )
+    }
+
+    return cols
+})
 
 // Columnas que renderizan como moneda via slot dinámico
 const currencyCols = [
@@ -209,6 +259,8 @@ const currencyCols = [
     'saldoRecuperacion',
     'saldoUtilidad',
     'saldoTotal',
+    'abonosMes',
+    'saldoCaja',
 ]
 
 const opcionesStore = useOpcionesStore()
@@ -254,11 +306,11 @@ async function fetchCreditos() {
             }),
             ...(filters.fechaFinal && { fecha_final: filters.fechaFinal }),
             ...(filters.recibidoEn && { recibido_en: filters.recibidoEn }),
-            ...(filters.cliente && { cliente_id: filters.cliente }),
-            ...(filters.cajero && { cajero_id: filters.cajero }),
             ...(filters.aliado && { aliado: filters.aliado }),
-            ...(filters.diasMora && { dias_mora: 1 }),
-            ...(filters.abonoAval && { abono_aval: 1 }),
+            ...(filters.abonosMes && { abonos_mes: filters.abonosMes }),
+            ...(filters.consolidarEmpresas && {
+                consolidar_empresas: filters.consolidarEmpresas,
+            }),
         })
 
         const { data } = await api.get(
@@ -266,10 +318,12 @@ async function fetchCreditos() {
             { params }
         )
 
+        mostrarColumnasAbonos.value = filters.abonosMes
+
         const { data: creditosData, total, current_page } = data.creditos
 
         // Lista de creditos
-        transformCreditos(creditosData, data.totales)
+        transformCreditos(creditosData, data.totales, data.empresa)
 
         pagination.total = total
         pagination.currentPage = current_page
@@ -280,6 +334,16 @@ async function fetchCreditos() {
     } finally {
         loading.value = false
     }
+}
+
+async function resetFilters() {
+    filters.fechaInicial = ''
+    filters.fechaFinal = ''
+    filters.aliado = ''
+    filters.abonosMes = false
+    filters.consolidarEmpresas = false
+
+    await fetchCreditos()
 }
 
 async function descargarArchivo(url, nombre) {
@@ -314,18 +378,20 @@ async function generarInforme(tipo) {
     }
 }
 
-function transformCreditos(data, sumaTotales) {
+function transformCreditos(data, sumaTotales, empresaPrincipal) {
     const toNumber = v => Number(v) || 0
 
     creditos.value = data.map(cr => ({
         mes: cr.fecha,
         empresa: cr.resumen.empresa || empresaPrincipal || '',
-        valorCredito: cr.suma_credito,
-        ventasBase: cr.suma_compra,
+        valorCredito: cr.suma_credito ?? 0,
+        ventasBase: cr.suma_compra ?? 0,
         abonos: cr.resumen.abonos,
         saldoRecuperacion: cr.resumen.saldo_recuperacion,
         saldoUtilidad: cr.resumen.saldo_utilidad,
         saldoTotal: cr.resumen.saldo_total,
+        abonosMes: cr.resumen.abonos_mes,
+        saldoCaja: cr.resumen.abonos_mes - cr.suma_compra,
     }))
 
     const totalesMap = {

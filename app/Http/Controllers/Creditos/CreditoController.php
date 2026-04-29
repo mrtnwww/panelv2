@@ -2500,9 +2500,11 @@ class CreditoController extends Controller
         // Filtros
         $conditions = [
             'generateReport' => $request->input('generateReport', false),
-            'fechaInicial' => $request->input('fechaInicial', NULL),
-            'fechaFinal' => $request->input('fechaFinal', NULL),
+            'fechaInicial' => $request->input('fecha_inicial', NULL),
+            'fechaFinal' => $request->input('fecha_final', NULL),
             'aliado' => $request->input('aliado', ''),
+            'abonos_mes' => $request->input('abonos_mes', ''),
+            'consolidar_empresas' => $request->input('consolidar_empresas', ''),
         ];
 
         $searchTerm = $request->input('search', '');
@@ -2511,18 +2513,35 @@ class CreditoController extends Controller
 
         $empresasIds = Empresa::query();
 
-        if (!empty($conditions['aliado']) || !empty($searchTerm)) {
-            $empresasIds->where(function ($query) use ($conditions, $searchTerm) {
-                foreach ([$conditions['aliado'], $searchTerm] as $term) {
-                    if (!empty($term)) {
-                        $query->orWhere('razon_social', 'like', '%' . $term . '%');
-                    }
-                }
+        if (!empty($conditions['aliado'])) {
+            $empresasIds->where(function ($query) use ($conditions) {
+                $query->orWhere('id', $conditions['aliado']);
+            });
+        } else if (!empty($searchTerm)) {
+            $empresasIds->where(function ($query) use ($searchTerm) {
+                $query->orWhere('razon_social', 'like', '%' . $searchTerm . '%');
             });
         } else {
             $empresasIds->where('aliado', $empresaId)
                 ->orWhere('sede', $empresaId);
         }
+
+        $empresasIds->where(function ($query) use ($conditions, $searchTerm, $empresaId) {
+            if (!empty($conditions['aliado'])) {
+                $query->where('id', $conditions['aliado']);
+            }
+
+            if (!empty($searchTerm)) {
+                $query->where('razon_social', 'like', '%' . $searchTerm . '%');
+            }
+
+            if (empty($conditions['aliado']) && empty($searchTerm)) {
+                $query->where(function ($sub) use ($empresaId) {
+                    $sub->where('aliado', $empresaId)
+                        ->orWhere('sede', $empresaId);
+                });
+            }
+        });
 
         $empresasIds = $empresasIds->pluck('id');
 
@@ -2537,10 +2556,16 @@ class CreditoController extends Controller
             ->when($fechaInicialParsed && $fechaFinalParsed, function ($query) use ($fechaInicialParsed, $fechaFinalParsed) {
                 $query->whereBetween('credito.created_at', [$fechaInicialParsed, $fechaFinalParsed]);
             })
+            ->when($fechaInicialParsed && !$fechaFinalParsed, function ($query) use ($fechaInicialParsed) {
+                $query->where('credito.created_at', '>=', $fechaInicialParsed);
+            })
+            ->when(!$fechaInicialParsed && $fechaFinalParsed, function ($query) use ($fechaFinalParsed) {
+                $query->where('credito.created_at', '<=', $fechaFinalParsed);
+            })
             ->applyConditions($conditions)
             ->applySearchAdmin($searchTerm);
 
-        if (!empty($conditions['consolidar_empresas']) && $conditions['consolidar_empresas'] == 1) {
+        if (!empty($conditions['consolidar_empresas'])) {
             // se agrupan los creditos por fecha
             $creditosByDate->select(
                 DB::raw("DATE_FORMAT(credito.created_at, '%Y-%m') as fecha"),
@@ -2595,14 +2620,14 @@ class CreditoController extends Controller
             ->value('total_abonos');
 
         // Se obtiene el total de abonos del mes
-        if (!empty($conditions['abonos_mes']) && $conditions['abonos_mes'] == 1) {
+        if (!empty($conditions['abonos_mes'])) {
             $abonosByDate = Abono::join('credito', 'abono.credito_id', '=', 'credito.id')
                 ->whereIn('credito.empresa_id', $empresasIds)
                 ->when($fechaInicialParsed && $fechaFinalParsed, function ($query) use ($fechaInicialParsed, $fechaFinalParsed) {
                     $query->whereBetween('abono.created_at', [$fechaInicialParsed, $fechaFinalParsed]);
                 });
 
-            if (!empty($conditions['consolidar_empresas']) && $conditions['consolidar_empresas'] == 1) {
+            if (!empty($conditions['consolidar_empresas'])) {
                 // se agrupan los abonos por fecha
                 $abonosByDate->select(
                     DB::raw("DATE_FORMAT(abono.created_at, '%Y-%m') as fecha"),
@@ -2629,7 +2654,7 @@ class CreditoController extends Controller
 
             $combinedQuery = $creditosByDate->unionAll($abonosByDate);
 
-            if (!empty($conditions['consolidar_empresas']) && $conditions['consolidar_empresas'] == 1) {
+            if (!empty($conditions['consolidar_empresas'])) {
                 // agrupar para mantener los valores de creditos y sumar abonos
                 $vQuery = DB::table(DB::raw("({$combinedQuery->toSql()}) as combined"))
                     ->mergeBindings($combinedQuery->getQuery())
@@ -2707,8 +2732,8 @@ class CreditoController extends Controller
                 ->whereNull('abono.deleted_at')
                 ->first();
 
-            if (!empty($conditions['abonos_mes']) && $conditions['abonos_mes'] == 1) {
-                if (!empty($conditions['consolidar_empresas']) && $conditions['consolidar_empresas'] == 1) {
+            if (!empty($conditions['abonos_mes'])) {
+                if (!empty($conditions['consolidar_empresas'])) {
                     // consulta para todas las empresas en ese mes
                     $resultadoAbonosMes = DB::table('abono')
                         ->leftJoin('credito', 'credito.id', '=', 'abono.credito_id')
