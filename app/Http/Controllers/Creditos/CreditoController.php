@@ -2309,7 +2309,7 @@ class CreditoController extends Controller
         }
     }
 
-    public function listCreditsCorresponsal(Excel $excel)
+    public function listCreditsCorresponsal(Request $request, Excel $excel)
     {
         $empresaId = auth()->user()->empresa_id;
 
@@ -2326,7 +2326,11 @@ class CreditoController extends Controller
         $form = request('form', null);
 
         // Filtros
-        $conditions = request('conditions', []);
+        $conditions = [
+            'estado_credito' => $request->input('estado_credito'),
+            'fecha_inicial' => $request->input('fecha_inicial'),
+            'fecha_final' => $request->input('fecha_final'),
+        ];
 
         $empresasAliados = Empresa::where('aliado', $currentEmpresaId)
             ->orWhere('sede', $currentEmpresaId)
