@@ -65,6 +65,18 @@ export const useOpcionesStore = defineStore('opciones', {
             }))
         },
 
+        async fetchClientesPendientesFE(query) {
+            const { data } = await api.get('/api/facturacion/clientes', {
+                params: { search: query, perPage: 30 },
+            })
+
+            return data.clientes.data.map(c => ({
+                value: c.id,
+                label: `${c.nombre} (${c.cedula})`,
+                nombreCompleto: c.nombre,
+            }))
+        },
+
         async fetchCajeras(query) {
             const { data } = await api.get('/api/cajeras', {
                 params: { search: query, perPage: 30 },

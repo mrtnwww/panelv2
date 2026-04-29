@@ -11,6 +11,7 @@ use App\Http\Controllers\CuentaFacturacion\CuentaFacturacionController;
 use App\Http\Controllers\Destinos\DestinoController;
 use App\Http\Controllers\Empresas\EmpresaController;
 use App\Http\Controllers\Extracto\ExtractoController;
+use App\Http\Controllers\Facturacion\FacturacionElectronicaController;
 use App\Http\Controllers\Notificaciones\NotificacionController;
 use App\Http\Controllers\Productos\ProductoController;
 use App\Http\Controllers\ReporteCentralesTipo\ReporteCentralesTipoController;
@@ -133,6 +134,12 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     // Extracto
     Route::prefix('extracto')->group(function () {
         Route::get('/generar/{creditoId}', [ExtractoController::class, 'generate']);
+    });
+
+    // Facturacion electrónica
+    Route::prefix('facturacion')->group(function () {
+        Route::get('/clientes', [FacturacionElectronicaController::class, 'consultarClientes']);
+        Route::post('/registrarTerceros', [FacturacionElectronicaController::class, 'registrarTerceros']);
     });
 
     // Cuenta y Facturación
